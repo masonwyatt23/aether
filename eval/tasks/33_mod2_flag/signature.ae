@@ -1,0 +1,7 @@
+## Return (x % 2) + 1, proved in range [1, 2].
+## Contract: result >= 1 AND result < 3 (proved at compile time).
+fn mod2_flag(x: Int) -> Int
+  where result >= 1 && result < 3
+  effects {} {
+  0
+}

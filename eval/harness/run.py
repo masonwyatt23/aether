@@ -10,7 +10,7 @@ Usage:
 
 `<candidate-dir>` holds one `.ae` file per task, named after the task
 directory (e.g. `04_clamp.ae`). `eval/baseline/` is the reference set and
-should always score 12/12 — run it as the harness self-test:
+should always score 100% — run it as the harness self-test:
 
     python3 eval/harness/run.py eval/baseline
 
@@ -46,6 +46,28 @@ def aether_bin() -> str:
     if release.exists():
         return str(release)
     return "aether"  # fall back to PATH
+
+
+# Difficulty tiers, easiest first (for ordered reporting).
+TIER_ORDER = ["easy", "medium", "medium-hard", "hard"]
+
+
+def task_difficulty(task: str) -> str:
+    """Read the `**Difficulty:**` line from a task's prompt.md.
+
+    Tasks without one — the original benchmark tier — are treated as `easy`.
+    """
+    prompt = TASKS_DIR / task / "prompt.md"
+    try:
+        text = prompt.read_text()
+    except OSError:
+        return "easy"
+    for line in text.splitlines():
+        low = line.lower()
+        if "difficulty:" in low:
+            tier = low.split("difficulty:", 1)[1].strip().strip("*").strip()
+            return tier or "easy"
+    return "easy"
 
 
 def classify(diagnostics: list, errors: int, warnings: int) -> str:
@@ -136,7 +158,20 @@ def main() -> int:
     print(f"\n  score: {verified}/{total} verified ({pct:.0f}%)")
     print("  (a task counts only when the compiler PROVED its contract)")
 
-    # Self-test contract: the baseline must score a perfect 12/12.
+    # Per-difficulty breakdown — the score spread across tiers is what makes
+    # the benchmark discriminating.
+    tiers: dict[str, list[int]] = {}
+    for task in tasks:
+        tier = task_difficulty(task)
+        bucket = tiers.setdefault(tier, [0, 0])
+        bucket[0] += 1 if results[task] == VERIFIED else 0
+        bucket[1] += 1
+    print("\n  by difficulty:")
+    for tier in sorted(tiers, key=lambda t: TIER_ORDER.index(t) if t in TIER_ORDER else 99):
+        v, t = tiers[tier]
+        print(f"    {tier:<13} {v}/{t}")
+
+    # Self-test contract: the reference baseline must verify every task.
     if candidate_dir.resolve() == (REPO_ROOT / "eval" / "baseline").resolve():
         if verified != total:
             print("\nFAIL: the baseline must verify every task.", file=sys.stderr)

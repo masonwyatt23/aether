@@ -1,0 +1,8 @@
+## Clamp x to the range [lo, hi] using let-bindings in each branch.
+## Precondition: hi >= lo (encoded in the type of hi).
+## Contract: result >= lo AND result <= hi (proved at compile time).
+fn clamp_via_let(x: Int, lo: Int, hi: Int{h: h >= lo}) -> Int
+  where result >= lo && result <= hi
+  effects {} {
+  0
+}

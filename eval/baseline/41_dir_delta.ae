@@ -1,0 +1,13 @@
+## Return the vertical displacement encoded by a Dir value.
+## Match must cover all four constructors: North, South, East, West.
+type Dir = North(Int) | South(Int) | East(Int) | West(Int)
+
+fn vertical(d: Dir) -> Int
+  effects {} {
+  match d with {
+    North(n) => n,
+    South(n) => 0 - n,
+    East(_)  => 0,
+    West(_)  => 0
+  }
+}

@@ -1,0 +1,25 @@
+## Helper: clip x to [0, cap]. No contract on helper itself.
+fn clip_to_cap(x: Int, cap: Int{c: c >= 0}) -> Int
+  effects {} {
+  if x > cap then cap else x
+}
+
+## Main: clip x to [0, max_cap] then add base.
+## Precondition: max_cap >= 0 (encoded in the type of max_cap).
+## Contract: result >= base AND result <= base + max_cap (proved at compile time).
+fn scaled_clip(x: Int, base: Int, max_cap: Int{c: c >= 0}) -> Int
+  where result >= base && result <= base + max_cap
+  effects {} {
+  if x < 0 then
+    let clipped = 0
+    let r = base + clipped
+    r
+  else if x > max_cap then
+    let clipped = max_cap
+    let r = base + clipped
+    r
+  else
+    let clipped = x
+    let r = base + clipped
+    r
+}

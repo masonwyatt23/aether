@@ -37,7 +37,7 @@ eval/
 ## Running it
 
 Build the CLI once, then score the reference baseline (the harness
-self-test — it must score 12/12):
+self-test — it must score 100%):
 
 ```bash
 cargo build --release -p aether-cli
@@ -51,11 +51,12 @@ directory and point the harness at it:
 python3 eval/harness/run.py path/to/candidate-solutions
 ```
 
-Or generate solutions with a model (needs `ANTHROPIC_API_KEY`):
+Or generate solutions with a model — the generator is multi-provider
+(`openai` / `xai` / `anthropic`), reading the matching API key:
 
 ```bash
-export ANTHROPIC_API_KEY=sk-...
-python3 eval/harness/generate.py candidates/run1
+export OPENAI_API_KEY=...
+python3 eval/harness/generate.py candidates/run1 openai gpt-5.2
 python3 eval/harness/run.py candidates/run1
 ```
 
@@ -72,24 +73,39 @@ Each candidate is run through `aether check --json` and classified:
 | `PARSE-ERROR` | the candidate does not parse |
 | `MISSING` | no candidate file for this task |
 
-The score is `verified / total`.
+The score is `verified / total`, and `run.py` also breaks it down by
+difficulty tier — the *spread* across tiers is what makes the benchmark
+discriminating.
 
-## The 12 tasks
+## The 57 tasks
 
-`min`, `max`, `abs`, `clamp`, `sign`, `safe_div`, `bounded_inc`,
-`bounded_dec`, `lower_mid`, `clamp_unit`, `step_up`, `counter_tick` — each a
-small integer function whose contract is a non-trivial refinement the
-linear-arithmetic solver must actually work to discharge.
+Tasks span four difficulty tiers (`run.py` reports the per-tier score):
+
+| Tier | Count | What it tests |
+|---|---:|---|
+| **easy** | 12 | The original set — small integer functions (`min`, `clamp`, `abs`, …). |
+| **medium** | 4 | Tighter multi-clause contracts; parameter refinements that must be used. |
+| **medium-hard** | 16 | ADTs with exhaustive pattern matching; structured multi-statement bodies, `let`-chains, helper composition. |
+| **hard** | 25 | Multi-branch case analysis with tight contracts; modular arithmetic (`mod`/`div`); and **trap tasks** where the naive implementation violates the contract. |
+
+Every task ships a `reference.ae` that the compiler verifies, so the
+baseline always scores 100% — and (apart from a few easy-tier tasks) the
+stubbed `signature.ae` does *not* verify, so a do-nothing answer fails.
 
 ## Honest limitations
 
-- **It is small.** Twelve tasks, all integer arithmetic. This is a research
-  demonstration of an *idea* — verified-correctness scoring — not an
-  industry-scale benchmark.
 - **Contract coverage is bounded by the solver.** Aether proves linear
   integer arithmetic (and escalates non-linear goals to `z3` when installed).
-  Tasks are chosen to stay inside what the solver decides; a richer benchmark
-  would need a richer solver.
+  Tasks stay inside what the solver decides; a richer benchmark would need a
+  richer solver.
+- **A few easy-tier tasks have loose contracts** — e.g. `abs`'s `result >= 0`
+  is satisfied by the constant `0`. Those tasks (kept for historical
+  continuity) can't distinguish a correct answer from a degenerate one; the
+  medium/hard tiers are designed so only a genuinely correct solution
+  verifies.
+- **It is still a research benchmark**, not an industry standard — 57 tasks,
+  all integer/ADT functions. Its value is the *methodology*: scoring provable
+  correctness rather than test-pass rate.
 - **It rewards a narrow notion of correctness.** "The compiler proved this
   contract" is stronger than "tests passed" but only as meaningful as the
   contract. A weak contract is easy to satisfy; the value is in the contract

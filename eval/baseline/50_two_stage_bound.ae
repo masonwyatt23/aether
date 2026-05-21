@@ -1,0 +1,18 @@
+## Bound x to [lo, hi] via two nested stages with let bindings.
+## Precondition: hi >= lo (encoded in the type of hi).
+## Contract: result >= lo AND result <= hi (proved at compile time).
+fn two_stage_bound(x: Int, lo: Int, hi: Int{h: h >= lo}) -> Int
+  where result >= lo && result <= hi
+  effects {} {
+  if x < lo then
+    let stage1 = lo
+    if stage1 > hi then hi else stage1
+  else if x > hi then
+    let stage1 = hi
+    if stage1 < lo then lo else stage1
+  else
+    let stage1 = x
+    if stage1 < lo then lo
+    else if stage1 > hi then hi
+    else stage1
+}

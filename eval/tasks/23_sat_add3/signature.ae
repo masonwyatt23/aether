@@ -1,0 +1,8 @@
+## Compute x + y, then clamp the sum to [floor, cap].
+## Precondition: y >= 0 and cap >= floor.
+## Contract: result >= floor AND result <= cap (proved at compile time).
+fn sat_add3(x: Int, y: Int{v: v >= 0}, floor: Int, cap: Int{c: c >= floor}) -> Int
+  where result >= floor && result <= cap
+  effects {} {
+  0
+}

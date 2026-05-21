@@ -1,0 +1,7 @@
+## Return (x % 5) + 1, proved in range [1, 5].
+## Contract: result >= 1 AND result < 6 (proved at compile time).
+fn mod5_rank(x: Int) -> Int
+  where result >= 1 && result < 6
+  effects {} {
+  0
+}

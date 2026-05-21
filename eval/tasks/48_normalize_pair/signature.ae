@@ -1,0 +1,8 @@
+## Given a in [0,50] and b in [0,50], return a + b clamped to [0, 100].
+## Preconditions: a in [0,50], b in [0,50] (encoded in parameter types).
+## Contract: result >= 0 AND result <= 100 (proved at compile time).
+fn normalize_pair(a: Int{x: x >= 0 && x <= 50}, b: Int{x: x >= 0 && x <= 50}) -> Int
+  where result >= 0 && result <= 100
+  effects {} {
+  a + b + 1
+}

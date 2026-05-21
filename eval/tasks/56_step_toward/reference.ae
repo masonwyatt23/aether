@@ -1,0 +1,8 @@
+## Move x one step toward t (t >= x), without overshooting.
+## Precondition: t >= x (encoded in t's type).
+## Contract: result >= x AND result <= t (proved at compile time).
+fn step_toward(x: Int, t: Int{v: v >= x}) -> Int
+  where result >= x && result <= t
+  effects {} {
+  if x <= t - 1 then x + 1 else t
+}

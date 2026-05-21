@@ -1,0 +1,7 @@
+## Return (x % 4) + 1, proved in range [1, 4].
+## Contract: result >= 1 AND result < 5 (proved at compile time).
+fn mod4_slot(x: Int) -> Int
+  where result >= 1 && result < 5
+  effects {} {
+  (x % 4) + 1
+}

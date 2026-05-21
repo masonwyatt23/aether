@@ -1,0 +1,10 @@
+## Clamp twice the input (2 * x) to the range [lo, hi].
+## Precondition: hi >= lo (encoded in the type of hi).
+## Contract: result >= lo AND result <= hi (proved at compile time).
+fn clamp_double(x: Int, lo: Int, hi: Int{h: h >= lo}) -> Int
+  where result >= lo && result <= hi
+  effects {} {
+  if 2 * x < lo then lo
+  else if 2 * x > hi then hi
+  else 2 * x
+}

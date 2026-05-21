@@ -1,0 +1,11 @@
+## Return the success value, or 0 on Err.
+## Match must cover both Ok and Err constructors.
+type Res = Ok(Int) | Err(Int)
+
+fn ok_or_zero(r: Res) -> Int
+  effects {} {
+  match r with {
+    Ok(v)  => v,
+    Err(_) => 0
+  }
+}

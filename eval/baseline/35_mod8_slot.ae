@@ -1,0 +1,7 @@
+## Return (x % 8) + 1, proved in range [1, 8].
+## Contract: result >= 1 AND result < 9 (proved at compile time).
+fn mod8_slot(x: Int) -> Int
+  where result >= 1 && result < 9
+  effects {} {
+  (x % 8) + 1
+}

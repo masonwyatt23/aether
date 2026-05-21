@@ -1,0 +1,8 @@
+## Decrement x by 1 but floor the result at lo.
+## Precondition: lo <= x (encoded in lo's type).
+## Contract: result >= lo (proved at compile time).
+fn prev_capped(x: Int, lo: Int{l: l <= x}) -> Int
+  where result >= lo
+  effects {} {
+  0
+}

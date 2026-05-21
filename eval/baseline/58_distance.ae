@@ -1,0 +1,8 @@
+## Compute |a - b|, the non-negative distance between a and b.
+## No preconditions — a and b may be any integers.
+## Contract: result >= 0 (proved at compile time).
+fn distance(a: Int, b: Int) -> Int
+  where result >= 0
+  effects {} {
+  if a >= b then a - b else b - a
+}

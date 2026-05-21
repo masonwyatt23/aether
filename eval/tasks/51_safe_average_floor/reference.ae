@@ -1,0 +1,23 @@
+## Given a,b in [0,100], compute floor((a+b)/2) via let chain; result in [0,100].
+## Preconditions: a in [0,100], b in [0,100] (encoded in parameter types).
+## Contract: result >= 0 AND result <= 100 (proved at compile time).
+fn safe_average_floor(a: Int{x: x >= 0 && x <= 100}, b: Int{x: x >= 0 && x <= 100}) -> Int
+  where result >= 0 && result <= 100
+  effects {} {
+  if a <= b then
+    let lo = a
+    let step = b - lo
+    let half = step / 2
+    let mid = lo + half
+    if mid > 100 then 100
+    else if mid < 0 then 0
+    else mid
+  else
+    let lo = b
+    let step = a - lo
+    let half = step / 2
+    let mid = lo + half
+    if mid > 100 then 100
+    else if mid < 0 then 0
+    else mid
+}

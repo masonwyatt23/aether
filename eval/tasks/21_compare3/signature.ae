@@ -1,0 +1,7 @@
+## Compare a and b, returning base if a < b, base + 1 if a == b, base + 2 if a > b.
+## Contract: result >= base AND result <= base + 2 (proved at compile time).
+fn compare3(a: Int, b: Int, base: Int) -> Int
+  where result >= base && result <= base + 2
+  effects {} {
+  0
+}

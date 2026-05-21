@@ -1,0 +1,11 @@
+## Sum the integer values stored in a flat Tree.
+## Match must cover both Leaf and Branch constructors.
+type Tree = Leaf(Int) | Branch(Int, Int)
+
+fn tree_sum(t: Tree) -> Int
+  effects {} {
+  match t with {
+    Leaf(v)      => v,
+    Branch(l, r) => l + r
+  }
+}

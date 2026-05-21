@@ -1,0 +1,8 @@
+## Combine a in [0,10] and weight in [0,10] via three let bindings.
+## Preconditions: a in [0,10], weight in [0,10] (encoded in parameter types).
+## Contract: result >= 0 AND result <= 20 (proved at compile time).
+fn weighted_pick(a: Int{x: x >= 0 && x <= 10}, weight: Int{w: w >= 0 && w <= 10}) -> Int
+  where result >= 0 && result <= 20
+  effects {} {
+  a + weight + 1
+}

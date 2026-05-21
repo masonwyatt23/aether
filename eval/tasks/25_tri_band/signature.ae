@@ -1,0 +1,8 @@
+## Clamp x to the range [b, c], given a strict lower guard a < b.
+## Preconditions: b >= a + 1 (so b > a), c >= b.
+## Contract: result >= b AND result <= c (proved at compile time).
+fn tri_band(x: Int, a: Int, b: Int{q: q >= a + 1}, c: Int{r: r >= b}) -> Int
+  where result >= b && result <= c
+  effects {} {
+  0
+}

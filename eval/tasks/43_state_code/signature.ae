@@ -1,0 +1,10 @@
+## Encode a State as a signed integer: Active(n) => n, Done(n) => 0 - n, Idle => 0.
+## Match Active and Done first; Idle last as a wildcard-like arm.
+type State = Active(Int) | Idle | Done(Int)
+
+fn state_code(s: State) -> Int
+  effects {} {
+  match s with {
+    Active(n) => n
+  }
+}

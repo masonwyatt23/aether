@@ -1,0 +1,7 @@
+## Return (h % 12) + 1, proved in the 1-based clock range [1, 12].
+## Contract: result >= 1 AND result < 13 (proved at compile time).
+fn clock_tick(h: Int) -> Int
+  where result >= 1 && result < 13
+  effects {} {
+  0
+}

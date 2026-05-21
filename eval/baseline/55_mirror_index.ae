@@ -1,0 +1,8 @@
+## Return the mirror index of i in an array of length len.
+## Preconditions: 0 <= i <= len - 1 (in i's type), len >= 1 (in len's type).
+## Contract: result >= 0 AND result <= len - 1 (proved at compile time).
+fn mirror_index(i: Int{v: v >= 0 && v <= len - 1}, len: Int{v: v >= 1}) -> Int
+  where result >= 0 && result <= len - 1
+  effects {} {
+  len - 1 - i
+}

@@ -1,0 +1,11 @@
+## Unwrap an Opt, returning `default` when None.
+## Match must be exhaustive over both constructors.
+type Opt = Some(Int) | None
+
+fn unwrap_or(o: Opt, default: Int) -> Int
+  effects {} {
+  match o with {
+    Some(v) => v,
+    None    => default
+  }
+}

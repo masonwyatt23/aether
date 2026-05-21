@@ -1,0 +1,10 @@
+## Compute a - b, then clamp the difference to [lo, hi].
+## Preconditions: b >= 0 and hi >= lo.
+## Contract: result >= lo AND result <= hi (proved at compile time).
+fn safe_sub_clamp(a: Int, b: Int{v: v >= 0}, lo: Int, hi: Int{h: h >= lo}) -> Int
+  where result >= lo && result <= hi
+  effects {} {
+  if a - b < lo then lo
+  else if a - b > hi then hi
+  else a - b
+}

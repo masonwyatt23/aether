@@ -1,0 +1,9 @@
+## Return base + sign(x): base + 1 if x > 0, base - 1 if x < 0, base if x == 0.
+## Contract: result >= base - 1 AND result <= base + 1 (proved at compile time).
+fn sign_clamp(x: Int, base: Int) -> Int
+  where result >= base - 1 && result <= base + 1
+  effects {} {
+  if x > 0 then base + 1
+  else if x < 0 then base - 1
+  else base
+}

@@ -1,0 +1,8 @@
+## Return the span (width) of the range [lo, hi].
+## Precondition: hi >= lo (encoded in the type of hi).
+## Contract: result >= 0 AND result >= hi - lo (proved at compile time).
+fn range_span(lo: Int, hi: Int{x: x >= lo}) -> Int
+  where result >= 0 && result >= hi - lo
+  effects {} {
+  hi - lo
+}

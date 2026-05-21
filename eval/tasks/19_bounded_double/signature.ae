@@ -1,0 +1,8 @@
+## Double x, but cap the result at hi.
+## Preconditions: x >= 0 (in x's type), hi >= x (in hi's type).
+## Contract: result >= x AND result <= hi (proved at compile time).
+fn bounded_double(x: Int{v: v >= 0}, hi: Int{v: v >= x}) -> Int
+  where result >= x && result <= hi
+  effects {} {
+  0
+}

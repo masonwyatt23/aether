@@ -1,0 +1,8 @@
+## Add a and b, saturating at n. Both a and b are in [0, n].
+## Preconditions: n >= 1, a in [0, n], b in [0, n] (encoded in types).
+## Contract: result >= 0 AND result <= n (proved at compile time).
+fn add_bounded(n: Int{v: v >= 1}, a: Int{v: v >= 0 && v <= n}, b: Int{v: v >= 0 && v <= n}) -> Int
+  where result >= 0 && result <= n
+  effects {} {
+  a + b
+}

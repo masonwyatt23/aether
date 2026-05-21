@@ -8,7 +8,13 @@ the compiler **proved** its refinement contract.
 
 Run date: 2026-05-21. Harness: `eval/harness/run.py`.
 
-## Scores
+> **Note — the benchmark has since been expanded from 12 to 57 tasks**
+> across four difficulty tiers (easy / medium / medium-hard / hard). The
+> scores below are the **original 12-task (easy-tier) run**. The 45 harder
+> tasks have not yet been run against models — that re-run is the next step,
+> and it is where a score *spread* is expected to appear.
+
+## Scores — original 12-task run
 
 | Model | Provider | Verified | Score |
 |---|---|---:|---:|
@@ -16,8 +22,8 @@ Run date: 2026-05-21. Harness: `eval/harness/run.py`.
 | `grok-4.3` | xAI | 12 / 12 | **100%** |
 | `claude-opus-4-7` | Anthropic | 12 / 12 | **100%** |
 
-Every model produced provably-correct solutions for all 12 tasks. The
-generated solutions are committed under `eval/candidates/<model>/` so the
+Every model produced provably-correct solutions for all 12 easy-tier tasks.
+The generated solutions are committed under `eval/candidates/<model>/` so the
 result is fully inspectable and reproducible.
 
 ## What this shows — and what it does not

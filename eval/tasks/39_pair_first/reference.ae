@@ -1,0 +1,11 @@
+## Return the first (or only) element of a Pair or Single.
+## Match must cover both constructors.
+type Pair = Pair(Int, Int) | Single(Int)
+
+fn first(p: Pair) -> Int
+  effects {} {
+  match p with {
+    Pair(a, _) => a,
+    Single(x)  => x
+  }
+}

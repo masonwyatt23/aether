@@ -1,0 +1,11 @@
+## Integer perimeter approximation: Circle(r) => 6*r, Square(s) => 4*s, Triangle(a,b) => a+b+a.
+## Match must cover all three constructors.
+type Shape = Circle(Int) | Square(Int) | Triangle(Int, Int)
+
+fn perimeter(s: Shape) -> Int
+  effects {} {
+  match s with {
+    Circle(r)    => 6 * r,
+    Square(side) => 4 * side
+  }
+}

@@ -1,0 +1,7 @@
+## Return (x % 6) + 1, proved in the die-face range [1, 6].
+## Contract: result >= 1 AND result < 7 (proved at compile time).
+fn die_face(x: Int) -> Int
+  where result >= 1 && result < 7
+  effects {} {
+  (x % 6) + 1
+}

@@ -1,0 +1,8 @@
+## Clamp x to the inner range [lo + 1, hi - 1].
+## Precondition: hi >= lo + 2 so the inner range is non-empty.
+## Contract: result >= lo + 1 AND result <= hi - 1 (proved at compile time).
+fn clamp_inner(x: Int, lo: Int, hi: Int{h: h >= lo + 2}) -> Int
+  where result >= lo + 1 && result <= hi - 1
+  effects {} {
+  0
+}

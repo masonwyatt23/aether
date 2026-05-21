@@ -1,0 +1,10 @@
+## Clamp x to the range [base, base + span].
+## Precondition: span >= 0 so the range is non-empty.
+## Contract: result >= base AND result <= base + span (proved at compile time).
+fn offset_clamp(x: Int, base: Int, span: Int{s: s >= 0}) -> Int
+  where result >= base && result <= base + span
+  effects {} {
+  if x < base then base
+  else if x > base + span then base + span
+  else x
+}

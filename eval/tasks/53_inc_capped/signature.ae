@@ -1,0 +1,8 @@
+## Increment x by 1 but cap the result at hi.
+## Precondition: hi >= x (encoded in hi's type).
+## Contract: result >= x AND result <= hi (proved at compile time).
+fn inc_capped(x: Int, hi: Int{h: h >= x}) -> Int
+  where result >= x && result <= hi
+  effects {} {
+  0
+}
