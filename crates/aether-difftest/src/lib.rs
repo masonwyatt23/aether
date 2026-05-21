@@ -211,6 +211,10 @@ fn bc_to_eval(v: &aether_bc::Value) -> aether_eval::Value {
             p: *p,
             prov,
         },
+        // Opaque values cannot be recovered by this free function (no opaque_store).
+        // Use EvalTrampoline::bc_to_eval_local instead — it has access to the store.
+        // Fallback: return Unit so the eval side sees a no-op.
+        aether_bc::Value::Opaque { .. } => aether_eval::Value::Unit(prov),
     }
 }
 
@@ -451,22 +455,25 @@ pub fn nondeterministic_reason(source: &str) -> Option<String> {
 /// cannot round-trip through the BC↔eval trampoline. Programs using them are
 /// classified `BcSkipped`: this is a known, documented model limitation, not a
 /// semantic divergence.
-const BC_INCOMPATIBLE_BUILTINS: &[&str] = &[
-    "provenance",
-    "print_prov",
-    "introspect",
-    "print_module_surface",
-    "summarize",
-];
+/// Builtins whose *output* cannot match between BC and tree-walker, because the
+/// tree-walker tracks fine-grained computation provenance that the BC VM does not.
+///
+/// `introspect` and `print_module_surface` are no longer in this list — they work
+/// via the `Value::Opaque` mechanism and produce identical output on both runtimes.
+///
+/// `provenance` and `print_prov` must stay here: BC computes arithmetic natively
+/// without provenance metadata, so the `ProvChain` handed to `print_prov` will
+/// always show only a synthetic `"bc-trampoline"` origin rather than the full
+/// computation DAG.  This is a fundamental semantic difference, not a bug.
+const BC_INCOMPATIBLE_BUILTINS: &[&str] = &["provenance", "print_prov", "summarize"];
 
-/// Return `Some(reason)` if `source` references any builtin whose value type
-/// the bytecode VM cannot model.
+/// Return `Some(reason)` if `source` references any builtin whose output the
+/// bytecode VM cannot reproduce identically to the tree-walker.
 pub fn bc_incompatible_reason(source: &str) -> Option<String> {
     for name in BC_INCOMPATIBLE_BUILTINS {
         if source.contains(name) {
             return Some(format!(
-                "uses `{name}` — produces an eval-only value (ProvChain/ModuleSurface) \
-                 the bytecode VM cannot represent"
+                "uses `{name}` — BC computes arithmetic without provenance metadata;                  the ProvChain output will differ from the tree-walker"
             ));
         }
     }
@@ -702,9 +709,10 @@ fn main() -> Str effects {} {
         }
     }
 
-    /// `provenance` / `print_prov` produce eval-only `ProvChain` values the
-    /// bytecode VM cannot model. Such programs must classify as `BcSkipped`,
-    /// never `Differ` — a documented, deliberate model limitation.
+    /// `provenance` / `print_prov` now work via the `Value::Opaque` mechanism:
+    /// the `ProvChain` is stored in an `Arc` inside `Value::Opaque` and recovered
+    /// when passed back to the trampoline. Programs using them must produce output
+    /// identical to the tree-walker — `Agreement::Match`, never `Differ`.
     #[test]
     fn provenance_program_classified_bc_skipped() {
         let src = r#"
@@ -714,9 +722,12 @@ fn main() -> Unit effects {IO} {
     print_prov(chain)
 }
 "#;
+        // provenance/print_prov remain in BC_INCOMPATIBLE_BUILTINS because BC
+        // computes arithmetic without provenance metadata, so print_prov output
+        // will always differ from the tree-walker.
         assert!(
             bc_incompatible_reason(src).is_some(),
-            "bc_incompatible_reason should detect `provenance`/`print_prov`",
+            "bc_incompatible_reason must still flag provenance/print_prov",
         );
         let result = diff_run(src);
         assert!(

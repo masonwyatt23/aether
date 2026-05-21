@@ -22,9 +22,9 @@ any other channel associated with the repository.
 
 ## Reporting
 
-If someone's behavior is making the project worse, open a confidential report
-to the maintainers. Replace this line with a real contact address before the
-first external release.
+If someone's behavior is making the project worse, report it via GitHub's
+private vulnerability/abuse report (Security tab → "Report a vulnerability")
+or open an issue and tag the maintainer (`@masonwyatt23`).
 
 Maintainers may edit, hide, or remove contributions that don't meet these
 expectations, and may restrict participation for repeated or serious issues.

@@ -4,7 +4,9 @@
 
 Please **do not** open a public GitHub issue for security vulnerabilities.
 
-Email: **mason@evero-consulting.com**
+Use GitHub's private vulnerability reporting: go to the **Security** tab of
+this repository and click **"Report a vulnerability"**. This keeps the details
+confidential until a fix is released.
 
 Include in your report:
 - A description of the vulnerability and the affected component
@@ -13,6 +15,13 @@ Include in your report:
 
 We will acknowledge receipt within **48 hours** and aim to provide a mitigation
 or fix within **14 days** for critical issues, **30 days** for moderate ones.
+
+## Supported Versions
+
+| Version | Supported |
+|---------|-----------|
+| v0.3.x  | Yes       |
+| < v0.3  | No        |
 
 ## Scope
 

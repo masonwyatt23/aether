@@ -21,7 +21,13 @@ test "sha256 known vector" {
   )
 }
 
-## (uuid + random tests would need Rand effect on `test` blocks; exercise them from `main` instead.)
+test "uuid v4 has 36 chars" {
+  assert_eq(len(uuid_v4()), 36)
+}
+
+test "random_int degenerate range returns value" {
+  assert_eq(random_int(5, 5), 5)
+}
 
 test "date epoch" {
   assert_eq(date_year(0), 1970)

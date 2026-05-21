@@ -1406,7 +1406,15 @@ impl<'a> Parser<'a> {
             params: vec![],
             ret: Type::Con(TyCon::Unit, start),
             effects: EffectRow {
-                effects: vec![Effect::Throw],
+                effects: vec![
+                    Effect::Async,
+                    Effect::FS,
+                    Effect::IO,
+                    Effect::Net,
+                    Effect::Rand,
+                    Effect::State,
+                    Effect::Throw,
+                ],
                 tail: None,
             },
             spec: SpecBlock::default(),
@@ -1694,6 +1702,30 @@ mod tests {
             assert_eq!(f.name, "test__feature_works");
             assert!(f.params.is_empty());
             assert!(f.effects.effects.contains(&Effect::Throw));
+        } else {
+            panic!("expected test to desugar to fn decl");
+        }
+    }
+
+    #[test]
+    fn test_block_effect_row_includes_all_builtin_effects() {
+        // test/bench/snap blocks must allow any builtin effect so that
+        // print (IO), random_int (Rand), fs_read (FS), http_get (Net), etc.
+        // can be called from within them without an effect error.
+        let m = pm(r#"test "effectful" { assert(true) }"#);
+        if let Decl::Fn(f) = &m.decls[0] {
+            let effs = &f.effects.effects;
+            assert!(effs.contains(&Effect::IO), "missing IO");
+            assert!(effs.contains(&Effect::Rand), "missing Rand");
+            assert!(effs.contains(&Effect::Throw), "missing Throw");
+            assert!(effs.contains(&Effect::FS), "missing FS");
+            assert!(effs.contains(&Effect::Net), "missing Net");
+            assert!(effs.contains(&Effect::State), "missing State");
+            assert!(effs.contains(&Effect::Async), "missing Async");
+            assert!(
+                f.effects.tail.is_none(),
+                "tail should be None for Option-A row"
+            );
         } else {
             panic!("expected test to desugar to fn decl");
         }

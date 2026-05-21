@@ -1,3 +1,5 @@
+Live: https://masonwyatt23.github.io/aether/ (deployed automatically by `.github/workflows/pages.yml`).
+
 # Aether Playground
 
 A browser-based playground for the [Aether programming language](https://github.com/masonwyatt/aether).

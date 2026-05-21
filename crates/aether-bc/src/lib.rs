@@ -536,6 +536,65 @@ fn main() -> Unit effects {IO} {
 
     // ── records ───────────────────────────────────────────────────────────────
 
+    // ── opaque value tests ──────────────────────────────────────────────────────
+
+    /// An `Opaque` value round-trips through a let-binding: storing it in a
+    /// local and loading it back produces an equal value.
+    #[test]
+    fn opaque_roundtrips_through_let() {
+        use std::sync::Arc;
+        let inner: Arc<dyn std::any::Any + Send + Sync> = Arc::new(42_i64);
+        let v = Value::Opaque {
+            inner: inner.clone(),
+            display: "test-opaque".to_string(),
+        };
+        // Put it in an array (simulating a locals slot), then read back.
+        let locals = [v.clone()];
+        let retrieved = locals[0].clone();
+        assert_eq!(retrieved, v, "opaque value should equal itself after clone");
+        assert_eq!(retrieved.display(), "test-opaque");
+    }
+
+    /// `Value::Opaque { display }` renders via `display()` just like the eval
+    /// `Value::display()` would for the same underlying type.
+    #[test]
+    fn opaque_display_matches_stored_string() {
+        use std::sync::Arc;
+        // Simulate a ProvHandle whose display the eval side would produce.
+        let display_str = "<prov head=0>".to_string();
+        let v = Value::Opaque {
+            inner: Arc::new(0_i64) as Arc<dyn std::any::Any + Send + Sync>,
+            display: display_str.clone(),
+        };
+        assert_eq!(
+            v.display(),
+            display_str,
+            "Opaque::display() must return the cached display string"
+        );
+    }
+
+    /// Serialization of a program that contains *no* opaque values (the normal
+    /// case for AOT artifacts) must still work correctly after the `Value::Opaque`
+    /// variant was added.  Opaque values are runtime-only and never present in
+    /// compiled programs.
+    #[test]
+    fn serialize_normal_program_still_works() {
+        let src = r#"
+fn add(a: Int, b: Int) -> Int effects {} { a + b }
+fn main() -> Int effects {} { add(3, 4) }
+"#;
+        let m = aether_parser::parse_module(aether_ast::FileId(0), src).expect("parse");
+        let prog = compile_module(&m).expect("compile");
+        let bytes = serialize_program(&prog);
+        let prog2 = deserialize_program(&bytes).expect("deserialize");
+        let val = run_main(&prog2).expect("run");
+        assert_eq!(
+            val.as_int(),
+            Some(7),
+            "serialized/deserialized program must run correctly"
+        );
+    }
+
     #[test]
     fn record_field_get() {
         // Record literal + field access.

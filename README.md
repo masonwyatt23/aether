@@ -4,6 +4,7 @@
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 [![386 tests](https://img.shields.io/badge/tests-386%20passing-brightgreen.svg)](#)
 [![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](#install)
+[![Try in browser](https://img.shields.io/badge/playground-live-blueviolet.svg)](https://masonwyatt23.github.io/aether/)
 
 > **A programming language designed for AI agents to read, write, and verify code.**
 

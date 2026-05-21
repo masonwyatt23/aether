@@ -4,6 +4,8 @@
 //! The operand stack is shared across all frames (callee appends on top of
 //! caller's stack slice, then pops when returning).
 
+use std::sync::Arc;
+
 use serde::{Deserialize, Serialize};
 
 use crate::error::VmError;
@@ -38,7 +40,12 @@ pub struct Program {
 // ─── runtime value ────────────────────────────────────────────────────────────
 
 /// Lightweight runtime value — no provenance overhead.
-#[derive(Debug, Clone, PartialEq)]
+///
+/// The `Opaque` variant holds any eval-only value (e.g. `ProvChain`, `ModuleSurface`)
+/// that cannot be natively represented in the BC value model.  The second field
+/// caches the display string so `Value::display()` can mirror the tree-walker output
+/// without needing to know the concrete eval type.
+#[derive(Clone)]
 pub enum Value {
     Int(i64),
     Bool(bool),
@@ -64,6 +71,72 @@ pub enum Value {
         inner: Box<Value>,
         p: f64,
     },
+    /// An opaque eval-only value (e.g. `ProvChain`, `ModuleSurface`) that cannot
+    /// be natively represented in bytecode.  The `display` field caches the eval
+    /// display string so output matches the tree-walker exactly.
+    Opaque {
+        /// The underlying eval value, stored type-erased.
+        inner: Arc<dyn std::any::Any + Send + Sync>,
+        /// Cached display string (mirrors `aether_eval::Value::display()`).
+        display: String,
+    },
+}
+
+// Manual Debug for Value (Opaque cannot derive it).
+impl std::fmt::Debug for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Int(n) => write!(f, "Int({n})"),
+            Value::Bool(b) => write!(f, "Bool({b})"),
+            Value::Str(s) => write!(f, "Str({s:?})"),
+            Value::Float(v) => write!(f, "Float({v})"),
+            Value::Unit => write!(f, "Unit"),
+            Value::List(vs) => write!(f, "List({vs:?})"),
+            Value::Tuple(vs) => write!(f, "Tuple({vs:?})"),
+            Value::Record(fs) => write!(f, "Record({fs:?})"),
+            Value::Ctor { name, args } => write!(f, "Ctor({name}, {args:?})"),
+            Value::Closure { fn_idx, captured } => {
+                write!(f, "Closure(fn{fn_idx}, {captured:?})")
+            }
+            Value::Confident { inner, p } => write!(f, "Confident({inner:?}, {p})"),
+            Value::Opaque { display, .. } => write!(f, "Opaque({display:?})"),
+        }
+    }
+}
+
+// Manual PartialEq for Value (Opaque uses display string equality as a proxy).
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Value::Int(a), Value::Int(b)) => a == b,
+            (Value::Bool(a), Value::Bool(b)) => a == b,
+            (Value::Str(a), Value::Str(b)) => a == b,
+            (Value::Float(a), Value::Float(b)) => a == b,
+            (Value::Unit, Value::Unit) => true,
+            (Value::List(a), Value::List(b)) => a == b,
+            (Value::Tuple(a), Value::Tuple(b)) => a == b,
+            (Value::Record(a), Value::Record(b)) => a == b,
+            (Value::Ctor { name: n1, args: a1 }, Value::Ctor { name: n2, args: a2 }) => {
+                n1 == n2 && a1 == a2
+            }
+            (
+                Value::Closure {
+                    fn_idx: f1,
+                    captured: c1,
+                },
+                Value::Closure {
+                    fn_idx: f2,
+                    captured: c2,
+                },
+            ) => f1 == f2 && c1 == c2,
+            (Value::Confident { inner: i1, p: p1 }, Value::Confident { inner: i2, p: p2 }) => {
+                i1 == i2 && p1 == p2
+            }
+            // Two opaque values are equal if their display strings match.
+            (Value::Opaque { display: d1, .. }, Value::Opaque { display: d2, .. }) => d1 == d2,
+            _ => false,
+        }
+    }
 }
 
 impl Value {
@@ -129,6 +202,7 @@ impl Value {
             }
             Value::Closure { fn_idx, .. } => format!("<closure fn{}>", fn_idx),
             Value::Confident { inner, p } => format!("{} ~confidence({p})", inner.display()),
+            Value::Opaque { display, .. } => display.clone(),
         }
     }
 }
@@ -145,6 +219,16 @@ pub trait BuiltinDispatcher: Send + Sync {
     ///
     /// Return `Err(String)` to signal a runtime error from the builtin.
     fn call(&mut self, name: &str, args: &[Value]) -> Result<Value, String>;
+
+    /// Drain any stdout emitted by the most-recent `call()` invocation.
+    ///
+    /// Called by the VM after each `CallBuiltinDyn` so that trampoline output
+    /// is interleaved with native `print` output in the correct order.
+    /// The default implementation returns an empty string (no-op for dispatchers
+    /// that don't produce side-channel stdout).
+    fn drain_stdout(&mut self) -> String {
+        String::new()
+    }
 }
 
 /// A no-op dispatcher that errors on every call.  Used by `run_main`.
@@ -427,6 +511,16 @@ impl<'p> Vm<'p> {
                         .ok_or(VmError::StackUnderflow)?;
                     let args: Vec<Value> = self.stack.drain(start..).collect();
                     let result = self.dispatcher.call(&name, &args).map_err(VmError::User)?;
+                    // Drain any stdout the dispatcher emitted during this call and
+                    // append it to the VM's stdout buffer *now* so that ordering
+                    // relative to native `print` calls is preserved.
+                    let emitted = self.dispatcher.drain_stdout();
+                    if !emitted.is_empty() {
+                        if !self.capture_only {
+                            print!("{emitted}");
+                        }
+                        self.stdout.push_str(&emitted);
+                    }
                     self.stack.push(result);
                 }
 

@@ -133,9 +133,30 @@ rational arithmetic** with boolean combinations:
 - Combinations of atoms by conjunction, disjunction, negation.
 
 The procedure is **sound** (whenever it says *Proved*, the implication
-holds) and **incomplete**: anything outside the linear fragment (e.g.
-`x * y`) returns `Unknown`, which the compiler downgrades to a warning so
-that useful programs aren't rejected.
+holds) and **incomplete**: anything outside the linear fragment returns
+`Unknown`, which the compiler downgrades to a warning so that useful
+programs aren't rejected.
+
+### Extended fragments (since v0.3.1)
+
+**Constant-folding multiplication.** `k * x` and `x * k` for any literal `k`
+are linearised: `0 * x → 0`, `1 * x → x`, `3 * x → 3x`.  Fully-constant
+products (`2 * 3`) fold to their value.  Genuine non-linear terms (`x * y`)
+still bail to `Unknown`.
+
+**`mod` / `div` by a positive literal.**  `x % k` for literal `k > 0`
+introduces a fresh variable bounded `0 ≤ m < k`, enabling proofs like
+`x % 3 >= 0` and `x % 3 < 3`.  `x / k` introduces a fresh variable with
+no additional bounds (sound but incomplete).
+
+**Equality propagation.**  Any hypothesis of the form `x == k` (single
+variable equals constant) is eagerly substituted into all other hypotheses
+and the goal before Fourier–Motzkin runs.  This lets the solver prove chains
+like `[x == 5, y == x + 1] ⊢ y == 6` in one pass.
+
+**Bounded universal quantifier.**  `forall_in(x, lo, hi, pred)` unrolls the
+quantifier over `[lo, hi]` (max 1024 iterations) by conjoining the
+instantiated predicate for each integer in range.
 
 Path-sensitive reasoning: when checking ensures-clauses, the checker
 case-splits on `if`/`else` and threads `let` bindings into the assumed
