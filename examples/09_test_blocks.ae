@@ -1,0 +1,24 @@
+## In-language `test "..." { ... }` blocks — Aether's first-class testing
+## syntax. Tests are functions with `{Throw}` effect; failing `assert`s throw.
+
+fn add(x: Int, y: Int) -> Int effects {} { x + y }
+
+fn double(x: Int) -> Int effects {} { x + x }
+
+test "add is commutative" {
+  assert_eq(add(2, 3), add(3, 2))
+}
+
+test "double matches add" {
+  assert_eq(double(7), add(7, 7))
+}
+
+test "comparison" {
+  assert(1 < 2)
+  assert(2 <= 2)
+  assert(3 > 2)
+}
+
+fn main() -> Unit effects {} {
+  ()
+}

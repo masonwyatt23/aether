@@ -1,0 +1,21 @@
+## Refinement types: `min` carries a postcondition the solver proves.
+##
+## The annotation `result <= a && result <= b` is checked at compile time by
+## case-splitting on the `if` and discharging each branch via the linear-
+## arithmetic decision procedure.
+
+fn min(a: Int, b: Int) -> Int
+  where result <= a && result <= b
+  effects {} {
+  if a <= b then a else b
+}
+
+## Without refinement: simple recursion that adds 1 each call.
+fn inc(x: Int) -> Int effects {} {
+  x + 1
+}
+
+fn main() -> Unit effects {IO} {
+  let m = min(3, 7)
+  print(str(m))
+}

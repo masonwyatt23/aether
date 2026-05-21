@@ -1,0 +1,13 @@
+target/
+playground/pkg/
+playground/node_modules/
+vscode-aether/node_modules/
+vscode-aether/out/
+**/*.rs.bk
+Cargo.lock.bak
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

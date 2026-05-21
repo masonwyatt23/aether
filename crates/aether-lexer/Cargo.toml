@@ -1,0 +1,20 @@
+[package]
+name = "aether-lexer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Lexer and token definitions for the Aether programming language."
+keywords = ["aether", "lexer", "token", "lang", "parse"]
+categories = ["compilers", "parser-implementations"]
+homepage = "https://github.com/masonwyatt/aether"
+
+[dependencies]
+aether-ast.workspace = true
+logos.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

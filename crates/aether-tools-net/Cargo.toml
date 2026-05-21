@@ -1,0 +1,23 @@
+[package]
+name = "aether-tools-net"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Real HTTP and LLM tool implementations for the Aether runtime."
+keywords = ["aether", "http", "llm", "tools", "net"]
+categories = ["compilers", "web-programming::http-client"]
+homepage = "https://github.com/masonwyatt/aether"
+
+[dependencies]
+aether-eval = { workspace = true }
+aether-ast = { workspace = true }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "blocking"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

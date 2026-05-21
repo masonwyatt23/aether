@@ -1,0 +1,16 @@
+## std::base64 — Base64 encode/decode (RFC 4648, no padding variants).
+##
+## Implemented via hand-rolled Rust natives in aether-eval::builtins.
+## Round-trip guarantee: base64_decode(base64_encode(x)) == x for all Str.
+
+## Encode `input` as a Base64 string.
+fn base64_encode(input: Str) -> Str effects {} {
+  base64_encode_native(input)
+}
+
+## Decode a Base64-encoded string back to its original value.
+## Throws if `input` contains characters outside the Base64 alphabet or
+## has incorrect padding.
+fn base64_decode(input: Str) -> Str effects {Throw} {
+  base64_decode_native(input)
+}

@@ -1,0 +1,30 @@
+[package]
+name = "aether-bc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Bytecode compiler and stack-based VM for Aether"
+keywords = ["aether", "vm", "bytec", "lang", "compil"]
+categories = ["compilers", "command-line-utilities"]
+homepage = "https://github.com/masonwyatt/aether"
+
+[dependencies]
+aether-ast.workspace = true
+aether-parser.workspace = true
+thiserror.workspace = true
+serde = { workspace = true, features = ["derive"] }
+bincode = "1"
+
+[dev-dependencies]
+aether-eval.workspace = true
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "fib_bench"
+harness = false
+
+[lints]
+workspace = true

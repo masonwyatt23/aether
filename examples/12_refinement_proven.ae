@@ -1,0 +1,35 @@
+## Showcase: the linear-arithmetic solver proves several non-trivial
+## postconditions at compile time.
+##
+## Run `aether check examples/12_refinement_proven.ae` and observe:
+##   ✓ types, effects, and refinements verified
+
+## abs always returns a non-negative integer.
+fn pos_abs(n: Int) -> Int where result >= 0 effects {} {
+  if n >= 0 then n else 0 - n
+}
+
+## Two-armed clamp restricted to a valid range via parameter refinement.
+fn clamp_to(x: Int, lo: Int, hi: Int{h: h >= lo}) -> Int
+  where result >= lo && result <= hi
+  effects {} {
+  if x < lo then lo
+  else if x > hi then hi
+  else x
+}
+
+## Successor of a positive integer is positive (over rationals).
+fn next_pos(n: Int{x: x > 0}) -> Int where result > 0 effects {} {
+  n + 1
+}
+
+## A predicate over a single linear inequality.
+fn at_least_one(n: Int{x: x >= 1}) -> Int where result >= 1 effects {} {
+  n
+}
+
+fn main() -> Unit effects {IO} {
+  print(str(pos_abs(-5)))      # 5
+  print(str(clamp_to(50, 0, 100)))  # 50
+  print(str(next_pos(7)))      # 8
+}

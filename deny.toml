@@ -1,0 +1,61 @@
+# cargo-deny configuration for the Aether workspace.
+# Run: cargo deny check
+
+[licenses]
+# Allow common permissive OSS licenses.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "CC0-1.0",
+    "Zlib",
+]
+
+# Reject any GPL-family licenses.
+deny = [
+    "GPL-2.0",
+    "GPL-3.0",
+    "LGPL-2.0",
+    "LGPL-2.1",
+    "LGPL-3.0",
+    "AGPL-3.0",
+]
+
+# Fail on licenses that could not be determined.
+unlicensed = "deny"
+
+# Allow dual-licensed crates (MIT OR Apache-2.0 is very common in Rust).
+allow-osi-fsf-free = "neither"
+copyleft = "deny"
+
+[advisories]
+# Use the RustSec advisory database.
+db-path = "~/.cargo/advisory-db"
+db-urls = ["https://github.com/rustsec/advisory-db"]
+
+# Deny crates with known security vulnerabilities.
+vulnerability = "deny"
+
+# Warn on unmaintained crates (not hard-fail, some deps lag).
+unmaintained = "warn"
+
+# Warn on crates that have been yanked.
+yanked = "warn"
+
+# Warn on crates with security notices.
+notice = "warn"
+
+[bans]
+# No explicit bans — workspace is clean.
+multiple-versions = "warn"
+wildcards = "allow"
+
+[sources]
+# Only allow crates.io as a registry source.
+unknown-registry = "deny"
+unknown-git = "deny"

@@ -1,0 +1,54 @@
+## std::json — JSON serialisation/deserialisation tool declarations.
+##
+## Both tools are declared (not defined) so the runtime provides the
+## implementation. json_parse can throw on malformed input; json_encode
+## is total.
+
+## Parse a JSON string, returning a normalised Str representation.
+## Throws on malformed JSON. (legacy stub — prefer json_parse_value)
+tool json_parse(s: Str) -> Str !{Throw}
+
+## Encode a value (expressed as a Str) into its canonical JSON form.
+tool json_encode(s: Str) -> Str !{}
+
+## Combine two JSON objects (both given as Str) by concatenation of their
+## string representations. No semantic merging — use as a display helper.
+fn json_concat(a: Str, b: Str) -> Str effects {} {
+  a ++ b
+}
+
+## Wrap a plain string value in a trivial JSON string literal.
+fn json_str(s: Str) -> Str effects {} {
+  "\"" ++ s ++ "\""
+}
+
+## Parse a JSON string and return its canonicalised (normalised-whitespace)
+## representation. Throws on malformed input.
+fn json_parse_value(s: Str) -> Str effects {Throw} {
+  json_parse_value_native(s)
+}
+
+## Extract the string value of `key` from a top-level JSON object string.
+## Throws if the input is not a JSON object, the key is absent, or the
+## value is not a string.
+fn json_get_str(json: Str, key: Str) -> Str effects {Throw} {
+  json_get_str_native(json, key)
+}
+
+## Extract the integer value of `key` from a top-level JSON object string.
+## Throws if the key is absent or the value is not an integer.
+fn json_get_int(json: Str, key: Str) -> Int effects {Throw} {
+  json_get_int_native(json, key)
+}
+
+## Extract the boolean value of `key` from a top-level JSON object string.
+## Throws if the key is absent or the value is not a boolean.
+fn json_get_bool(json: Str, key: Str) -> Bool effects {Throw} {
+  json_get_bool_native(json, key)
+}
+
+## Return the list of top-level keys in a JSON object string.
+## Returns an empty list if the value is not an object.
+fn json_keys(json: Str) -> [Str] effects {Throw} {
+  json_keys_native(json)
+}

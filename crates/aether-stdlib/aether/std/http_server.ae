@@ -1,0 +1,23 @@
+## std::http_server — minimal blocking HTTP server and local client.
+##
+## `http_serve_static` binds a TCP port and returns `body` for every GET
+## request.  It loops until the `AETHER_SERVE_LIMIT` env var is exhausted
+## (default 1), which makes it safe for tests.  Set AETHER_SERVE_LIMIT=0 for
+## an infinite server suitable for demos.
+##
+## `http_get_local` opens a plain TCP connection to 127.0.0.1:port and issues
+## a minimal HTTP/1.0 GET, returning the response body as a string.
+
+## Bind `port` and serve `body` for every GET request.
+## Loops until AETHER_SERVE_LIMIT requests have been handled (default 1).
+## Set AETHER_SERVE_LIMIT=0 in the environment for an infinite loop.
+## Carries Net (binds a port) and IO (blocks the thread).
+fn http_serve_static(port: Int, body: Str) -> Unit effects {Net, IO} {
+  http_serve_static_native(port, body)
+}
+
+## Issue a blocking HTTP GET to 127.0.0.1:port/path and return the body.
+## Throws if the connection is refused or the response cannot be parsed.
+fn http_get_local(port: Int, path: Str) -> Str effects {Net, Throw} {
+  http_get_local_native(port, path)
+}

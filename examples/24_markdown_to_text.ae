@@ -1,0 +1,102 @@
+## Markdown-to-plain-text converter.
+##
+## Strips common Markdown syntax from a string:
+##   **bold**, _italic_, ## headings, `code`, [link](url)
+## Uses std::regex for pattern replacement and std::result for error
+## propagation. Each strip step is independently testable.
+##
+## Demonstrates: std::regex, std::string, std::result.
+
+import std::regex
+import std::string
+import std::result
+
+## Strip **bold** and __bold__ markers, leaving just the inner text.
+fn strip_bold(s: Str) -> Str effects {Throw} {
+  let s = regex_replace("\\*\\*([^*]+)\\*\\*", s, "$1")
+  regex_replace("__([^_]+)__", s, "$1")
+}
+
+## Strip _italic_ and *italic* markers.
+fn strip_italic(s: Str) -> Str effects {Throw} {
+  let s = regex_replace("\\*([^*]+)\\*", s, "$1")
+  regex_replace("_([^_]+)_", s, "$1")
+}
+
+## Strip ## heading markers (any level 1-6) from line starts.
+fn strip_headings(s: Str) -> Str effects {Throw} {
+  regex_replace("(?m)^#{1,6}\\s+", s, "")
+}
+
+## Strip inline `code` backtick spans.
+fn strip_code(s: Str) -> Str effects {Throw} {
+  regex_replace("`([^`]+)`", s, "$1")
+}
+
+## Replace [link text](url) with just the link text.
+fn strip_links(s: Str) -> Str effects {Throw} {
+  regex_replace("\\[([^\\]]+)\\]\\([^)]+\\)", s, "$1")
+}
+
+## Run all stripping passes in sequence; returns Ok(plain) or Err(reason).
+fn md_to_text(md: Str) -> Result effects {Throw} {
+  let s = strip_headings(md)
+  let s = strip_bold(s)
+  let s = strip_italic(s)
+  let s = strip_code(s)
+  let s = strip_links(s)
+  Ok(str_trim(s))
+}
+
+test "strips bold" {
+  assert_eq(strip_bold("Hello **world** today"), "Hello world today")
+}
+
+test "strips italic" {
+  assert_eq(strip_italic("An _important_ note"), "An important note")
+}
+
+test "strips heading markers" {
+  assert_eq(strip_headings("## Getting Started"), "Getting Started")
+}
+
+test "strips inline code" {
+  assert_eq(strip_code("Run `cargo test` now"), "Run cargo test now")
+}
+
+test "strips links" {
+  assert_eq(strip_links("See [Aether](https://example.com) for docs"), "See Aether for docs")
+}
+
+test "full pipeline round-trip" {
+  let md = "## Overview\n\nThis is **bold** and _italic_ text with a `snippet` and [a link](https://x.com)."
+  let plain = result_unwrap(md_to_text(md))
+  assert_eq(str_contains(plain, "**"), false)
+  assert_eq(str_contains(plain, "_italic_"), false)
+  assert_eq(str_contains(plain, "`snippet`"), false)
+  assert_eq(str_contains(plain, "https://x.com"), false)
+  assert_eq(str_contains(plain, "Overview"), true)
+}
+
+fn main() -> Unit effects {IO, Throw} {
+  let sample = str_join([
+    "## Getting Started",
+    "",
+    "Welcome to **Aether**, a language for _AI agents_.",
+    "Install it with `cargo install aether-cli` or clone the repo.",
+    "Read the [language reference](https://github.com/example/aether/spec).",
+    "",
+    "### Features",
+    "",
+    "- **Effect tracking** keeps side-effects explicit.",
+    "- _Refinement types_ let you state invariants as code.",
+    "- First-class `tool` declarations for agent primitives."
+  ], "\n")
+
+  print("=== Original Markdown ===")
+  print(sample)
+  print("")
+  print("=== Plain Text ===")
+  let r = md_to_text(sample)
+  print(result_unwrap_or(r, "(conversion failed)"))
+}

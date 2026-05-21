@@ -1,0 +1,77 @@
+{
+  "name": "aether-language-support",
+  "displayName": "Aether Language",
+  "description": "Syntax highlighting and LSP integration for the Aether language (.ae, .aev)",
+  "version": "0.1.0",
+  "publisher": "aether-lang",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aether-lang/aether"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Snippets"
+  ],
+  "activationEvents": [
+    "onLanguage:aether"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "aether",
+        "aliases": ["Aether", "aether"],
+        "extensions": [".ae", ".aev"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "aether",
+        "scopeName": "source.aether",
+        "path": "./syntaxes/aether.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "aether",
+        "path": "./snippets/aether.code-snippets"
+      }
+    ],
+    "configuration": {
+      "title": "Aether",
+      "properties": {
+        "aether.serverPath": {
+          "type": "string",
+          "default": "aether-lsp",
+          "description": "Path to the aether-lsp binary. Defaults to 'aether-lsp' on PATH. Override to point at a locally built binary, e.g. './target/release/aether-lsp'."
+        },
+        "aether.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Trace LSP communication between VS Code and the aether-lsp server."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4",
+    "@vscode/vsce": "^2.24.0"
+  }
+}

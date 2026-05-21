@@ -1,0 +1,20 @@
+[package]
+name = "aether-parser"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Recursive-descent parser that produces the Aether AST from source text."
+keywords = ["aether", "parse", "lang", "ast", "compil"]
+categories = ["compilers", "parser-implementations"]
+homepage = "https://github.com/masonwyatt/aether"
+
+[dependencies]
+aether-ast.workspace = true
+aether-lexer.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

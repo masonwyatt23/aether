@@ -1,0 +1,38 @@
+## v0.3 stdlib showcase: base64, hash, uuid, random, date.
+
+import std::base64
+import std::hash
+import std::uuid
+import std::random
+import std::date
+import std::fmt
+
+test "base64 roundtrip" {
+  let plain = "hello, aether"
+  let encoded = base64_encode(plain)
+  let decoded = base64_decode(encoded)
+  assert_eq(decoded, plain)
+}
+
+test "sha256 known vector" {
+  assert_eq(
+    hash_sha256("hello"),
+    "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+  )
+}
+
+## (uuid + random tests would need Rand effect on `test` blocks; exercise them from `main` instead.)
+
+test "date epoch" {
+  assert_eq(date_year(0), 1970)
+  assert_eq(date_month(0), 1)
+  assert_eq(date_day(0), 1)
+}
+
+fn main() -> Unit effects {IO, Rand} {
+  print(fmt1("sha256(\"hi\") = ${hash_sha256(\"hi\")}", "x"))
+  print(fmt1("uuid_short = ${uuid_short()}", "x"))
+  let r = random_int(1, 100)
+  print("random in [1,100] = ${str(r)}")
+  print("year of ms=0 is ${str(date_year(0))}")
+}

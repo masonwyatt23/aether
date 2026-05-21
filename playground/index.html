@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aether Playground</title>
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <span class="logo-ae">Ae</span><span class="logo-ther">ther</span>
+    </div>
+    <div class="tagline">an agent-native programming language</div>
+    <div class="header-actions">
+      <button id="btn-check" title="Type-check, effect-check, and verify refinements">Check</button>
+      <button id="btn-run" class="primary" title="Run main()">Run</button>
+      <button id="btn-fmt" title="Format source (compact ↔ verbose)">Format</button>
+      <button id="btn-introspect" title="Show module surface">Introspect</button>
+      <label class="toggle">
+        <input type="checkbox" id="toggle-verbose" />
+        <span>verbose fmt</span>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <section class="pane editor-pane">
+      <div class="pane-label">source <span class="file-hint">.ae</span></div>
+      <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+    </section>
+
+    <div class="divider"></div>
+
+    <section class="pane output-pane">
+      <div class="pane-label">
+        output
+        <span id="status-badge" class="badge"></span>
+      </div>
+      <div id="output"></div>
+    </section>
+  </main>
+
+  <footer>
+    <span>network tools (<code>http_get</code>, <code>llm_complete</code>) use deterministic stubs in the browser</span>
+    <a href="https://github.com/masonwyatt/aether" target="_blank">GitHub</a>
+  </footer>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>

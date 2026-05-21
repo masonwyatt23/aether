@@ -1,0 +1,26 @@
+[package]
+name = "aether-ast"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Abstract syntax tree types for the Aether programming language."
+keywords = ["aether", "ast", "lang", "parse", "types"]
+categories = ["compilers", "parser-implementations"]
+homepage = "https://github.com/masonwyatt/aether"
+
+[dependencies]
+thiserror.workspace = true
+serde = { workspace = true, optional = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[features]
+default = []
+serde = ["dep:serde"]
+
+[lints]
+workspace = true

@@ -1,0 +1,25 @@
+## std::yaml — minimal YAML subset parser.
+##
+## Supports: `key: value`, `key: "quoted value"`, `key: 42`,
+## comments starting with `#`, and blank lines. Does not support
+## anchors, tags, or nested sequences-in-mappings beyond one level.
+##
+## The *_native builtins are implemented in aether-eval::builtins.
+
+## Extract a string value for `key` from a YAML document string.
+## Throws if the key is not found or the value cannot be represented as Str.
+fn yaml_get_str(yaml: Str, key: Str) -> Str effects {Throw} {
+  yaml_get_str_native(yaml, key)
+}
+
+## Extract an integer value for `key` from a YAML document string.
+## Throws if the key is not found or the value is not a valid integer.
+fn yaml_get_int(yaml: Str, key: Str) -> Int effects {Throw} {
+  yaml_get_int_native(yaml, key)
+}
+
+## Return the list of top-level keys in a YAML document string.
+## Returns an empty list if the document has no mappings.
+fn yaml_keys(yaml: Str) -> [Str] effects {Throw} {
+  yaml_keys_native(yaml)
+}

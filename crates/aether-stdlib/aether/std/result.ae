@@ -1,0 +1,45 @@
+## std::result — a first-class Result ADT for idiomatic error handling.
+##
+## `Result` is a sum type with two constructors:
+##   * `Ok(v)`  — a successful value carrying a `Str` payload.
+##   * `Err(e)` — a failure carrying a `Str` error message.
+##
+## Functions that can fail should return `Result` instead of using the `Throw`
+## effect directly.  `result_unwrap` bridges the two worlds: it has the
+## `Throw` effect and raises a user error (visible as `EvalError::User`) when
+## called on an `Err` value.
+
+## A typed error-or-value wrapper.
+type Result = Ok(Str) | Err(Str)
+
+## Return true iff `r` is the `Ok` variant.
+fn result_is_ok(r: Result) -> Bool effects {} {
+  match r with {
+    Ok(_) => true,
+    Err(_) => false
+  }
+}
+
+## Extract the value from `Ok(v)`, or throw the error message from `Err(e)`.
+fn result_unwrap(r: Result) -> Str effects {Throw} {
+  match r with {
+    Ok(v)  => v,
+    Err(e) => result_throw_native(e)
+  }
+}
+
+## Extract the value from `Ok(v)`, or return `default` for `Err(_)`.
+fn result_unwrap_or(r: Result, default: Str) -> Str effects {} {
+  match r with {
+    Ok(v)  => v,
+    Err(_) => default
+  }
+}
+
+## Apply a string prefix to the payload of `Ok`, leaving `Err` untouched.
+fn result_map_str(r: Result, prefix: Str) -> Result effects {} {
+  match r with {
+    Ok(v)  => Ok(prefix ++ v),
+    Err(e) => Err(e)
+  }
+}

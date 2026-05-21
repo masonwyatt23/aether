@@ -1,0 +1,12 @@
+## Effect tracking: `fetch` declares `{Net, Throw}` because it transitively
+## calls `http_get`. Removing either effect from the declaration causes the
+## type checker to reject the program.
+
+fn fetch(url: Str) -> Str effects {Net, Throw} {
+  http_get(url)
+}
+
+fn main() -> Unit effects {IO, Net, Throw} {
+  let body = fetch("https://example.com")
+  print(body)
+}

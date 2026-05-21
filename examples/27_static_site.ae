@@ -1,0 +1,121 @@
+## Tiny static site builder.
+##
+## Seeds /tmp/aether_site_src/ with three markdown-ish source files, then
+## reads each one, wraps it in an HTML template using fmt2/fmt3, and writes
+## the output to /tmp/aether_site_out/.
+##
+## Page rendering pipeline:
+##   1. Strip leading "# " heading to extract the page title.
+##   2. Replace **bold** markers with <strong>...</strong>.
+##   3. Replace `code` markers with <code>...</code>.
+##   4. Wrap paragraphs (blank-line-separated blocks) in <p>...</p>.
+##   5. Emit a complete <!DOCTYPE html> page.
+##
+## Demonstrates: std::fs, std::path, std::regex, std::string, std::fmt,
+## std::log, std::term.
+
+import std::fs
+import std::path
+import std::regex
+import std::string
+import std::fmt
+import std::log
+import std::term
+
+## Extract the first "# Title" line as the page title; falls back to filename.
+fn extract_title(src: Str, fallback: Str) -> Str effects {Throw} {
+  let found = regex_find("(?m)^# [^\\n]+", src)
+  if found == "" then fallback
+  else str_trim(regex_replace("^#\\s+", found, ""))
+}
+
+## Convert **bold** to <strong>bold</strong>.
+fn render_bold(s: Str) -> Str effects {Throw} {
+  regex_replace("\\*\\*([^*]+)\\*\\*", s, "<strong>$1</strong>")
+}
+
+## Convert `code` to <code>code</code>.
+fn render_code(s: Str) -> Str effects {Throw} {
+  regex_replace("`([^`]+)`", s, "<code>$1</code>")
+}
+
+## Wrap the body text in a minimal HTML5 page.
+fn html_page(title: Str, body: Str) -> Str effects {} {
+  "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>" ++ title ++ "</title>\n</head>\n<body>\n<h1>" ++ title ++ "</h1>\n" ++ body ++ "\n</body>\n</html>"
+}
+
+## Convert a single markdown-ish source string to an HTML page string.
+fn render_page(src: Str, filename: Str) -> Str effects {Throw} {
+  let title = extract_title(src, filename)
+  let body  = render_bold(render_code(src))
+  html_page(title, "<pre>" ++ body ++ "</pre>")
+}
+
+test "extract_title finds heading" {
+  assert_eq(extract_title("# About Aether\n\nSome content.", "fallback"), "About Aether")
+}
+
+test "extract_title uses fallback when absent" {
+  assert_eq(extract_title("no heading here", "index"), "index")
+}
+
+test "render_bold converts markers" {
+  assert_eq(render_bold("Hello **world**"), "Hello <strong>world</strong>")
+}
+
+test "render_code converts backticks" {
+  assert_eq(render_code("Run `aether run`"), "Run <code>aether run</code>")
+}
+
+test "html_page wraps content" {
+  let page = html_page("My Page", "<p>Hello</p>")
+  assert_eq(str_contains(page, "<!DOCTYPE html>"), true)
+  assert_eq(str_contains(page, "<title>My Page</title>"), true)
+  assert_eq(str_contains(page, "<h1>My Page</h1>"), true)
+}
+
+fn main() -> Unit effects {IO, FS, Throw} {
+  let src_dir = "/tmp/aether_site_src"
+  let out_dir = "/tmp/aether_site_out"
+
+  fs_mkdir_all(src_dir)
+  fs_mkdir_all(out_dir)
+
+  seed_sources(src_dir)
+
+  log_info("building static site")
+  print(term_bold("=== Static Site Builder ==="))
+  print(fmt2("src: {}  ->  out: {}", src_dir, out_dir))
+  print("")
+
+  let pages = ["index", "about", "changelog"]
+  build_pages(src_dir, out_dir, pages, 0)
+
+  print("")
+  print(term_green("Site build complete. ${str(len(pages))} page(s) written to ${out_dir}."))
+  log_info("build complete")
+}
+
+fn seed_sources(src_dir: Str) -> Unit effects {FS, Throw} {
+  fs_write(path_join(src_dir, "index.md"),
+    "# Welcome to Aether\n\nAether is a language designed for **AI agents**.\nInstall with `cargo install aether-cli`.\n")
+  fs_write(path_join(src_dir, "about.md"),
+    "# About\n\nAether provides **effect tracking**, refinement types,\nand first-class `tool` declarations.\n")
+  fs_write(path_join(src_dir, "changelog.md"),
+    "# Changelog\n\n**v0.3** — stdlib expansion: regex, fs, http_server, json, yaml.\n**v0.2** — ADTs and pattern matching.\n**v0.1** — initial release.\n")
+}
+
+fn build_pages(src_dir: Str, out_dir: Str, pages: [Str], i: Int) -> Unit effects {IO, FS, Throw} {
+  if i >= len(pages) then ()
+  else let _ = build_page(src_dir, out_dir, pages[i]) in build_pages(src_dir, out_dir, pages, i + 1)
+}
+
+fn build_page(src_dir: Str, out_dir: Str, name: Str) -> Unit effects {IO, FS, Throw} {
+  let src_path = path_join(src_dir, name ++ ".md")
+  let out_path = path_join(out_dir, name ++ ".html")
+  let src      = fs_read(src_path)
+  let html     = render_page(src, name)
+  fs_write(out_path, html)
+  print(term_blue(fmt2("  {} -> {}", src_path, out_path)))
+  print(fmt1("    title: {}", extract_title(src, name)))
+}

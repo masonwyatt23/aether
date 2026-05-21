@@ -1,0 +1,62 @@
+## 28_branch_lets.ae — implicit-block let bindings in if/else and match arms.
+##
+## Before this feature, `let` inside a branch arm required either explicit
+## braces `{ }` or the `let … in body` form.  Now a branch arm that starts
+## with `let` is parsed as an implicit block: any number of `let` statements
+## followed by a single tail expression.
+
+fn classify(n: Int) -> Str effects {} {
+  if n > 0 then
+    let label = "positive"
+    label
+  else
+    "non-positive"
+}
+
+fn describe(n: Int) -> Str effects {} {
+  match n with {
+    0 => let z = "exactly zero" z,
+    x if x > 0 =>
+      let sign  = "+"
+      let msg   = "positive"
+      sign ++ msg,
+    _ => "negative"
+  }
+}
+
+fn multi_let(n: Int) -> Int effects {} {
+  if n > 0 then
+    let a = n * 2
+    let b = a + 1
+    b
+  else
+    0
+}
+
+fn main() -> Unit effects {IO} {
+  print(classify(5))
+  print(classify(-3))
+  print(classify(0))
+  print(describe(0))
+  print(describe(7))
+  print(describe(-1))
+  print(str(multi_let(4)))
+  print(str(multi_let(-1)))
+}
+
+test "classify positive" {
+  assert_eq(classify(1),  "positive")
+  assert_eq(classify(-1), "non-positive")
+  assert_eq(classify(0),  "non-positive")
+}
+
+test "describe cases" {
+  assert_eq(describe(0),  "exactly zero")
+  assert_eq(describe(3),  "+positive")
+  assert_eq(describe(-2), "negative")
+}
+
+test "multi let in arm" {
+  assert_eq(multi_let(3), 7)
+  assert_eq(multi_let(0), 0)
+}

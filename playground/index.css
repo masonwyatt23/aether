@@ -1,0 +1,290 @@
+/* Aether Playground — dark theme */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:        #0d1117;
+  --bg2:       #161b22;
+  --bg3:       #1c2330;
+  --border:    #30363d;
+  --text:      #c9d1d9;
+  --text-muted:#6e7681;
+  --accent:    #58a6ff;
+  --accent2:   #3fb950;
+  --warn:      #d29922;
+  --error:     #f85149;
+  --note:      #79c0ff;
+  --radius:    6px;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "Menlo", monospace;
+  --font-ui:   -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+/* ── header ──────────────────────────────────────────────────────────────── */
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  height: 52px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.logo {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  user-select: none;
+}
+.logo-ae    { color: var(--accent); }
+.logo-ther  { color: var(--text); }
+
+.tagline {
+  color: var(--text-muted);
+  font-size: 12px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+button {
+  padding: 5px 14px;
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+button:hover  { background: var(--bg2); border-color: var(--accent); }
+button:active { background: var(--bg);  }
+
+button.primary {
+  background: var(--accent);
+  color: #0d1117;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+button.primary:hover  { background: #79bcff; }
+button.primary:active { background: #388bfd; }
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.toggle input { accent-color: var(--accent); cursor: pointer; }
+
+/* ── main layout ─────────────────────────────────────────────────────────── */
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pane-label {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.file-hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg3);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--accent);
+}
+
+.divider {
+  width: 1px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* ── editor ──────────────────────────────────────────────────────────────── */
+
+.editor-pane { flex: 1.1; }
+
+#editor {
+  flex: 1;
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.6;
+  border: none;
+  outline: none;
+  resize: none;
+  tab-size: 2;
+  overflow-y: auto;
+}
+#editor::placeholder { color: var(--text-muted); }
+#editor:focus { background: #0a0e13; }
+
+/* ── output pane ─────────────────────────────────────────────────────────── */
+
+.output-pane { flex: 0.9; background: var(--bg); }
+
+#output {
+  flex: 1;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* status badge */
+.badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 1px 7px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+.badge.ok      { background: rgba(63,185,80,0.18); color: var(--accent2); }
+.badge.error   { background: rgba(248,81,73,0.18);  color: var(--error); }
+.badge.warning { background: rgba(210,153,34,0.18); color: var(--warn); }
+.badge.running { background: rgba(88,166,255,0.18); color: var(--accent); }
+
+/* output blocks */
+.out-stdout {
+  color: var(--text);
+}
+.out-value {
+  color: var(--accent2);
+}
+.out-value::before { content: "→ "; color: var(--text-muted); }
+
+.out-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin: 10px 0 4px;
+}
+.out-section-label:first-child { margin-top: 0; }
+
+.diag {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 8px;
+  padding: 3px 0;
+}
+.diag-loc {
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-size: 12px;
+}
+.diag-msg { }
+.diag.error   .diag-msg { color: var(--error); }
+.diag.warning .diag-msg { color: var(--warn); }
+.diag.note    .diag-msg { color: var(--note); }
+
+.out-ok     { color: var(--accent2); }
+.out-error  { color: var(--error); }
+.out-hint   { color: var(--text-muted); font-size: 12px; margin-top: 8px; }
+
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── footer ──────────────────────────────────────────────────────────────── */
+
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 20px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+footer code { font-family: var(--font-mono); font-size: 11px; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ── responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+  main { flex-direction: column; }
+  .divider { width: auto; height: 1px; }
+  .editor-pane, .output-pane { flex: none; height: 50%; }
+  .tagline { display: none; }
+}

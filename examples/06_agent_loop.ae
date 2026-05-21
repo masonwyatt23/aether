@@ -1,0 +1,18 @@
+## Agent workflow: iterative refinement.
+##
+## `iter_refine(seed, step, budget)` is the stdlib primitive that runs a step
+## function `budget` times, threading the seed through each invocation.
+## The final value is tagged with a `confident(..., 0.85)` marker so downstream
+## code can require minimum confidence before acting.
+
+## One step of refinement: add 1 to the running estimate.
+fn step(x: Int) -> Int effects {} {
+  x + 1
+}
+
+fn main() -> Unit effects {IO} {
+  let value = iter_refine(0, "step", 5)
+  let tagged = confident(value, 0.85)
+  print(str(value))
+  print(str(tagged))
+}

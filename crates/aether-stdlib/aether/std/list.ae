@@ -1,0 +1,34 @@
+## std::list — list helpers for integer collections.
+##
+## All functions are pure (effects {}). list_max throws on empty input.
+## The *_native builtins are implemented in aether-eval::builtins.
+
+## Return the number of elements in an Int list.
+fn list_len(xs: [Int]) -> Int effects {} {
+  len(xs)
+}
+
+## Return the sum of all elements in an Int list (0 for empty).
+fn list_sum(xs: [Int]) -> Int effects {} {
+  list_sum_native(xs)
+}
+
+## Return the maximum element of an Int list. Throws if the list is empty.
+fn list_max(xs: [Int]) -> Int effects {Throw} {
+  list_max_native(xs)
+}
+
+## Return true iff `x` appears in `xs`.
+fn list_contains(xs: [Int], x: Int) -> Bool effects {} {
+  list_contains_native(xs, x)
+}
+
+## Return the number of occurrences of `x` in `xs`.
+fn list_count(xs: [Int], x: Int) -> Int effects {} {
+  list_count_native(xs, x)
+}
+
+## Return a new list with the elements of `xs` in reverse order.
+fn list_reversed(xs: [Int]) -> [Int] effects {} {
+  list_reversed_native(xs)
+}

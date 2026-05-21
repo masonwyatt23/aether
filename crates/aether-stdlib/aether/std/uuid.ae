@@ -1,0 +1,14 @@
+## std::uuid — UUID v4 generation using OS entropy (getrandom).
+##
+## No external uuid crate needed — the format is assembled from raw random bytes.
+
+## Generate a UUID v4 in canonical hyphenated form: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+fn uuid_v4() -> Str effects {Rand} {
+  uuid_v4_native()
+}
+
+## Generate a short ID: the first 8 hex characters of a UUID v4.
+## Useful as a compact cache or correlation key.
+fn uuid_short() -> Str effects {Rand} {
+  uuid_short_native()
+}

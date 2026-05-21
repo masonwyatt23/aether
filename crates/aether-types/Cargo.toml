@@ -1,0 +1,23 @@
+[package]
+name = "aether-types"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Type checker and refinement-type solver for the Aether programming language."
+keywords = ["aether", "types", "check", "lang", "refin"]
+categories = ["compilers"]
+homepage = "https://github.com/masonwyatt/aether"
+
+[dependencies]
+aether-ast.workspace = true
+aether-parser.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+proptest = "1"
+
+[lints]
+workspace = true

@@ -1,0 +1,21 @@
+## Bytecode VM demo — recursive Fibonacci.
+##
+## Run with the bytecode VM:
+##   aether run --bc examples/18_bytecode.ae
+##
+## The bytecode VM is ~18x faster than the tree-walker for compute-intensive
+## programs like this one.  Try compiling ahead-of-time too:
+##   aether compile examples/18_bytecode.ae -o /tmp/fib.aebc
+##   aether exec /tmp/fib.aebc
+
+fn fib(n: Int) -> Int effects {} {
+  if n <= 1 then n else fib(n - 1) + fib(n - 2)
+}
+
+fn sum_fibs(limit: Int) -> Int effects {} {
+  if limit <= 0 then 0 else fib(limit) + sum_fibs(limit - 1)
+}
+
+fn main() -> Int effects {} {
+  fib(20)
+}

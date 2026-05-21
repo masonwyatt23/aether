@@ -1,0 +1,39 @@
+## std::string — string manipulation helpers.
+##
+## All functions are pure (effects {}). The *_native builtins are implemented
+## in aether-eval::builtins.
+
+## Return `s` converted to uppercase.
+fn str_upper(s: Str) -> Str effects {} {
+  str_upper_native(s)
+}
+
+## Return `s` converted to lowercase.
+fn str_lower(s: Str) -> Str effects {} {
+  str_lower_native(s)
+}
+
+## Return true iff `needle` occurs anywhere in `s`.
+fn str_contains(s: Str, needle: Str) -> Bool effects {} {
+  str_contains_native(s, needle)
+}
+
+## Return true iff `s` starts with `prefix`.
+fn str_starts_with(s: Str, prefix: Str) -> Bool effects {} {
+  str_starts_with_native(s, prefix)
+}
+
+## Split `s` on every occurrence of `sep`, returning the list of pieces.
+fn str_split_on(s: Str, sep: Str) -> [Str] effects {} {
+  str_split_on_native(s, sep)
+}
+
+## Join the strings in `xs` with `sep` between each pair.
+fn str_join(xs: [Str], sep: Str) -> Str effects {} {
+  str_join_native(xs, sep)
+}
+
+## Return `s` with leading and trailing whitespace removed.
+fn str_trim(s: Str) -> Str effects {} {
+  str_trim_native(s)
+}

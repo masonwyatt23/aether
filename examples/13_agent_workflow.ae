@@ -1,0 +1,44 @@
+## End-to-end showcase: an "agent script" that uses every major Aether feature.
+##
+## - Imports stdlib modules.
+## - Refinement-verified utility (`bounded_inc`).
+## - Persistent memory via `mem_set` / `mem_get` (file-backed by default).
+## - Confidence-tagged LLM call (`llm_complete` stub by default; real via `--network`).
+## - Provenance trail printed at the end.
+
+import std::iter
+import std::mem
+
+## Add 1 but stay within the declared upper bound.
+fn bounded_inc(x: Int, hi: Int{h: h >= x}) -> Int
+  where result >= x && result <= hi + 1
+  effects {} {
+  x + 1
+}
+
+## Helper so this file doesn't need str_eq from the stdlib (which lives in
+## std::string but adds a parsing dep the example doesn't otherwise need).
+fn str_eq(a: Str, b: Str) -> Bool effects {} {
+  a == b
+}
+
+fn main() -> Unit effects {IO, Net, Throw, State} {
+  # Remember last visit count across runs.
+  let prev_str = mem_get("visits")
+  let prev = if str_eq(prev_str, "") then 0 else int(prev_str)
+  let next = bounded_inc(prev, 100)
+  mem_set("visits", str(next))
+
+  # Ask the model for a one-line greeting (deterministic stub by default).
+  let reply = llm_complete("greet visit number " ++ str(next))
+  let tagged = confident(reply, 0.7)
+
+  print("visit:")
+  print(str(next))
+  print("model reply:")
+  print(str(tagged))
+
+  # Surface where `next` came from.
+  let chain = provenance(next)
+  print_prov(chain)
+}

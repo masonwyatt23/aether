@@ -1,0 +1,108 @@
+## Webhook receiver demo.
+##
+## Demonstrates the full webhook-processing pipeline in Aether:
+##   1. Seed /tmp/aether_webhook.json with a realistic GitHub-push payload.
+##   2. Read and parse it via std::json.
+##   3. Validate required fields and build a structured summary via std::result.
+##   4. Append a processed record to /tmp/aether_webhook_log.jsonl.
+##
+## The http_serve_static / http_get_local API (std::http_server) requires an
+## external client to avoid deadlock in a single-process run; for a runnable
+## self-contained demo the FS pipeline is used here. See the stdlib_e2e.rs
+## test for the two-process server+client integration pattern.
+##
+## Demonstrates: std::fs, std::json, std::string, std::fmt, std::log,
+## std::result, std::term.
+
+import std::fs
+import std::json
+import std::string
+import std::fmt
+import std::log
+import std::result
+import std::term
+
+## Parse the JSON body and return a structured summary line.
+fn process_event(body: Str) -> Result effects {Throw} {
+  let event   = json_get_str(body, "event")
+  let repo    = json_get_str(body, "repo")
+  let branch  = json_get_str(body, "branch")
+  let commits = json_get_int(body, "commits")
+  let author  = json_get_str(body, "author")
+  let line    = "[" ++ event ++ "] " ++ author ++ " pushed " ++ str(commits) ++ " commit(s) to " ++ repo ++ "/" ++ branch
+  Ok(line)
+}
+
+## Validate that the JSON body contains all required webhook fields.
+fn validate_payload(body: Str) -> Result effects {Throw} {
+  let keys = json_keys(body)
+  if str_contains(str_join(keys, ","), "event") then
+    if str_contains(str_join(keys, ","), "repo") then Ok(body)
+    else Err("missing required field: repo")
+  else Err("missing required field: event")
+}
+
+test "process well-formed push event" {
+  let body = "{\"event\":\"push\",\"repo\":\"org/aether\",\"branch\":\"main\",\"commits\":3,\"author\":\"mason\"}"
+  let r = process_event(body)
+  assert_eq(result_is_ok(r), true)
+  assert_eq(result_unwrap_or(r, ""), "[push] mason pushed 3 commit(s) to org/aether/main")
+}
+
+test "validate rejects missing event field" {
+  let body = "{\"repo\":\"org/aether\",\"branch\":\"main\",\"commits\":1,\"author\":\"ci\"}"
+  let r = validate_payload(body)
+  assert_eq(result_is_ok(r), false)
+  assert_eq(result_unwrap_or(r, "no-error"), "no-error")
+}
+
+test "validate accepts complete payload" {
+  let body = "{\"event\":\"push\",\"repo\":\"org/aether\",\"branch\":\"main\",\"commits\":2,\"author\":\"bot\"}"
+  let r = validate_payload(body)
+  assert_eq(result_is_ok(r), true)
+}
+
+fn main() -> Unit effects {IO, FS, Throw} {
+  let payload_path = "/tmp/aether_webhook.json"
+  let log_path     = "/tmp/aether_webhook_log.jsonl"
+
+  let payloads = [
+    "{\"event\":\"push\",\"repo\":\"org/aether\",\"branch\":\"main\",\"commits\":3,\"author\":\"mason\"}",
+    "{\"event\":\"push\",\"repo\":\"org/aether\",\"branch\":\"feature/regex\",\"commits\":1,\"author\":\"bot\"}",
+    "{\"event\":\"push\",\"repo\":\"org/cli\",\"branch\":\"main\",\"commits\":7,\"author\":\"mason\"}"
+  ]
+
+  log_info("webhook processor starting")
+
+  fs_write(log_path, "")
+
+  process_batch(payloads, log_path, 0)
+
+  print("")
+  print(term_bold("=== Webhook Processing Complete ==="))
+  print("")
+  print(term_bold("Event log (JSONL):"))
+  let log_contents = fs_read(log_path)
+  print(log_contents)
+  log_info("processed ${str(len(payloads))} webhook events")
+}
+
+fn process_batch(payloads: [Str], log_path: Str, i: Int) -> Unit effects {IO, FS, Throw} {
+  if i >= len(payloads) then ()
+  else let _ = process_one(payloads[i], log_path, i + 1) in process_batch(payloads, log_path, i + 1)
+}
+
+fn process_one(body: Str, log_path: Str, idx: Int) -> Unit effects {IO, FS, Throw} {
+  let vr = validate_payload(body)
+  if result_is_ok(vr) then
+    process_valid(body, log_path, idx)
+  else
+    print(term_red(fmt2("  [{}] rejected: {}", str(idx), result_unwrap_or(vr, "unknown"))))
+}
+
+fn process_valid(body: Str, log_path: Str, idx: Int) -> Unit effects {IO, FS, Throw} {
+  let sr      = process_event(body)
+  let summary = result_unwrap_or(sr, "(parse error)")
+  print(term_green(fmt2("  [{}] {}", str(idx), summary)))
+  fs_append(log_path, "{\"idx\":" ++ str(idx) ++ ",\"summary\":\"" ++ summary ++ "\"}\n")
+}

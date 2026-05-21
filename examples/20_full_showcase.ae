@@ -1,0 +1,69 @@
+## Full v0.3 showcase: ADTs, refinements, string interpolation, imports,
+## tests, the works. This is what a 1-page agent script in Aether looks like.
+
+import std::iter
+import std::fmt
+import std::result
+
+## A task in our toy planner. `Result` is `Ok(Str) | Err(Str)` from std::result.
+type Task = Pending(Str) | Done(Str) | Failed(Str, Str)
+
+## Refinement: priority must be in [0, 10].
+fn ranked(p: Int{x: x >= 0 && x <= 10}, label: Str) -> Str
+  where len(result) >= len(label)
+  effects {} {
+  fmt2("[p={}] {}", str(p), label)
+}
+
+## Describe a task — match on the constructor.
+fn describe(t: Task) -> Str effects {} {
+  match t with {
+    Pending(label)  => "⏳ ${label}",
+    Done(label)     => "✅ ${label}",
+    Failed(l, why)  => "❌ ${l} (${why})"
+  }
+}
+
+## Convert a Result into a Task.
+fn task_of(r: Result) -> Task effects {} {
+  match r with {
+    Ok(label)  => Done(label),
+    Err(why)   => Failed("step", why)
+  }
+}
+
+test "describe pending" {
+  assert_eq(describe(Pending("write code")), "⏳ write code")
+}
+
+test "describe done" {
+  assert_eq(describe(Done("ship it")), "✅ ship it")
+}
+
+test "task_of result" {
+  assert_eq(describe(task_of(Ok("merged"))), "✅ merged")
+  assert_eq(describe(task_of(Err("timeout"))), "❌ step (timeout)")
+}
+
+test "ranked produces longer string" {
+  assert_eq(ranked(3, "do thing"), "[p=3] do thing")
+}
+
+test "clamp from std::iter is verified" {
+  assert_eq(clamp(150, 0, 100), 100)
+  assert_eq(clamp(-5, 0, 100), 0)
+}
+
+fn main() -> Unit effects {IO} {
+  let tasks = [
+    Pending("research"),
+    Done("design"),
+    Failed("implement", "build broke")
+  ]
+  let name = "Aether"
+  print("v0.3 agent — running for ${name}")
+  print(describe(tasks[0]))
+  print(describe(tasks[1]))
+  print(describe(tasks[2]))
+  print(ranked(7, "critical task"))
+}

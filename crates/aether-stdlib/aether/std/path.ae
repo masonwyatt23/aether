@@ -1,0 +1,31 @@
+## std::path — file-system path helpers.
+##
+## Pure functions (`effects {}`) manipulate path strings without touching the
+## filesystem.  `path_exists` carries the `FS` effect because it performs a
+## stat(2) syscall.  All helpers delegate to Rust `std::path::Path` via the
+## `*_native` builtins in `aether-eval::builtins`.
+
+## Join two path segments with the OS separator, normalising redundant slashes.
+fn path_join(a: Str, b: Str) -> Str effects {} {
+  path_join_native(a, b)
+}
+
+## Return the final component of `p` (the filename), or empty string for root paths.
+fn path_basename(p: Str) -> Str effects {} {
+  path_basename_native(p)
+}
+
+## Return the parent directory of `p`, or "." when there is no parent.
+fn path_dirname(p: Str) -> Str effects {} {
+  path_dirname_native(p)
+}
+
+## Return the extension of `p` (without the leading dot), or empty string if absent.
+fn path_extension(p: Str) -> Str effects {} {
+  path_extension_native(p)
+}
+
+## Return true iff `p` exists on the filesystem at call time.
+fn path_exists(p: Str) -> Bool effects {FS} {
+  path_exists_native(p)
+}

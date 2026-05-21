@@ -1,0 +1,12 @@
+## 08_imports.ae — demonstrate importing from std::iter.
+##
+## Imports the clamp, in_range, max_of, and min_of helpers from the standard
+## library and exercises them in main.
+
+import std::iter
+
+fn main() -> Unit effects {IO} {
+  print(str(clamp(50, 0, 100)))
+  print(str(clamp(-5, 0, 100)))
+  print(str(clamp(200, 0, 100)))
+}

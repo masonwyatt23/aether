@@ -1,0 +1,43 @@
+## std::regex — regular-expression helpers.
+##
+## All functions carry effects {Throw} because an invalid pattern causes a
+## runtime error. The *_native builtins are implemented in
+## aether-eval::builtins using the `regex` crate.
+
+## Return true iff `pattern` matches anywhere in `input`.
+## Throws on invalid regex pattern.
+fn regex_match(pattern: Str, input: Str) -> Bool effects {Throw} {
+  regex_match_native(pattern, input)
+}
+
+## Return the first match of `pattern` in `input`, or "" if no match.
+## Throws on invalid regex pattern.
+fn regex_find(pattern: Str, input: Str) -> Str effects {Throw} {
+  regex_find_native(pattern, input)
+}
+
+## Replace the first match of `pattern` in `input` with `replacement`.
+## Throws on invalid regex pattern.
+fn regex_replace(pattern: Str, input: Str, replacement: Str) -> Str effects {Throw} {
+  regex_replace_native(pattern, input, replacement)
+}
+
+## Replace ALL matches of `pattern` in `input` with `replacement`.
+## Throws on invalid regex pattern.
+fn regex_replace_all(pattern: Str, input: Str, replacement: Str) -> Str effects {Throw} {
+  regex_replace_all_native(pattern, input, replacement)
+}
+
+## Split `input` on every match of `pattern`, returning the pieces.
+## Throws on invalid regex pattern.
+fn regex_split(pattern: Str, input: Str) -> [Str] effects {Throw} {
+  regex_split_native(pattern, input)
+}
+
+## Return the capture groups of the first match of `pattern` in `input`.
+## Returns an empty list if there is no match. Group 0 (the whole match)
+## is not included — only explicit capture groups are returned.
+## Throws on invalid regex pattern.
+fn regex_captures(pattern: Str, input: Str) -> [Str] effects {Throw} {
+  regex_captures_native(pattern, input)
+}

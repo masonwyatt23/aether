@@ -1,0 +1,49 @@
+## std::fs — file-system content I/O.
+##
+## All functions carry the `FS` effect because they touch the filesystem.
+## Errors (missing file, permission denied, etc.) surface as the `Throw` effect.
+## All path arguments accept absolute or relative strings; relative paths are
+## resolved against the current working directory at call time.
+
+## Read the UTF-8 contents of `path` and return them as a string.
+## Throws if the file does not exist or is not valid UTF-8.
+fn fs_read(path: Str) -> Str effects {FS, Throw} {
+  fs_read_native(path)
+}
+
+## Write `contents` to `path`, creating or truncating the file.
+## Throws on permission denied or invalid path.
+fn fs_write(path: Str, contents: Str) -> Unit effects {FS, Throw} {
+  fs_write_native(path, contents)
+}
+
+## Append `contents` to `path`, creating the file if it does not exist.
+## Throws on permission denied or invalid path.
+fn fs_append(path: Str, contents: Str) -> Unit effects {FS, Throw} {
+  fs_append_native(path, contents)
+}
+
+## Return true iff `path` exists on the filesystem at call time.
+fn fs_exists(path: Str) -> Bool effects {FS} {
+  fs_exists_native(path)
+}
+
+## Remove the file at `path`.
+## Throws if the file does not exist or cannot be removed.
+fn fs_remove(path: Str) -> Unit effects {FS, Throw} {
+  fs_remove_native(path)
+}
+
+## Return a list of filenames (not full paths) in the directory `path`.
+## Non-recursive — returns only immediate children.
+## Throws if `path` is not a directory or cannot be read.
+fn fs_list_dir(path: Str) -> [Str] effects {FS, Throw} {
+  fs_list_dir_native(path)
+}
+
+## Create `path` and all missing parent directories.
+## No-op if the directory already exists.
+## Throws on permission denied.
+fn fs_mkdir_all(path: Str) -> Unit effects {FS, Throw} {
+  fs_mkdir_all_native(path)
+}

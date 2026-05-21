@@ -1,0 +1,24 @@
+## std::retry — retry-with-backoff scaffolding.
+##
+## These are building blocks for retry loops in agent programs.
+## `retry_backoff_ms` computes exponential delay: 100 * 2^attempt, capped at
+## 30 000 ms.  `retry_sleep_ms` suspends the calling thread.
+## Compose them in a loop with `retry_attempts()` as the bound.
+
+## Return the default number of attempts for a retried operation.
+## Re-export or shadow this constant per-project to tune retry budgets.
+fn retry_attempts() -> Int effects {} {
+  3
+}
+
+## Sleep for `ms` milliseconds.  Carries `IO` because it blocks the OS thread.
+fn retry_sleep_ms(ms: Int) -> Unit effects {IO} {
+  retry_sleep_ms_native(ms)
+}
+
+## Return the exponential backoff delay in milliseconds for attempt number
+## `attempt` (0-based).  Formula: min(100 * 2^attempt, 30000).
+## Result is always >= 100.
+fn retry_backoff_ms(attempt: Int) -> Int effects {} {
+  retry_backoff_ms_native(attempt)
+}

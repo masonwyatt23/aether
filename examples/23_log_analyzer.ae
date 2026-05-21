@@ -1,0 +1,89 @@
+## Log analyzer: write a synthetic log file, parse it with regex, count
+## severities, and print a colored summary to the terminal.
+##
+## Demonstrates: std::fs, std::regex, std::string, std::term, std::fmt, std::map.
+## Counting trick: regex_split on the severity tag yields N+1 pieces for N
+## occurrences, so len(pieces) - 1 gives the exact count without iteration.
+
+import std::fs
+import std::regex
+import std::string
+import std::term
+import std::fmt
+import std::map
+
+## Count occurrences of `tag` (e.g. "\\[ERROR\\]") in `text`.
+## Splitting on the tag yields N+1 parts for N occurrences.
+fn count_tag(text: Str, tag: Str) -> Int effects {Throw} {
+  let parts = regex_split(tag, text)
+  len(parts) - 1
+}
+
+## Extract up to 3 message snippets that follow `tag` in `text`.
+## Returns a human-readable multi-line string.
+fn extract_lines(text: Str, tag: Str) -> Str effects {Throw} {
+  let parts = regex_split(tag, text)
+  if len(parts) <= 1 then "  (none)"
+  else build_detail(parts)
+}
+
+## Build the detail string from already-split parts.
+fn build_detail(parts: [Str]) -> Str effects {Throw} {
+  let l1 = "  - " ++ str_trim(regex_find("[^\\n]*", parts[1]))
+  let l2 = if len(parts) > 2 then "\n  - " ++ str_trim(regex_find("[^\\n]*", parts[2])) else ""
+  let l3 = if len(parts) > 3 then "\n  - " ++ str_trim(regex_find("[^\\n]*", parts[3])) else ""
+  l1 ++ l2 ++ l3
+}
+
+test "count ERROR lines" {
+  let text = "[INFO] ok\n[ERROR] disk full\n[WARN] low mem\n[ERROR] oom\n"
+  assert_eq(count_tag(text, "\\[ERROR\\]"), 2)
+}
+
+test "count WARN lines" {
+  let text = "[WARN] high cpu\n[INFO] started\n[WARN] slow query\n"
+  assert_eq(count_tag(text, "\\[WARN\\]"), 2)
+}
+
+test "zero when tag absent" {
+  let text = "[INFO] all good\n[INFO] still good\n"
+  assert_eq(count_tag(text, "\\[ERROR\\]"), 0)
+}
+
+fn main() -> Unit effects {IO, FS, Throw} {
+  let log_path = "/tmp/aether_demo_log.txt"
+
+  let log_content = str_join([
+    "[INFO] server started on port 8080",
+    "[INFO] accepting connections",
+    "[WARN] high memory usage: 87%",
+    "[ERROR] disk full on /dev/sda1",
+    "[INFO] cache warmed up",
+    "[WARN] slow query detected (2.4s)",
+    "[ERROR] connection timeout to db:5432",
+    "[INFO] health check passed",
+    "[ERROR] out of file descriptors",
+    "[INFO] graceful shutdown initiated"
+  ], "\n")
+
+  fs_write(log_path, log_content)
+  let text = fs_read(log_path)
+
+  let errors   = count_tag(text, "\\[ERROR\\]")
+  let warnings = count_tag(text, "\\[WARN\\]")
+  let infos    = count_tag(text, "\\[INFO\\]")
+  let total    = errors + warnings + infos
+
+  print(term_bold("=== Log Analysis Report ==="))
+  print("Source : ${log_path}")
+  print(fmt1("Total  : {} lines", str(total)))
+  print("")
+  print(term_red(   fmt1("  ERROR  : {}", str(errors))))
+  print(term_yellow(fmt1("  WARN   : {}", str(warnings))))
+  print(term_blue(  fmt1("  INFO   : {}", str(infos))))
+  print("")
+  print(term_bold("Error details:"))
+  print(extract_lines(text, "\\[ERROR\\]"))
+  print("")
+  print(term_green("Analysis complete."))
+}

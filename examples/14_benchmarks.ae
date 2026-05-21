@@ -1,0 +1,26 @@
+## In-language `bench "..." { ... }` blocks. Run with `aether bench <file>`.
+## Each block runs N times (default 100); the runner reports mean µs/iter.
+
+fn fib(n: Int) -> Int effects {} {
+  if n < 2 then n
+  else fib(n - 1) + fib(n - 2)
+}
+
+fn sum_to(n: Int) -> Int effects {} {
+  if n <= 0 then 0
+  else n + sum_to(n - 1)
+}
+
+bench "fib(10)" {
+  let _ = fib(10)
+}
+
+bench "sum_to(50)" {
+  let _ = sum_to(50)
+}
+
+bench "string concat" {
+  let _ = "hello, " ++ "world"
+}
+
+fn main() -> Unit effects {} { () }

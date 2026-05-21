@@ -1,0 +1,114 @@
+(* Aether grammar (EBNF). MVP 0.1.
+   - Whitespace is insignificant outside literals.
+   - `#` to end-of-line is a comment; `##` is a doc line bound to the next decl.
+   - The grammar is the same for compact and verbose surfaces; whitespace
+     between tokens is the only stylistic difference. *)
+
+module        = { doc_line } , { decl } ;
+
+decl          = [ annotation ] , ( fn_decl_verbose
+                                 | fn_decl_compact
+                                 | let_decl
+                                 | type_alias
+                                 | import_decl
+                                 | tool_decl ) ;
+
+annotation    = "@no_prov" | "@pure" | "@inline" ;
+
+fn_decl_verbose = "fn" , ident , [ generics ] , params , [ "->" , type ]
+                , [ "where" , expr , { "&&" , expr } ]
+                , [ "effects" , effect_set ]
+                , [ "spec" , spec_block ]
+                , block ;
+
+fn_decl_compact = ident , [ generics ] , params , ":" , type
+                , [ "!" , effect_set ]
+                , [ "where" , expr , { "&&" , expr } ]
+                , "=" , expr ;
+
+let_decl       = "let" , ident , [ ":" , type ] , "=" , expr ;
+
+type_alias     = "type" , ident , [ generics ] , "=" , type ;
+
+import_decl    = "import" , [ "{" , ident , { "," , ident } , "}" , "from" ] ,
+                 ident , { "::" , ident } ,
+                 [ "as" , ident ] ;
+
+tool_decl      = "tool" , ident , params , "->" , type ,
+                 [ "!" , effect_set ] ;
+
+spec_block     = "{" , { ( "requires" | "ensures" ) , expr , [ ";" ]
+                       | "effects" , effect_set , [ ";" ] } , "}" ;
+
+generics       = "<" , ident , { "," , ident } , ">" ;
+params         = "(" , [ param , { "," , param } ] , ")" ;
+param          = ident , ":" , type , [ "=" , expr ] ;
+
+effect_set     = "{" , [ effect_label , { "," , effect_label } ] , "}" ;
+effect_label   = "IO" | "Net" | "FS" | "State" | "Rand" | "Async" | "Throw"
+               | ident ;
+
+type           = type_atom , { type_postfix } , [ type_arrow ] ;
+type_postfix   = "?"                                            (* option *)
+               | "~" , "confidence" , "(" , expr , ")"          (* confidence *)
+               | "{" , [ ident , ":" ] , expr , "}" ;           (* refinement *)
+type_arrow     = "->" , type , [ "!" , effect_set ] ;
+type_atom      = ident , [ "<" , type , { "," , type } , ">" ] (* base / generic *)
+               | "(" , [ type , { "," , type } ] , ")"          (* tuple / unit *)
+               | "[" , type , "]"                               (* list *)
+               | "{" , [ rec_field , { "," , rec_field } ] , "}" ; (* record *)
+rec_field      = ident , ":" , type ;
+
+block          = "{" , { stmt } , [ expr ] , "}" ;
+stmt           = "let" , pattern , [ ":" , type ] , "=" , expr , [ ";" ]
+               | expr , [ ";" ] ;
+
+expr           = or_expr ;
+or_expr        = and_expr , { ( "||" | "or" ) , and_expr } ;
+and_expr       = cmp_expr , { ( "&&" | "and" ) , cmp_expr } ;
+cmp_expr       = add_expr , { ( "==" | "!=" | "<" | "<=" | ">" | ">=" | "=>" ) , add_expr } ;
+add_expr       = mul_expr , { ( "+" | "-" | "++" ) , mul_expr } ;
+mul_expr       = unary_expr , { ( "*" | "/" | "%" ) , unary_expr } ;
+unary_expr     = ( "-" | "!" | "not" ) , unary_expr | postfix_expr ;
+postfix_expr   = atom_expr , { call | field | index | pipe_fwd | annot } ;
+call           = "(" , [ arg , { "," , arg } ] , ")" ;
+arg            = [ ident , "=" ] , expr ;
+field          = "." , ident ;
+index          = "[" , expr , "]" ;
+pipe_fwd       = "|>" , atom_expr ;
+annot          = ":" , type ;
+
+atom_expr      = literal
+               | ident
+               | "introspect" , call
+               | "summarize"  , call
+               | "provenance" , call
+               | "confident" , "(" , expr , "," , expr , ")"
+               | "assume"    , "(" , expr , ")"
+               | "(" , [ expr , { "," , expr } ] , ")"
+               | "[" , [ expr , { "," , expr } ] , "]"
+               | "{" , ( record_lit | block_body ) , "}"
+               | "if" , expr , [ "then" ] , expr , "else" , expr
+               | "let" , pattern , [ ":" , type ] , "=" , expr , "in" , expr
+               | "fn" , params , [ "->" , type ] , ( block | "=>" , expr ) ;
+
+record_lit     = ident , ":" , expr , { "," , ident , ":" , expr } ;
+block_body     = { stmt } , [ expr ] ;
+
+pattern        = "_"
+               | ident
+               | literal
+               | "(" , [ pattern , { "," , pattern } ] , ")"
+               | ident , "(" , [ pattern , { "," , pattern } ] , ")" ; (* ctor *)
+
+literal        = int_lit | float_lit | str_lit | bool_lit | "(" , ")" ;
+int_lit        = [ "-" ] , digit , { digit | "_" } ;
+float_lit      = int_lit , "." , digit , { digit | "_" } ;
+str_lit        = '"' , { any_char_or_escape } , '"' ;
+bool_lit       = "true" | "false" ;
+
+ident          = letter , { letter | digit | "_" } ;
+letter         = "A" .. "Z" | "a" .. "z" | "_" ;
+digit          = "0" .. "9" ;
+
+doc_line       = "##" , { any_non_newline } , newline ;

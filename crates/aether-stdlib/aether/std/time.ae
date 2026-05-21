@@ -1,0 +1,22 @@
+## std::time — wall-clock and monotonic time helpers.
+##
+## All three functions carry the `IO` effect because they read from system
+## clocks.  `time_format_iso` is pure: it converts a millisecond epoch offset
+## to an ISO-8601 string using deterministic arithmetic with no OS calls.
+
+## Return the current wall-clock time as milliseconds since the Unix epoch.
+fn time_now_ms() -> Int effects {IO} {
+  time_now_ms_native()
+}
+
+## Return a monotonically increasing timestamp in milliseconds, suitable for
+## measuring elapsed time.  The zero point is unspecified across processes.
+fn time_monotonic_ms() -> Int effects {IO} {
+  time_monotonic_ms_native()
+}
+
+## Format a Unix-epoch millisecond value as an ISO-8601 date-time string
+## of the form `YYYY-MM-DDTHH:MM:SSZ`.  Pure: no OS calls.
+fn time_format_iso(ms: Int) -> Str effects {} {
+  time_format_iso_native(ms)
+}

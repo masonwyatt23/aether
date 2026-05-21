@@ -1,0 +1,40 @@
+## std::strlist — list helpers for string collections.
+##
+## Analogous to std::list but operates on [Str] rather than [Int].
+## strlist_head throws on empty input; strlist_tail on empty returns [].
+## The *_native builtins are implemented in aether-eval::builtins.
+
+## Return the number of elements in a Str list.
+fn strlist_len(xs: [Str]) -> Int effects {} {
+  strlist_len_native(xs)
+}
+
+## Return the element at index `i` (0-based). Throws if out of bounds.
+fn strlist_get(xs: [Str], i: Int) -> Str effects {Throw} {
+  strlist_get_native(xs, i)
+}
+
+## Join all elements of `xs` with `sep` between each pair.
+fn strlist_join(xs: [Str], sep: Str) -> Str effects {} {
+  strlist_join_native(xs, sep)
+}
+
+## Return true iff `x` appears in `xs`.
+fn strlist_contains(xs: [Str], x: Str) -> Bool effects {} {
+  strlist_contains_native(xs, x)
+}
+
+## Return a new list with the elements of `xs` in reverse order.
+fn strlist_reversed(xs: [Str]) -> [Str] effects {} {
+  strlist_reversed_native(xs)
+}
+
+## Return the first element of `xs`. Throws if `xs` is empty.
+fn strlist_head(xs: [Str]) -> Str effects {Throw} {
+  strlist_head_native(xs)
+}
+
+## Return all elements of `xs` except the first. Returns [] for an empty list.
+fn strlist_tail(xs: [Str]) -> [Str] effects {} {
+  strlist_tail_native(xs)
+}

@@ -1,0 +1,37 @@
+## std::iter — iteration helpers for agent refinement loops.
+##
+## Wraps the `iter_refine` builtin with typed, named conveniences and adds
+## arithmetic helpers with refinement-verified bounds.
+
+## Run the named step function `n` times starting from 0, returning the final Int.
+fn count_to(n: Int) -> Int effects {} {
+  iter_refine(0, "id", n)
+}
+
+## Refine a seed Int by running the named step function `budget` times.
+fn refine_with(seed: Int, step_name: Str, budget: Int{n: n >= 0}) -> Int effects {} {
+  iter_refine(seed, step_name, budget)
+}
+
+## Clamp x to [lo, hi]. The precondition `hi >= lo` is encoded via a refinement
+## on the `hi` parameter, so the postcondition is provable on every path.
+fn clamp(x: Int, lo: Int, hi: Int{h: h >= lo}) -> Int
+  where result >= lo && result <= hi
+  effects {} {
+  if x < lo then lo else if x > hi then hi else x
+}
+
+## Return true iff x is within [lo, hi] inclusive.
+fn in_range(x: Int, lo: Int, hi: Int) -> Bool effects {} {
+  x >= lo && x <= hi
+}
+
+## Return the larger of two Ints (alias for the builtin with a descriptive name).
+fn max_of(a: Int, b: Int) -> Int effects {} {
+  max(a, b)
+}
+
+## Return the smaller of two Ints (alias for the builtin with a descriptive name).
+fn min_of(a: Int, b: Int) -> Int effects {} {
+  min(a, b)
+}

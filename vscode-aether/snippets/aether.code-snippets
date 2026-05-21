@@ -1,0 +1,84 @@
+{
+  "Function (verbose)": {
+    "prefix": "fn",
+    "body": [
+      "## ${1:Brief description of ${2:name}.}",
+      "fn ${2:name}(${3:param}: ${4:Int}) -> ${5:Unit}",
+      "  effects {${6:IO}} {",
+      "  ${0}",
+      "}"
+    ],
+    "description": "Verbose function declaration with doc comment, signature, effects row, and body block."
+  },
+  "Function (compact)": {
+    "prefix": "fnc",
+    "body": [
+      "${1:name}(${2:param}: ${3:I}): ${4:U}!{} = ${0}"
+    ],
+    "description": "Compact single-expression function declaration."
+  },
+  "If-then-else": {
+    "prefix": "if",
+    "body": [
+      "if ${1:condition}",
+      "  then ${2:true_branch}",
+      "  else ${0:false_branch}"
+    ],
+    "description": "if/then/else expression."
+  },
+  "Match with arms": {
+    "prefix": "match",
+    "body": [
+      "match ${1:value} with",
+      "  ${2:pattern1} => ${3:expr1}",
+      "  ${4:pattern2} => ${0:expr2}"
+    ],
+    "description": "Match expression with two arms."
+  },
+  "Introspect surface": {
+    "prefix": "intro",
+    "body": [
+      "let ${1:surface} = introspect(\"${2:current}\")"
+    ],
+    "description": "Capture a module surface via the introspect agent primitive."
+  },
+  "Spec block": {
+    "prefix": "spec",
+    "body": [
+      "spec {",
+      "  requires ${1:precondition};",
+      "  ensures ${2:postcondition};",
+      "  effects {${3:IO}};",
+      "}"
+    ],
+    "description": "Formal contract block: requires / ensures / effects."
+  },
+  "Tool declaration": {
+    "prefix": "tool",
+    "body": [
+      "tool ${1:name}(${2:param}: ${3:Str}) -> ${4:Str} !{${5:Net, Throw}}"
+    ],
+    "description": "First-class external tool declaration."
+  },
+  "Let binding": {
+    "prefix": "let",
+    "body": [
+      "let ${1:name}: ${2:Int} = ${0}"
+    ],
+    "description": "Let binding with optional type annotation."
+  },
+  "Refinement type": {
+    "prefix": "refine",
+    "body": [
+      "${1:Int}{${2:n}: ${3:n > 0}}"
+    ],
+    "description": "Inline refinement type: Base{binder: predicate}."
+  },
+  "Import": {
+    "prefix": "import",
+    "body": [
+      "import { ${1:symbol} } from ${2:module}"
+    ],
+    "description": "Named import from a module."
+  }
+}

@@ -1,0 +1,24 @@
+## std::random — Pseudo-random value generation using OS entropy (getrandom).
+##
+## All functions carry the {Rand} effect. No seed management — each call
+## draws fresh entropy from the OS via getrandom.
+
+## Return a random integer in the inclusive range [lo, hi].
+fn random_int(lo: Int, hi: Int) -> Int effects {Rand} {
+  random_int_native(lo, hi)
+}
+
+## Return a random Bool (true or false with equal probability).
+fn random_bool() -> Bool effects {Rand} {
+  random_bool_native()
+}
+
+## Return a random Float in [0.0, 1.0).
+fn random_float() -> Float effects {Rand} {
+  random_float_native()
+}
+
+## Pick a random element from `xs`. Throws if `xs` is empty.
+fn random_pick(xs: [Str]) -> Str effects {Rand, Throw} {
+  random_pick_native(xs)
+}

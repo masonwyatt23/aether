@@ -1,0 +1,27 @@
+[package]
+name = "aether-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "WebAssembly bindings for the Aether language playground."
+keywords = ["aether", "wasm", "lang", "web", "run"]
+categories = ["compilers", "wasm"]
+homepage = "https://github.com/masonwyatt/aether"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+aether-ast.workspace = true
+aether-parser.workspace = true
+aether-types.workspace = true
+aether-eval.workspace = true
+aether-stdlib.workspace = true
+wasm-bindgen = "0.2"
+serde = { workspace = true, features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+
+[dev-dependencies]

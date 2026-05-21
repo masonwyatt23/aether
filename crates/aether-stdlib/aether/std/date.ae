@@ -1,0 +1,32 @@
+## std::date — Calendar math from Unix-epoch milliseconds.
+##
+## All functions are pure (effects {}). The epoch is 1970-01-01T00:00:00Z.
+## Leap-year rules follow the proleptic Gregorian calendar.
+
+## Return the 4-digit year for a Unix-epoch millisecond timestamp.
+## date_year(0) == 1970
+fn date_year(ms: Int) -> Int effects {} {
+  date_year_native(ms)
+}
+
+## Return the month (1..=12) for a Unix-epoch millisecond timestamp.
+fn date_month(ms: Int) -> Int effects {} {
+  date_month_native(ms)
+}
+
+## Return the day-of-month (1..=31) for a Unix-epoch millisecond timestamp.
+fn date_day(ms: Int) -> Int effects {} {
+  date_day_native(ms)
+}
+
+## Return the weekday as an integer (0=Sunday, 6=Saturday).
+## 1970-01-01 was a Thursday, so date_weekday(0) == 4.
+fn date_weekday(ms: Int) -> Int effects {} {
+  date_weekday_native(ms)
+}
+
+## Compose year/month/day into a Unix-epoch millisecond timestamp (midnight UTC).
+## date_compose(1970, 1, 1) == 0
+fn date_compose(year: Int, month: Int, day: Int) -> Int effects {} {
+  date_compose_native(year, month, day)
+}

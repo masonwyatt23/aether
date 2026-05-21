@@ -1,0 +1,20 @@
+## Agent primitive: `introspect("current")` returns a structured surface of the
+## current module — exports, effects, signatures — in a single primitive call.
+##
+## This is how Aether keeps agents fast: instead of grepping source, the agent
+## queries a budgeted projection of the module.
+
+## Doubles a number.
+fn double(x: Int) -> Int effects {} {
+  x * 2
+}
+
+## Adds two numbers.
+fn add(x: Int, y: Int) -> Int effects {} {
+  x + y
+}
+
+fn main() -> Unit effects {IO} {
+  let surface = introspect("current")
+  print_module_surface(surface)
+}

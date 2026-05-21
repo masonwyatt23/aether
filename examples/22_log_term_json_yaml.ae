@@ -1,0 +1,36 @@
+## v0.3 stdlib showcase round 2: log, term, json (real parser), yaml.
+
+import std::log
+import std::term
+import std::json
+import std::yaml
+import std::fmt
+
+fn main() -> Unit effects {IO, Throw} {
+  log_info("starting demo")
+  log_warn("this is a warning")
+
+  let json_src = "{ \"name\": \"aether\", \"version\": 3, \"stable\": true }"
+  print(fmt2("name = {}, version = {}",
+            json_get_str(json_src, "name"),
+            str(json_get_int(json_src, "version"))))
+  print(fmt1("stable = {}", str(json_get_bool(json_src, "stable"))))
+
+  let yaml_src = "# project config\nname: my_agent\nport: 8080\n"
+  print(fmt1("yaml name = {}", yaml_get_str(yaml_src, "name")))
+  print(fmt1("yaml port = {}", str(yaml_get_int(yaml_src, "port"))))
+
+  print(term_green("✓ all stdlib parsers working"))
+  log_error("(this is a fake error for demonstration)")
+}
+
+test "json extraction" {
+  let j = "{ \"key\": \"value\" }"
+  assert_eq(json_get_str(j, "key"), "value")
+}
+
+test "yaml extraction" {
+  let y = "name: aether\nversion: 3"
+  assert_eq(yaml_get_str(y, "name"), "aether")
+  assert_eq(yaml_get_int(y, "version"), 3)
+}

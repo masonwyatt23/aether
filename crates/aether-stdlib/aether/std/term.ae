@@ -1,0 +1,43 @@
+## std::term — terminal color and cursor helpers.
+##
+## Functions wrap input strings with ANSI escape sequences. All functions
+## are pure (effects {}) because they merely construct strings; the IO
+## happens when the caller prints them.
+##
+## When the NO_COLOR environment variable is set (per no-color.org), every
+## function returns its input unchanged — the *_native builtins check this.
+
+## Wrap `s` in ANSI red foreground escape codes.
+fn term_red(s: Str) -> Str effects {} {
+  term_red_native(s)
+}
+
+## Wrap `s` in ANSI green foreground escape codes.
+fn term_green(s: Str) -> Str effects {} {
+  term_green_native(s)
+}
+
+## Wrap `s` in ANSI yellow foreground escape codes.
+fn term_yellow(s: Str) -> Str effects {} {
+  term_yellow_native(s)
+}
+
+## Wrap `s` in ANSI blue foreground escape codes.
+fn term_blue(s: Str) -> Str effects {} {
+  term_blue_native(s)
+}
+
+## Wrap `s` in ANSI bold escape codes.
+fn term_bold(s: Str) -> Str effects {} {
+  term_bold_native(s)
+}
+
+## Wrap `s` in ANSI dim (faint) escape codes.
+fn term_dim(s: Str) -> Str effects {} {
+  term_dim_native(s)
+}
+
+## Return the ANSI escape sequence that clears the screen and homes the cursor.
+fn term_clear() -> Str effects {} {
+  "\u{001b}[2J\u{001b}[H"
+}

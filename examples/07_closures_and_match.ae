@@ -1,0 +1,20 @@
+## Closures + match: first-class lambdas captured into env, then
+## pattern-matched arms with guards.
+
+fn classify(n: Int) -> Str effects {} {
+  match n with {
+    0       => "zero",
+    x if x > 0 => "positive",
+    _       => "negative"
+  }
+}
+
+fn main() -> Unit effects {IO} {
+  let k = 7
+  let add_k = fn(x: Int) -> Int => x + k
+  let y = add_k(35)
+  print(str(y))
+  print(classify(y))
+  print(classify(0))
+  print(classify(-3))
+}

@@ -1,0 +1,16 @@
+## Algebraic data types with named constructors and pattern matching.
+
+type Shape = Circle(Float) | Square(Float) | Triangle(Float, Float, Float)
+
+fn area(s: Shape) -> Float effects {} {
+  match s with {
+    Circle(r)         => r * r * 3.14,
+    Square(side)      => side * side,
+    Triangle(a, b, _) => a * b / 2.0
+  }
+}
+
+fn main() -> Unit effects {IO} {
+  print(str(area(Circle(5.0))))
+  print(str(area(Square(4.0))))
+}

@@ -1,0 +1,50 @@
+## std::math — common mathematical functions.
+##
+## All functions are pure (effects {}). The *_native builtins are implemented
+## in aether-eval::builtins using f64 / i64 Rust primitives.
+
+## Return the absolute value of an integer. Result is always >= 0.
+fn math_abs_int(n: Int) -> Int effects {} {
+  abs(n)
+}
+
+## Return `base` raised to `exp`. `exp` must be >= 0.
+fn math_pow(base: Int, exp: Int) -> Int effects {} {
+  math_pow_native(base, exp)
+}
+
+## Return the square root of `x` as a Float.
+## Returns 0.0 for negative inputs rather than NaN.
+fn math_sqrt(x: Float) -> Float effects {} {
+  math_sqrt_native(x)
+}
+
+## Return the largest integer less than or equal to `x`.
+fn math_floor(x: Float) -> Int effects {} {
+  math_floor_native(x)
+}
+
+## Return the smallest integer greater than or equal to `x`.
+fn math_ceil(x: Float) -> Int effects {} {
+  math_ceil_native(x)
+}
+
+## Return `x` rounded to the nearest integer (half-way rounds away from zero).
+fn math_round(x: Float) -> Int effects {} {
+  math_round_native(x)
+}
+
+## Return the smaller of two Float values.
+fn math_min_f(a: Float, b: Float) -> Float effects {} {
+  math_min_f_native(a, b)
+}
+
+## Return the larger of two Float values.
+fn math_max_f(a: Float, b: Float) -> Float effects {} {
+  math_max_f_native(a, b)
+}
+
+## Return the mathematical constant π (3.141592653589793).
+fn math_pi() -> Float effects {} {
+  math_pi_native()
+}

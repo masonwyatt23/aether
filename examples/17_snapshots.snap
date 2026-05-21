@@ -1,0 +1,5 @@
+[clamp_behavior]
+zero = "50"
+low = "0"
+high = "100"
+

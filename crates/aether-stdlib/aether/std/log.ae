@@ -1,0 +1,26 @@
+## std::log — structured logging at four severity levels.
+##
+## All functions carry effect {IO} because they write to stderr.
+## log_debug is suppressed unless the AETHER_LOG environment variable
+## contains "debug" (case-insensitive). The *_native builtins are
+## implemented in aether-eval::builtins.
+
+## Log an informational message to stderr with an ISO timestamp prefix.
+fn log_info(msg: Str) -> Unit effects {IO} {
+  log_info_native(msg)
+}
+
+## Log a warning message to stderr with an ISO timestamp prefix.
+fn log_warn(msg: Str) -> Unit effects {IO} {
+  log_warn_native(msg)
+}
+
+## Log an error message to stderr with an ISO timestamp prefix.
+fn log_error(msg: Str) -> Unit effects {IO} {
+  log_error_native(msg)
+}
+
+## Log a debug message to stderr. Suppressed unless AETHER_LOG=debug.
+fn log_debug(msg: Str) -> Unit effects {IO} {
+  log_debug_native(msg)
+}

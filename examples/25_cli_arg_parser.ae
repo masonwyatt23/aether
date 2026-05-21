@@ -1,0 +1,126 @@
+## CLI argument parser.
+##
+## Parses a [Str] of POSIX-style flags into a Str->Int map.
+##
+## Flag forms supported:
+##   --flag          boolean presence flag (stored as 1)
+##   --key=value     key-value pair (key stored as 1; value extracted separately)
+##   -x              short flag (stored as 1)
+##
+## Uses std::sys::sys_args() at runtime; falls back to a hardcoded demo argv
+## when no real arguments are supplied.
+##
+## Demonstrates: std::sys, std::string, std::regex, std::map, std::fmt.
+
+import std::sys
+import std::string
+import std::regex
+import std::map
+import std::fmt
+
+## Extract the flag name from a token, or "" if the token is not a flag.
+## --verbose         -> "verbose"
+## --output=foo.txt  -> "output"
+## -v                -> "v"
+## positional        -> ""
+fn flag_name(token: Str) -> Str effects {Throw} {
+  if regex_match("^--[a-zA-Z][a-zA-Z0-9-]*=", token) then
+    regex_replace("^--([a-zA-Z][a-zA-Z0-9-]*)=.*$", token, "$1")
+  else if regex_match("^--[a-zA-Z][a-zA-Z0-9-]*$", token) then
+    regex_replace("^--", token, "")
+  else if regex_match("^-[a-zA-Z]$", token) then
+    regex_replace("^-", token, "")
+  else ""
+}
+
+## Extract the value from a --key=value token, or "" otherwise.
+fn flag_value(token: Str) -> Str effects {Throw} {
+  if regex_match("^--[a-zA-Z][a-zA-Z0-9-]*=", token) then
+    regex_replace("^--[a-zA-Z][a-zA-Z0-9-]*=", token, "")
+  else ""
+}
+
+## Record a single token in the flag map (pure accumulator step).
+fn record_token(flags: [MapEntry], token: Str) -> [MapEntry] effects {Throw} {
+  let name = flag_name(token)
+  if name == "" then flags
+  else map_set(flags, name, 1)
+}
+
+test "--flag sets presence" {
+  let m = record_token(map_new(), "--verbose")
+  assert_eq(map_has(m, "verbose"), true)
+  assert_eq(map_get(m, "verbose"), 1)
+}
+
+test "--key=value records key" {
+  let m = record_token(map_new(), "--output=report.txt")
+  assert_eq(map_has(m, "output"), true)
+}
+
+test "kv round-trip: key and value" {
+  assert_eq(flag_name("--port=9090"),  "port")
+  assert_eq(flag_value("--port=9090"), "9090")
+}
+
+test "short flag -v" {
+  let m = record_token(map_new(), "-v")
+  assert_eq(map_has(m, "v"), true)
+}
+
+test "positional arg is ignored" {
+  let m = record_token(map_new(), "myfile.txt")
+  assert_eq(map_size(m), 0)
+}
+
+## Walk argv[i..] and accumulate flags.
+fn parse_from(argv: [Str], acc: [MapEntry], i: Int) -> [MapEntry] effects {Throw} {
+  if i >= len(argv) then acc
+  else parse_from(argv, record_token(acc, argv[i]), i + 1)
+}
+
+## Parse all args in argv into a flag map.
+fn parse_args(argv: [Str]) -> [MapEntry] effects {Throw} {
+  parse_from(argv, map_new(), 0)
+}
+
+## Search argv for --key=value and return the value, or default if absent.
+fn get_value(argv: [Str], key: Str, default: Str) -> Str effects {Throw} {
+  find_value(argv, key, default, 0)
+}
+
+fn find_value(argv: [Str], key: Str, default: Str, i: Int) -> Str effects {Throw} {
+  if i >= len(argv) then default
+  else if flag_name(argv[i]) == key then flag_value(argv[i])
+  else find_value(argv, key, default, i + 1)
+}
+
+## True if any token in argv looks like a user flag (starts with -).
+fn has_user_flag(argv: [Str]) -> Bool effects {Throw} {
+  has_flag_at(argv, 0)
+}
+
+fn has_flag_at(argv: [Str], i: Int) -> Bool effects {Throw} {
+  if i >= len(argv) then false
+  else if regex_match("^-", argv[i]) then true
+  else has_flag_at(argv, i + 1)
+}
+
+fn main() -> Unit effects {IO, Throw} {
+  let real_args = sys_args()
+  # When sys_args returns the aether CLI's own args (e.g. "run <file>"),
+  # fall back to demo input so the example is self-contained and deterministic.
+  let argv = if has_user_flag(real_args) then real_args
+             else ["--verbose", "--output=report.txt", "--port=8080", "-h", "positional"]
+
+  let flags = parse_args(argv)
+
+  print("=== CLI Arg Parser ===")
+  print(fmt1("Input tokens : {}", str(len(argv))))
+  print(fmt1("Flags parsed : {}", str(map_size(flags))))
+  print("")
+  print(fmt1("--verbose : {}", str(map_has(flags, "verbose"))))
+  print(fmt1("--output  : {}", get_value(argv, "output", "(not set)")))
+  print(fmt1("--port    : {}", get_value(argv, "port",   "(not set)")))
+  print(fmt1("-h        : {}", str(map_has(flags, "h"))))
+}

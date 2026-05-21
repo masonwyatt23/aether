@@ -1,0 +1,47 @@
+## std::sys — process control and operating-system helpers.
+##
+## Functions that interact with the OS carry effects {IO}. Functions that
+## may fail carry effects {Throw}. The *_native builtins are implemented in
+## aether-eval::builtins.
+
+## Terminate the process with the given exit code.
+## This function never returns; it is declared as effects {IO} to reflect
+## the observable side-effect of process termination.
+fn sys_exit(code: Int) -> Unit effects {IO} {
+  sys_exit_native(code)
+}
+
+## Return the command-line arguments passed to the program after the binary
+## name. Returns an empty list when no arguments were provided.
+fn sys_args() -> [Str] effects {} {
+  sys_args_native()
+}
+
+## Read one line from standard input (excluding the trailing newline).
+## Returns an empty string on EOF.
+fn sys_stdin_line() -> Str effects {IO} {
+  sys_stdin_line_native()
+}
+
+## Return the current time as seconds since the Unix epoch (1970-01-01T00:00:00Z).
+fn sys_now_unix() -> Int effects {IO} {
+  sys_now_unix_native()
+}
+
+## Run `cmd` as a subprocess with the given argument list.
+## Returns stdout as a Str. Throws if the process exits with a non-zero
+## status code. Uses argv-array passing — no shell injection is possible.
+fn sys_spawn(cmd: Str, args: [Str]) -> Str effects {IO, Throw} {
+  sys_spawn_native(cmd, args)
+}
+
+## Return the hostname of the current machine.
+fn sys_hostname() -> Str effects {IO} {
+  sys_hostname_native()
+}
+
+## Spawn a detached background thread that sleeps for `ms` milliseconds.
+## Returns immediately; useful for non-blocking server patterns.
+fn sys_spawn_thread_sleep(ms: Int{n: n >= 0}) -> Unit effects {IO} {
+  sys_spawn_thread_sleep_native(ms)
+}

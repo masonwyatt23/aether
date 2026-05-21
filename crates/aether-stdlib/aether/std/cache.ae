@@ -1,0 +1,26 @@
+## std::cache — process-local in-memory key/value cache.
+##
+## Backed by a Mutex<HashMap<String,String>> in a OnceLock, so it is
+## thread-safe and shared across all Aether evaluations in the same OS process.
+## All functions carry the `State` effect because they mutate shared state.
+## Keys and values are both strings; encode other types before caching.
+
+## Return the cached value for `key`, or empty string if absent.
+fn cache_get(key: Str) -> Str effects {State} {
+  cache_get_native(key)
+}
+
+## Insert or overwrite the entry for `key` with `value`.
+fn cache_set(key: Str, value: Str) -> Unit effects {State} {
+  cache_set_native(key, value)
+}
+
+## Return true iff `key` is present in the cache.
+fn cache_has(key: Str) -> Bool effects {State} {
+  cache_has_native(key)
+}
+
+## Remove all entries from the cache.
+fn cache_clear() -> Unit effects {State} {
+  cache_clear_native()
+}

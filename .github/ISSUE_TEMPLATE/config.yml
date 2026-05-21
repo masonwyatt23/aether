@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Ask a question or start a discussion
+    url: https://github.com/masonwyatt/Aether/discussions
+    about: Questions, design discussions, and general community conversation belong in Discussions rather than Issues.

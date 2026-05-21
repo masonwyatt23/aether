@@ -1,0 +1,6 @@
+## Hello, Aether — the simplest program.
+## Demonstrates: function declaration, effect declaration, builtin `print`.
+
+fn main() -> Unit effects {IO} {
+  print("Hello, Aether!")
+}

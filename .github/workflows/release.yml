@@ -1,0 +1,45 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build release binaries
+        run: cargo build --release -p aether-cli -p aether-lsp
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp target/release/aether dist/
+          cp target/release/aether-lsp dist/
+          cp README.md LICENSE LICENSE-MIT LICENSE-APACHE dist/
+          tar -czf "aether-${{ github.ref_name }}-${{ matrix.target }}.tar.gz" -C dist .
+
+      - name: Attach to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: aether-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+          generate_release_notes: true

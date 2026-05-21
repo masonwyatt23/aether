@@ -1,0 +1,30 @@
+## std::proof — proof-construction helpers for agent verification workflows.
+##
+## `assert` is a tool declaration so runtimes can route failures to a
+## structured exception channel. `assume_for_proof` is a pure helper that
+## introduces a hypothesis into the current reasoning context.
+
+## Assert that `cond` is true, throwing if it is not.
+## Use in verification workflows where a violated invariant must halt execution.
+tool assert(cond: Bool, msg: Str) -> Unit !{Throw}
+
+## Introduce a boolean hypothesis for proof purposes (pure, no runtime effect).
+## Returns unit; the value of `p` is the interesting part.
+fn assume_for_proof(p: Bool) -> Unit effects {} {
+  ()
+}
+
+## Logical negation of a boolean (explicit named helper for readability).
+fn proof_not(p: Bool) -> Bool effects {} {
+  !p
+}
+
+## True iff both `a` and `b` hold.
+fn proof_and(a: Bool, b: Bool) -> Bool effects {} {
+  a && b
+}
+
+## True iff at least one of `a` or `b` holds.
+fn proof_or(a: Bool, b: Bool) -> Bool effects {} {
+  a || b
+}

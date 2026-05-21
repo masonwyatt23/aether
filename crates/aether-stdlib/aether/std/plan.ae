@@ -1,0 +1,35 @@
+## std::plan — structured planning primitives for agent workflows.
+##
+## A Plan bundles a title, an ordered list of step descriptions, and a token
+## budget so agents can reason about execution cost before committing.
+## Functions use inline record types so the type checker resolves fields.
+
+## A structured plan value: title, steps, and token budget.
+type Plan = {title: Str, steps: [Str], budget: Int}
+
+## Count the steps in a plan given its steps list.
+fn plan_step_count(steps: [Str]) -> Int effects {} {
+  len(steps)
+}
+
+## Return true when the step count meets or exceeds the budget.
+fn plan_over_budget(step_count: Int, budget: Int) -> Bool effects {} {
+  step_count >= budget
+}
+
+## Build a plan summary string from its components.
+fn plan_summary(title: Str, step_count: Int, budget: Int) -> Str effects {} {
+  title ++ " (" ++ str(step_count) ++ " steps, budget " ++ str(budget) ++ ")"
+}
+
+## Return true when a plan still has capacity (step_count < budget).
+fn plan_has_capacity(step_count: Int, budget: Int) -> Bool effects {} {
+  step_count < budget
+}
+
+## Clamp a budget to a minimum of 1 so plans are never zero-budget.
+fn plan_min_budget(budget: Int) -> Int
+  where result >= 1
+  effects {} {
+  if budget < 1 then 1 else budget
+}

@@ -1,0 +1,11 @@
+## Automatic provenance: every value carries a DAG of the operations that
+## produced it. `provenance(z)` returns a first-class chain handle that
+## `print_prov` can render.
+
+fn main() -> Unit effects {IO} {
+  let x = 5
+  let y = x + 3
+  let z = y * 2
+  let chain = provenance(z)
+  print_prov(chain)
+}

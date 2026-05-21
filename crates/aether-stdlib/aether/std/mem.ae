@@ -1,0 +1,24 @@
+## std::mem — agent memory model for key/value state.
+##
+## Declares the Mem record type and tool stubs for get/set. Tools are
+## declared (not defined) so the runtime can wire them to any backing store
+## (in-process map, Redis, etc.) without changing the surface types.
+
+## A single memory entry: a string key mapped to a string value.
+type Mem = {key: Str, value: Str}
+
+## Retrieve the value stored at `key`, or `default` if the key is absent.
+tool mem_get(key: Str, default: Str) -> Str !{State}
+
+## Store `value` under `key` in the agent memory, returning the stored value.
+tool mem_set(key: Str, value: Str) -> Str !{State}
+
+## Format a key/value pair as "key=value" for display or logging.
+fn mem_format(key: Str, value: Str) -> Str effects {} {
+  key ++ "=" ++ value
+}
+
+## True if two keys are equal (pure identity check).
+fn mem_key_eq(a: Str, b: Str) -> Bool effects {} {
+  a == b
+}

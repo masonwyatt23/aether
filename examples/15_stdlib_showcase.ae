@@ -1,0 +1,28 @@
+## Showcase of the expanded standard library.
+## Run: `aether run examples/15_stdlib_showcase.ae`
+
+import std::list
+import std::string
+import std::fmt
+import std::path
+import std::env
+
+fn main() -> Unit effects {IO, FS, Throw} {
+  let nums = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5]
+  print(fmt2("sum={} max={}", str(list_sum(nums)), str(list_max(nums))))
+  print(fmt1("contains 9? {}", str(list_contains(nums, 9))))
+
+  let greeting = str_upper("hello, aether")
+  print(greeting)
+  print(fmt1("starts with HELLO? {}", str(str_starts_with(greeting, "HELLO"))))
+
+  let p = path_join("/tmp", "aether.log")
+  print(fmt1("dirname={}", path_dirname(p)))
+  print(fmt1("basename={}", path_basename(p)))
+
+  let home = env_get("HOME")
+  print(fmt1("HOME prefix length={}", str(len(home))))
+
+  print(pad_left("42", 6, "0"))
+  print(pad_right("hi", 10, "."))
+}

@@ -1,0 +1,33 @@
+## std::map — a simple Str->Int map backed by a list of MapEntry records.
+##
+## Real parametric maps require generic types not yet supported; this surface
+## provides a concrete Str-keyed, Int-valued map sufficient for agent state.
+## The *_native builtins are implemented in aether-eval::builtins.
+
+## A single key/value pair in the map.
+type MapEntry = {key: Str, value: Int}
+
+## Return an empty map.
+fn map_new() -> [MapEntry] effects {} {
+  []
+}
+
+## Look up `key` in `m`. Throws if the key is absent.
+fn map_get(m: [MapEntry], key: Str) -> Int effects {Throw} {
+  map_get_native(m, key)
+}
+
+## Return a new map with `key` set to `value` (replaces existing, appends if new).
+fn map_set(m: [MapEntry], key: Str, value: Int) -> [MapEntry] effects {} {
+  map_set_native(m, key, value)
+}
+
+## Return true iff `key` exists in `m`.
+fn map_has(m: [MapEntry], key: Str) -> Bool effects {} {
+  map_has_native(m, key)
+}
+
+## Return the number of entries in `m`.
+fn map_size(m: [MapEntry]) -> Int effects {} {
+  len(m)
+}

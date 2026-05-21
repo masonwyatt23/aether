@@ -1,0 +1,40 @@
+[package]
+name = "aether-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Command-line interface and REPL for the Aether programming language."
+keywords = ["aether", "cli", "repl", "lang", "run"]
+categories = ["compilers", "command-line-utilities"]
+homepage = "https://github.com/masonwyatt/aether"
+
+[[bin]]
+name = "aether"
+path = "src/main.rs"
+
+[dependencies]
+aether-ast = { workspace = true, features = ["serde"] }
+serde.workspace = true
+serde_json = { workspace = true }
+aether-lexer.workspace = true
+aether-parser.workspace = true
+aether-types.workspace = true
+aether-eval.workspace = true
+aether-bc.workspace = true
+aether-stdlib.workspace = true
+aether-tools-net.workspace = true
+clap.workspace = true
+ariadne.workspace = true
+anyhow.workspace = true
+rustyline = "14"
+notify = "6"
+
+[dev-dependencies]
+tempfile = "3"
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

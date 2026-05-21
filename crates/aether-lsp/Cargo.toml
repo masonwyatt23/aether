@@ -1,0 +1,34 @@
+[package]
+name = "aether-lsp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Language Server Protocol server for the Aether language"
+keywords = ["aether", "lsp", "lang", "ide", "check"]
+categories = ["compilers", "development-tools"]
+homepage = "https://github.com/masonwyatt/aether"
+readme = "README.md"
+default-run = "aether-lsp"
+
+[[bin]]
+name = "aether-lsp"
+path = "src/main.rs"
+
+[lib]
+name = "aether_lsp"
+path = "src/lib.rs"
+
+[dependencies]
+aether-ast = { workspace = true }
+aether-parser = { workspace = true }
+aether-types = { workspace = true }
+
+tower-lsp = { workspace = true }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

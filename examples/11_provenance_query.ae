@@ -1,0 +1,16 @@
+## Showcase: provenance lets an agent answer "where did this value come from?"
+## without re-running the program. Every binop, call, and literal contributes
+## a node to the ProvChain.
+
+fn process(input: Int) -> Int effects {} {
+  let doubled = input * 2
+  let plus_one = doubled + 1
+  plus_one
+}
+
+fn main() -> Unit effects {IO} {
+  let value = process(7)
+  print(str(value))                   # 15
+  let chain = provenance(value)
+  print_prov(chain)                   # prints the DAG
+}

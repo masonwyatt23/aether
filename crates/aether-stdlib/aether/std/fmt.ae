@@ -1,0 +1,50 @@
+## std::fmt — printf-style string formatting and padding helpers.
+##
+## `fmt1` / `fmt2` / `fmt3` replace each `{}` placeholder in `template` with
+## successive string arguments left-to-right.  Excess `{}` remain verbatim;
+## extra arguments beyond the number of placeholders are silently ignored.
+## `pad_left` and `pad_right` pad a string to a minimum width using a single
+## fill character.
+
+## Replace the first `{}` in `template` with `a`.
+fn fmt1(template: Str, a: Str) -> Str effects {} {
+  fmt1_native(template, a)
+}
+
+## Replace the first two `{}` placeholders in `template` with `a` then `b`.
+fn fmt2(template: Str, a: Str, b: Str) -> Str effects {} {
+  fmt2_native(template, a, b)
+}
+
+## Replace the first three `{}` placeholders in `template` with `a`, `b`, `c`.
+fn fmt3(template: Str, a: Str, b: Str, c: Str) -> Str effects {} {
+  fmt3_native(template, a, b, c)
+}
+
+## Replace the first four `{}` placeholders in `template` with `a`, `b`, `c`, `d`.
+fn fmt4(template: Str, a: Str, b: Str, c: Str, d: Str) -> Str effects {} {
+  fmt4_native(template, a, b, c, d)
+}
+
+## Replace the first five `{}` placeholders in `template` with `a`, `b`, `c`, `d`, `e`.
+fn fmt5(template: Str, a: Str, b: Str, c: Str, d: Str, e: Str) -> Str effects {} {
+  fmt5_native(template, a, b, c, d, e)
+}
+
+## Replace each `{}` in `template` with successive elements of `args`.
+## Excess `{}` remain verbatim; extra args beyond placeholders are ignored.
+fn fmt_list(template: Str, args: [Str]) -> Str effects {} {
+  fmt_list_native(template, args)
+}
+
+## Left-pad `s` with `ch` (first character) until the total length is `n`.
+## Returns `s` unchanged when `len(s) >= n`.
+fn pad_left(s: Str, n: Int{x: x >= 0}, ch: Str) -> Str effects {} {
+  pad_left_native(s, n, ch)
+}
+
+## Right-pad `s` with `ch` (first character) until the total length is `n`.
+## Returns `s` unchanged when `len(s) >= n`.
+fn pad_right(s: Str, n: Int{x: x >= 0}, ch: Str) -> Str effects {} {
+  pad_right_native(s, n, ch)
+}

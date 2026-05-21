@@ -1,0 +1,15 @@
+## String interpolation: `"prefix ${expr} middle ${expr2} suffix"`.
+
+fn greet(name: Str, age: Int) -> Str effects {} {
+  "hello ${name}, you are ${str(age)} years old"
+}
+
+test "interpolation" {
+  assert_eq(greet("Mason", 32), "hello Mason, you are 32 years old")
+}
+
+fn main() -> Unit effects {IO} {
+  print(greet("Aether", 1))
+  let n = 7
+  print("the answer is ${str(n * 6)}")
+}

@@ -1,0 +1,174 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Aether",
+  "scopeName": "source.aether",
+  "fileTypes": ["ae", "aev"],
+  "patterns": [
+    { "include": "#doc_comment" },
+    { "include": "#line_comment" },
+    { "include": "#annotation" },
+    { "include": "#string" },
+    { "include": "#number" },
+    { "include": "#boolean" },
+    { "include": "#effects" },
+    { "include": "#builtin_types" },
+    { "include": "#agent_primitives" },
+    { "include": "#keywords" },
+    { "include": "#operator" },
+    { "include": "#punctuation" },
+    { "include": "#identifier" }
+  ],
+  "repository": {
+    "doc_comment": {
+      "name": "comment.line.documentation.aether",
+      "match": "##[^\\n]*"
+    },
+    "line_comment": {
+      "name": "comment.line.number-sign.aether",
+      "match": "#[^\\n]*"
+    },
+    "annotation": {
+      "name": "storage.modifier.aether",
+      "match": "@(?:no_prov|pure|inline)\\b"
+    },
+    "string": {
+      "name": "string.quoted.double.aether",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.aether",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "number": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.aether",
+          "match": "-?[0-9][0-9_]*\\.[0-9][0-9_]*"
+        },
+        {
+          "name": "constant.numeric.integer.aether",
+          "match": "-?[0-9][0-9_]*"
+        }
+      ]
+    },
+    "boolean": {
+      "name": "constant.language.boolean.aether",
+      "match": "\\b(true|false)\\b"
+    },
+    "effects": {
+      "name": "support.type.effect.aether",
+      "match": "\\b(IO|Net|FS|State|Rand|Async|Throw)\\b"
+    },
+    "builtin_types": {
+      "name": "support.type.primitive.aether",
+      "match": "\\b(Int|Float|Bool|Str|Bytes|Unit|ModuleSurface|ProvChain|I|F|B|U)\\b"
+    },
+    "agent_primitives": {
+      "name": "entity.name.function.builtin.aether",
+      "match": "\\b(introspect|summarize|provenance|confident|assume)\\b"
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.declaration.aether",
+          "match": "\\b(fn|let|type|tool|module|import|from|as)\\b"
+        },
+        {
+          "name": "keyword.control.aether",
+          "match": "\\b(if|then|else|match|with|in|do)\\b"
+        },
+        {
+          "name": "keyword.other.aether",
+          "match": "\\b(effects|effect|where|requires|ensures|ensuring|spec|result|confidence)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.aether",
+          "match": "\\b(not|and|or)\\b"
+        }
+      ]
+    },
+    "operator": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arrow.aether",
+          "match": "->|=>|\\|>"
+        },
+        {
+          "name": "keyword.operator.comparison.aether",
+          "match": "==|!=|<=|>=|<|>"
+        },
+        {
+          "name": "keyword.operator.logical.aether",
+          "match": "&&|\\|\\|"
+        },
+        {
+          "name": "keyword.operator.assignment.aether",
+          "match": ":=|="
+        },
+        {
+          "name": "keyword.operator.arithmetic.aether",
+          "match": "\\+\\+|\\+|-|\\*|/|%"
+        },
+        {
+          "name": "keyword.operator.agent.aether",
+          "match": "~|::|\\?"
+        },
+        {
+          "name": "keyword.operator.pipe.aether",
+          "match": "\\|(?!>|\\|)"
+        },
+        {
+          "name": "keyword.operator.null-coalesce.aether",
+          "match": "\\?\\?"
+        },
+        {
+          "name": "keyword.operator.effect.aether",
+          "match": "!"
+        },
+        {
+          "name": "keyword.operator.bitwise.aether",
+          "match": "&(?!&)"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.definition.block.aether",
+          "match": "[{}]"
+        },
+        {
+          "name": "punctuation.definition.group.aether",
+          "match": "[()]"
+        },
+        {
+          "name": "punctuation.definition.array.aether",
+          "match": "[\\[\\]]"
+        },
+        {
+          "name": "punctuation.separator.comma.aether",
+          "match": ","
+        },
+        {
+          "name": "punctuation.separator.semicolon.aether",
+          "match": ";"
+        },
+        {
+          "name": "punctuation.separator.colon.aether",
+          "match": ":"
+        },
+        {
+          "name": "punctuation.accessor.dot.aether",
+          "match": "\\."
+        }
+      ]
+    },
+    "identifier": {
+      "name": "variable.other.aether",
+      "match": "[A-Za-z_][A-Za-z0-9_]*"
+    }
+  }
+}
