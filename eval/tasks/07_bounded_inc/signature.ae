@@ -1,0 +1,7 @@
+## Increment x by 1, with ceiling hi >= x supplied as a precondition.
+## Contract: result >= x AND result <= hi + 1 (proved at compile time).
+fn bounded_inc(x: Int, hi: Int{h: h >= x}) -> Int
+  where result >= x && result <= hi + 1
+  effects {} {
+  0
+}

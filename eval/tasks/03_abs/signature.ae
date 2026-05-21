@@ -1,0 +1,7 @@
+## Return the absolute value of n.
+## Contract: result >= 0 (proved at compile time).
+fn abs(n: Int) -> Int
+  where result >= 0
+  effects {} {
+  0
+}

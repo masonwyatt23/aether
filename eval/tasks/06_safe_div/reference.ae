@@ -1,0 +1,8 @@
+## Divide a non-negative integer by a positive integer.
+## Preconditions: a >= 0 (in a's type), b > 0 (in b's type).
+## Contract: result >= 0 (proved at compile time).
+fn safe_div(a: Int{x: x >= 0}, b: Int{x: x > 0}) -> Int
+  where result >= 0
+  effects {} {
+  a / b
+}

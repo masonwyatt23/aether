@@ -175,3 +175,49 @@ Everything in `playground/` is static HTML + CSS + JS. The wasm bundle in `playg
 | `aether explain examples/04_introspect.ae` | Pretty-print the module surface (same as `introspect("current")`) |
 | `aether watch examples/02_refinement.ae` | Re-check on every save (150 ms debounce) |
 | `aether fmt examples/20_full_showcase.ae` | Auto-format source |
+
+---
+
+## 7. Verification gate
+
+`aether verify` is the strict sibling of `aether check`.  Use it in CI or an AI-agent loop when you need a guarantee — not a best-effort.
+
+| Command | Exits 0 when... |
+|---------|----------------|
+| `aether check` | no type/effect **errors** (warnings — unproven contracts — are tolerated) |
+| `aether verify` | no errors **and** no warnings (every contract must be proved) |
+
+### Passing: all contracts proved
+
+```
+$ aether verify examples/31_verify_gate.ae
+✓ verified — all contracts proved, all effects sound
+```
+
+`31_verify_gate.ae` declares three functions with linear-arithmetic postconditions (`result == n + n`, `result > n`, `result >= a && result >= b`). The built-in solver discharges all of them at compile time.
+
+### Failing: unproven contract
+
+When the linear solver cannot decide a postcondition it emits a `Warning` ("could not verify"). `check` exits 0; `verify` exits 1:
+
+```
+$ aether check   unproven.ae   # warning, but exits 0
+✓ types/effects ok (1 warning(s), refinements partially verified)
+
+$ aether verify  unproven.ae   # same warning, exits 1
+✗ verification failed — 0 error(s), 1 unproven contract(s)
+```
+
+### Machine-readable output for pipelines
+
+```
+$ aether verify --json examples/31_verify_gate.ae
+{
+  "verified": true,
+  "errors": 0,
+  "warnings": 0,
+  "diagnostics": []
+}
+```
+
+A failing run emits `"verified": false` with `warnings > 0` and the full diagnostic list — ready for an agent to parse and act on.

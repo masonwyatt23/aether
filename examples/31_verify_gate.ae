@@ -1,0 +1,32 @@
+## Verification gate demo — `aether verify` passes on this file.
+##
+## Every postcondition below is a linear arithmetic fact that the built-in
+## solver can prove at compile time.  Running `aether verify` exits 0;
+## running `aether check` on the same file also exits 0 (check is a superset).
+##
+## The distinction matters in a CI / AI-agent pipeline:
+##   aether check  — exits 0 on warnings (unproven contracts are tolerated)
+##   aether verify — exits 0 ONLY when every contract is proved
+
+## double(n) == n + n — provable by linear arithmetic.
+fn double(n: Int) -> Int where result == n + n effects {} {
+  n + n
+}
+
+## add_one always returns something strictly greater than the input.
+fn add_one(n: Int) -> Int where result > n effects {} {
+  n + 1
+}
+
+## max returns a value that is at least as large as both inputs.
+fn max_int(a: Int, b: Int) -> Int
+  where result >= a && result >= b
+  effects {} {
+  if a >= b then a else b
+}
+
+fn main() -> Unit effects {IO} {
+  print(str(double(6)))         # 12
+  print(str(add_one(41)))       # 42
+  print(str(max_int(3, 7)))     # 7
+}

@@ -1,0 +1,7 @@
+## Return -1, 0, or 1 depending on the sign of n.
+## Contract: result >= -1 AND result <= 1 (proved at compile time).
+fn sign(n: Int) -> Int
+  where result >= -1 && result <= 1
+  effects {} {
+  0
+}

@@ -1,0 +1,8 @@
+## Increment a counter in [0, 99], proving result in [1, 100].
+## Precondition: c in [0, 99] (encoded in the type of c).
+## Contract: result >= 1 AND result <= 100 (proved at compile time).
+fn counter_tick(c: Int{x: x >= 0 && x <= 99}) -> Int
+  where result >= 1 && result <= 100
+  effects {} {
+  c + 1
+}

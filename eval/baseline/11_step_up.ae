@@ -1,0 +1,8 @@
+## Add a non-negative step to n, guaranteeing result >= n.
+## Precondition: step >= 0 (encoded in the type of step).
+## Contract: result >= n (proved at compile time).
+fn step_up(n: Int, step: Int{x: x >= 0}) -> Int
+  where result >= n
+  effects {} {
+  n + step
+}

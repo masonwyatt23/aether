@@ -8,3 +8,4 @@
 | [`SHOWCASE.md`](SHOWCASE.md) | What makes Aether interesting — ideas with real snippets and real output |
 | [`../DEMO.md`](../DEMO.md) | Step-by-step command walkthrough |
 | [`../ROADMAP.md`](../ROADMAP.md) | Shipped features, planned work, and non-goals |
+| [`INTERNALS.md`](INTERNALS.md) | Annotated walkthrough of the compiler pipeline for contributors |

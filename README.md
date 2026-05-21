@@ -203,6 +203,32 @@ $ aether test examples/09_test_blocks.ae
 
 ---
 
+## Verified-code benchmark
+
+Most AI coding benchmarks score *test-pass rate*. Aether's compiler can do
+something stronger — **prove** a refinement contract for all inputs — so the
+repo ships a benchmark that scores **provable correctness** of generated code.
+
+`eval/` holds 12 tasks, each a function signature with a `where` contract.
+A solution counts only when `aether check` proves the contract (zero errors,
+zero warnings — not "the tests passed").
+
+```bash
+cargo build --release -p aether-cli
+python3 eval/harness/run.py eval/baseline      # reference set → 12/12 verified
+```
+
+Point the harness at a directory of model-generated solutions to score them;
+`eval/harness/generate.py` will produce those solutions via an LLM if
+`ANTHROPIC_API_KEY` is set. See [eval/README.md](eval/README.md) for the
+methodology and its honest limitations.
+
+`aether verify <file>` is the same idea as a one-shot gate: it exits 0 only
+if every contract is proved and every effect is sound — drop it into CI or an
+agent loop when you need a guarantee, not a best-effort check.
+
+---
+
 ## Repository layout
 
 ```

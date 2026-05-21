@@ -1,0 +1,8 @@
+## Return a value in [a, b], given b >= a.
+## Precondition: b >= a (encoded in the type of b).
+## Contract: result >= a AND result <= b (proved at compile time).
+fn lower_mid(a: Int, b: Int{x: x >= a}) -> Int
+  where result >= a && result <= b
+  effects {} {
+  if a >= b then a else if a + 1 <= b then a + 1 else a
+}

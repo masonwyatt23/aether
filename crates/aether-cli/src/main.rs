@@ -22,6 +22,7 @@ mod init;
 mod lint;
 mod modules;
 mod repl;
+mod verify;
 mod watch;
 
 use std::fs;
@@ -214,6 +215,17 @@ enum Cmd {
         #[arg(long)]
         no_imports: bool,
     },
+    /// Strict verification gate: exit 0 only if every contract is proved and
+    /// every effect is sound — for use in CI or an agent loop.
+    Verify {
+        file: PathBuf,
+        /// Skip import resolution (treat the file as self-contained).
+        #[arg(long)]
+        no_imports: bool,
+        /// Emit a machine-readable JSON verdict instead of pretty-printed output.
+        #[arg(long)]
+        json: bool,
+    },
     /// Execute a pre-compiled `.aebc` bytecode file (skips parse/typecheck).
     Exec { file: PathBuf },
 }
@@ -308,6 +320,11 @@ fn main() -> ExitCode {
             output,
             no_imports,
         } => cmd_compile(file, output, no_imports),
+        Cmd::Verify {
+            file,
+            no_imports,
+            json,
+        } => verify::run_verify(file, no_imports, json),
         Cmd::Exec { file } => cmd_exec(file),
     }
 }
@@ -510,7 +527,7 @@ fn read(file: &PathBuf) -> Option<String> {
 /// When `no_imports` is true (or the file contains no `import ` substring) we
 /// skip the loader and fall back to a plain `parse_module` call so the existing
 /// examples that have no imports continue to work exactly as before.
-fn resolve_module(
+pub(crate) fn resolve_module(
     file: &PathBuf,
     no_imports: bool,
     sm: &mut SourceMap,
@@ -898,7 +915,7 @@ fn cmd_exec(file: PathBuf) -> ExitCode {
 
 // --- diagnostics -------------------------------------------------------------
 
-fn print_diagnostic(sm: &SourceMap, d: &Diagnostic) {
+pub(crate) fn print_diagnostic(sm: &SourceMap, d: &Diagnostic) {
     let (kind, color) = match d.severity {
         Severity::Error => (ReportKind::Error, Color::Red),
         Severity::Warning => (ReportKind::Warning, Color::Yellow),

@@ -1,0 +1,7 @@
+## Return the smaller of two integers.
+## Contract: result <= a AND result <= b (proved at compile time).
+fn min(a: Int, b: Int) -> Int
+  where result <= a && result <= b
+  effects {} {
+  0
+}
