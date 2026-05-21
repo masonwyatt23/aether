@@ -158,6 +158,17 @@ like `[x == 5, y == x + 1] ⊢ y == 6` in one pass.
 quantifier over `[lo, hi]` (max 1024 iterations) by conjoining the
 instantiated predicate for each integer in range.
 
+### Optional SMT escalation
+
+When the built-in solver returns `Unknown` — a goal genuinely outside the
+linear fragment, such as `x * y >= 0` — the query is escalated to an
+external SMT solver. If a `z3` binary is on `PATH`, the goal is translated to
+SMT-LIB2 over the integers and `H ∧ ¬G` is checked for satisfiability:
+`unsat` proves the implication, `sat` yields a counterexample. This needs no
+build-time dependency: when `z3` is absent (or `AETHER_DISABLE_SMT` is set)
+the escalation is a no-op and the verdict stays `Unknown`. Escalation only
+ever upgrades an `Unknown`, so it can never turn a sound result unsound.
+
 Path-sensitive reasoning: when checking ensures-clauses, the checker
 case-splits on `if`/`else` and threads `let` bindings into the assumed
 context.

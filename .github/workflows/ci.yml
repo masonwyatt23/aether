@@ -108,3 +108,20 @@ jobs:
       - name: TypeScript check
         working-directory: vscode-aether
         run: npx tsc --noEmit
+
+  smt:
+    name: SMT backend (z3)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install z3
+        run: sudo apt-get update && sudo apt-get install -y z3
+
+      - name: Exercise the SMT escalation path
+        # With z3 on PATH the z3-gated tests in the smt module run for real,
+        # verifying the SMT-LIB2 translation and verdict parsing.
+        run: "cargo test -p aether-types smt::tests"

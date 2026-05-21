@@ -16,6 +16,7 @@ pub mod builtins;
 pub mod check;
 pub mod ctx;
 pub mod refine;
+pub mod smt;
 pub mod suggest;
 
 pub use check::{check_module, Diagnostic, Severity};

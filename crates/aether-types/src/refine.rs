@@ -545,7 +545,25 @@ fn verify_witness(witness: &BTreeMap<String, i64>, hyp_forms: &[Form], goal: &Fo
 // ─── top-level prover ────────────────────────────────────────────────────────
 
 /// Top-level entry: prove `hypothesis ⊢ goal`.
+/// Prove that `hypotheses ⊢ goal`.
+///
+/// First runs the built-in linear-arithmetic solver (`prove_linear`). If that
+/// returns `Unknown` — the goal is outside the linear fragment, e.g. it
+/// involves `x * y` — the query is escalated to an external SMT solver via
+/// [`crate::smt`]. When no SMT solver is installed the escalation is a no-op
+/// and the verdict stays `Unknown`, so behavior is unchanged on systems
+/// without one.
 pub fn prove(hypotheses: &[Expr], goal: &Expr) -> Verdict {
+    match prove_linear(hypotheses, goal) {
+        Verdict::Unknown => crate::smt::prove_smt(hypotheses, goal),
+        decided => decided,
+    }
+}
+
+/// The built-in linear-arithmetic decision procedure (Fourier–Motzkin over the
+/// rationals, with equality propagation and bounded quantifier unrolling).
+/// Sound and incomplete: anything outside the linear fragment is `Unknown`.
+pub fn prove_linear(hypotheses: &[Expr], goal: &Expr) -> Verdict {
     let mut hs = Vec::new();
     for h in hypotheses {
         match expr_to_form(h) {
@@ -894,9 +912,12 @@ mod tests {
         parse_expr(FileId(0), s).unwrap()
     }
 
+    // FM-only verdict — these tests pin the built-in solver's behavior, so
+    // they call `prove_linear` directly (no SMT escalation), staying
+    // deterministic whether or not an SMT solver is installed.
     fn p(hs: &[&str], g: &str) -> Verdict {
         let h: Vec<Expr> = hs.iter().map(|s| e(s)).collect();
-        prove(&h, &e(g))
+        prove_linear(&h, &e(g))
     }
 
     fn assert_proved(v: &Verdict) {

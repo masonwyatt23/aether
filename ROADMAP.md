@@ -11,6 +11,10 @@ programs, or the design notes in `spec/RATIONALE.md`.
 - Refinement types with a hand-rolled Fourier–Motzkin solver over linear
   rational arithmetic; proptest-validated soundness; `forall_in` bounded
   quantifier; integer witnesses on refutation.
+- Optional SMT escalation: goals outside the linear fragment (`x * y`, …)
+  are handed to a `z3` binary when one is on `PATH` — no build dependency,
+  no-op when absent.
+- First-class parametric generics — `fn id<A>(x: A) -> A`, inferred per call.
 - Algebraic data types, constructor patterns, exhaustiveness warnings.
 - First-class closures, `match` with guards, string interpolation.
 - Tree-walking interpreter with automatic provenance + tail-call optimization
@@ -28,19 +32,19 @@ programs, or the design notes in `spec/RATIONALE.md`.
 
 ## v0.4 — ergonomics & correctness
 
-- First-class parametric generics: `fn map<A, B>(xs: [A], f: (A) -> B) -> [B]`.
-  Today `std::list` is `[Int]`-only and `std::strlist` is `[Str]`-only.
 - Richer pattern-match exhaustiveness (nested constructors, literal ranges).
 - Bytecode VM coverage for eval-only values (`ProvChain`, `ModuleSurface`)
   so `provenance`/`introspect` programs run on the BC path instead of
   being classified `BcSkipped`.
 - `regex` multiline/global polish surfaced by the real-world examples.
 - More `fmt` ergonomics beyond `fmt5` / `fmt_list`.
+- Generic stdlib: rebuild `std::list` / `std::strlist` on the new parametric
+  generics so collection helpers work for any element type.
 
 ## v0.5 — verification depth
 
-- Pluggable SMT backend (Z3 / CVC5) for refinements outside the linear
-  fragment — non-linear arithmetic, `mod`, quantifier alternation.
+- Bundle a real SMT solver (statically linked, or a CVC5 option) so the
+  escalation path works without a separately-installed `z3` binary.
 - Refinement quantifiers beyond `forall_in` (unbounded `forall` / `exists`
   with solver support).
 - Effect handlers — first-class `handle`/`resume`.
