@@ -156,13 +156,13 @@ Aether ships two execution engines:
 - **Tree-walking interpreter** (`aether-eval`) — simple, correct by
   construction, used as the reference.
 - **Bytecode VM** (`aether-bc`) — compiles to a compact instruction set;
-  18× faster than the tree-walker on compute-heavy workloads.
+  ~23× faster than the tree-walker on compute-heavy workloads (up to 47×; see docs/PERFORMANCE.md).
 
 The two runtimes are tested for agreement on every example in `examples/`.
 The harness (`aether-difftest`) runs each program on both engines and fails
 if their observable outputs differ.
 
-Current state: **30 examples run, 0 divergences.**
+Current state: **31 examples run, 0 divergences.**
 
 ```
 --- diff summary ---

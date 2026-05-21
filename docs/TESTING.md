@@ -10,7 +10,7 @@ lays out a proportionate, prioritised plan for closing them.
 
 ### Test count and surface area
 
-As of the current `main` branch, `cargo test --workspace` runs **417 tests** across
+As of the current `main` branch, `cargo test --workspace` runs **454 tests** across
 nine crates.  The breakdown by kind:
 
 | Kind | Location | What it covers |

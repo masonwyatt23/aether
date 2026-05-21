@@ -1,6 +1,6 @@
 # Aether Examples
 
-30 programs that cover every major language feature, from "Hello, World" to real-world agent pipelines. Run any example with:
+31 programs that cover every major language feature, from "Hello, World" to real-world agent pipelines. Run any example with:
 
 ```bash
 aether run  examples/<file>.ae    # execute main
@@ -27,6 +27,7 @@ aether check examples/<file>.ae   # type + effect + refinement check only
 | `28_branch_lets.ae` | Implicit-block `let` bindings inside `if`/`else` arms and `match` arms |
 | `29_effectful_tests.ae` | `test` blocks performing real effects — `IO` (`print`), `Rand` (`random_int`), `Throw` |
 | `30_generics.ae` | Parametric generics — `fn id<A>(x: A) -> A`; type parameters inferred per call site |
+| `31_verify_gate.ae` | A file that passes `aether verify` — every refinement contract proved, every effect sound |
 
 ---
 

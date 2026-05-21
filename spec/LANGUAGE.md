@@ -208,7 +208,7 @@ See [grammar.ebnf](grammar.ebnf) for the formal EBNF.
 
 - ✅ **LSP server** (`aether-lsp`) — diagnostics, hover, goto-def, completion.
 - ✅ **WASM codegen** — `aether-wasm` + browser playground.
-- ✅ **Bytecode VM** (`aether-bc`) — 18× faster; AOT `.aebc` artifacts.
+- ✅ **Bytecode VM** (`aether-bc`) — ~23× faster on `fib(20)`; AOT `.aebc` artifacts.
 - ✅ **Pattern matching** with constructor patterns + exhaustiveness warnings.
 - ✅ **First-class closures** captured by value.
 - ✅ **Algebraic data types** (`type T = A(..) | B(..)`).

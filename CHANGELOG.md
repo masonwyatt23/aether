@@ -31,10 +31,28 @@ Dates are calendar dates in UTC.
 
 ### Added — Tooling & infrastructure
 - `aether build` (manifest-driven) and `aether docgen` (static HTML docs).
+- `aether verify` — a strict verification gate: exits 0 only if every
+  refinement contract is proved and every effect sound (`--json` for
+  pipelines). Stricter than `aether check`, which warns rather than fails.
 - "did you mean" identifier suggestions in type-checker diagnostics.
 - Differential-test harness (`aether-difftest`) locking the two runtimes.
 - GitHub Pages deploy of the browser playground; release workflow for
   tagged binaries.
+
+### Added — Evaluation & testing
+- **Verified-code benchmark** (`eval/`): 12 tasks, each a function with a
+  `where` contract; a solution scores only when the compiler *proves* the
+  contract. Multi-provider generator (OpenAI / xAI / Anthropic). First run:
+  `gpt-5.2`, `grok-4.3`, `claude-opus-4-7` each 12/12 (see `eval/RESULTS.md`).
+- Fuzz / robustness tests (proptest never-panic + parser round-trip),
+  `insta` diagnostic snapshot tests, `criterion` performance benchmarks,
+  and a `coverage` CI job (`cargo-llvm-cov`).
+
+### Added — Documentation
+- `docs/INTERNALS.md` (compiler walkthrough), `docs/TESTING.md` (testing
+  strategy), `docs/PERFORMANCE.md` (measured benchmarks), `docs/SHOWCASE.md`.
+- `experiments/py-refinements/` — a proof-of-concept porting refinement
+  contracts to Python.
 
 ## 0.3.0 — production-track MVP (2026-05-20)
 
@@ -48,7 +66,8 @@ Dates are calendar dates in UTC.
 `std::{plan, iter, mem, proof, json, list, string, map, path, time, env, fmt, result, regex, sys, math, base64, hash, uuid, random, date}`.
 
 ### Added — Runtimes
-- **Bytecode VM** (`aether-bc`) with 18× speedup over the tree-walker on `fib(20)`.
+- **Bytecode VM** (`aether-bc`) — substantially faster than the tree-walker
+  (later measured at ~23× on `fib(20)`; see `docs/PERFORMANCE.md`).
 - **AOT compile**: `aether compile <file> -o out.aebc` (magic `AEBC\0\0\0\x01`). `aether exec` runs precompiled.
 - **`aether run --bc`** with silent tree-walker fallback on unsupported features.
 
