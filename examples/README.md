@@ -1,6 +1,6 @@
 # Aether Examples
 
-28 programs that cover every major language feature, from "Hello, World" to real-world agent pipelines. Run any example with:
+30 programs that cover every major language feature, from "Hello, World" to real-world agent pipelines. Run any example with:
 
 ```bash
 aether run  examples/<file>.ae    # execute main
@@ -25,6 +25,8 @@ aether check examples/<file>.ae   # type + effect + refinement check only
 | `10_adts.ae` | Algebraic data types (`type Shape = Circle(Float) \| Square(Float) \| ...`); pattern matching |
 | `19_interpolation.ae` | String interpolation (`"hello ${name}, age ${str(age)}"`) |
 | `28_branch_lets.ae` | Implicit-block `let` bindings inside `if`/`else` arms and `match` arms |
+| `29_effectful_tests.ae` | `test` blocks performing real effects — `IO` (`print`), `Rand` (`random_int`), `Throw` |
+| `30_generics.ae` | Parametric generics — `fn id<A>(x: A) -> A`; type parameters inferred per call site |
 
 ---
 

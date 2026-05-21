@@ -194,7 +194,7 @@ Core built-ins live in `aether-eval::builtins` (`print`, `str`, `int`, `len`,
 `abs`, `max`, `min`, `iter_refine`, plus every `*_native` helper). Everything
 else is written in Aether itself.
 
-The standard library spans **28 modules** hosted as `.ae` source files
+The standard library spans **29 modules** hosted as `.ae` source files
 under `crates/aether-stdlib/aether/std/`:
 `plan, iter, mem, proof, json, list, strlist, string, map, path, time, env,
 fmt, result, regex, sys, math, base64, hash, uuid, random, date, log, term,

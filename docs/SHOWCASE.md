@@ -162,7 +162,7 @@ The two runtimes are tested for agreement on every example in `examples/`.
 The harness (`aether-difftest`) runs each program on both engines and fails
 if their observable outputs differ.
 
-Current state: **28 examples run, 0 divergences.**
+Current state: **30 examples run, 0 divergences.**
 
 ```
 --- diff summary ---

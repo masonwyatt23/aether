@@ -3,6 +3,39 @@
 All notable changes since the language was bootstrapped in this repo.
 Dates are calendar dates in UTC.
 
+## Unreleased
+
+### Added — Language
+- **Parametric generics**: `fn id<A>(x: A) -> A` — type parameters declared
+  with `<...>` and inferred at each call site (substitution + consistency
+  checking). A single-letter type parameter shadows builtin abbreviations,
+  so `<B>` is a generic, not `Bool`.
+- **Tail-call optimization** in the tree-walker — self/mutual tail recursion
+  runs in constant stack (200k-deep loops no longer overflow).
+- **`let` bindings in `if`/`else`/`match` arms** without explicit braces or
+  `in`.
+- **`test`/`bench`/`snap` blocks** may now perform any effect (previously
+  limited to `Throw`), so tests can call `print`, `random_int`, `fs_*`, etc.
+
+### Added — Verification
+- **Optional SMT escalation**: refinement goals outside the linear fragment
+  (e.g. `x * y >= 0`) are translated to SMT-LIB2 and discharged by a `z3`
+  binary when one is on `PATH`. No build dependency; a no-op when absent.
+- Refinement solver: equality-propagation pre-pass, ground witness
+  verification, `mod`/`div`-by-literal and constant-folding fragments.
+
+### Added — Stdlib
+- 8 new modules: `strlist`, `log`, `term`, `yaml`, `fs`, `cache`, `retry`,
+  `http_server` (29 modules total). Real JSON parsing in `std::json`;
+  `regex_replace_all`; `fmt4`/`fmt5`/`fmt_list`.
+
+### Added — Tooling & infrastructure
+- `aether build` (manifest-driven) and `aether docgen` (static HTML docs).
+- "did you mean" identifier suggestions in type-checker diagnostics.
+- Differential-test harness (`aether-difftest`) locking the two runtimes.
+- GitHub Pages deploy of the browser playground; release workflow for
+  tagged binaries.
+
 ## 0.3.0 — production-track MVP (2026-05-20)
 
 ### Added — Language

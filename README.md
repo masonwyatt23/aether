@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/masonwyatt23/aether/actions/workflows/ci.yml/badge.svg)](https://github.com/masonwyatt23/aether/actions/workflows/ci.yml)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
-[![386 tests](https://img.shields.io/badge/tests-386%20passing-brightgreen.svg)](#)
+[![414 tests](https://img.shields.io/badge/tests-414%20passing-brightgreen.svg)](#)
 [![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](#install)
 [![Try in browser](https://img.shields.io/badge/playground-live-blueviolet.svg)](https://masonwyatt23.github.io/aether/)
 
@@ -46,14 +46,15 @@ The `where` clause is a postcondition. The compiler case-splits on the `if` and 
 
 | Feature | Detail |
 |---|---|
-| Refinement types | Hand-rolled FM/LIA solver; path-sensitive; `forall_in`, `mod`/`div` by constant |
+| Refinement types | Hand-rolled FM/LIA solver; path-sensitive; `forall_in`, `mod`/`div` by constant; optional `z3` escalation for non-linear goals |
 | Effect tracking | Row-polymorphic unordered effect sets on every signature; transitive checking |
+| Parametric generics | `fn id<A>(x: A) -> A` — type parameters inferred at each call site |
 | Algebraic data types | `type Shape = Circle(Float) | Square(Float)` + constructor patterns + exhaustiveness |
 | Closures | First-class, captured by value |
 | Dual syntax | Compact (agent-emitted) + verbose (human-readable); `aether fmt` projects either way |
-| Two runtimes | Tree-walker (full features) + bytecode VM (**18x speedup** on `fib(20)`) with differential testing |
+| Two runtimes | Tree-walker (full features, tail-call optimized) + bytecode VM (**18x speedup** on `fib(20)`); locked together by differential testing |
 | LSP + editor | LSP server, VS Code extension (syntax, snippets, diagnostics, hover, goto-def), browser playground |
-| Stdlib | 21 modules shipped as `.ae` source: `iter`, `list`, `map`, `string`, `json`, `result`, `math`, `regex`, `mem`, `plan`, `proof`, `fmt`, `path`, `time`, `env`, `sys`, `base64`, `hash`, `uuid`, `random`, `date` |
+| Stdlib | 29 modules shipped as `.ae` source: `iter`, `list`, `strlist`, `map`, `string`, `json`, `yaml`, `result`, `math`, `regex`, `mem`, `plan`, `proof`, `fmt`, `path`, `time`, `date`, `env`, `sys`, `fs`, `base64`, `hash`, `uuid`, `random`, `log`, `term`, `cache`, `retry`, `http_server` |
 | In-language testing | `test "..." { ... }`, `bench "..." { ... }`, `snap "..." { ... }` blocks; `aether test/bench/snap` |
 | Agent primitives | `introspect`, `summarize`, `provenance`, `confident`, `assume`, `spec` as language keywords |
 | Network | `--network` flag enables real `http_get` + `llm_complete` via `ANTHROPIC_API_KEY` |
@@ -212,7 +213,8 @@ crates/
   aether-types/        # HM inference + effects + LIA refinement solver (proptest)
   aether-eval/         # tree-walker: closures, ADTs, match, provenance, tool registry
   aether-bc/           # bytecode VM (18x speedup over tree-walker on fib(20))
-  aether-stdlib/       # 21 stdlib modules shipped as .ae sources
+  aether-stdlib/       # 29 stdlib modules shipped as .ae sources
+  aether-difftest/     # differential harness: tree-walker vs bytecode VM
   aether-tools-net/    # real HTTP + Anthropic LLM via reqwest, behind --network flag
   aether-lsp/          # LSP server: diagnostics, hover, goto-def, completion
   aether-wasm/         # browser playground (wasm-pack)
@@ -226,7 +228,7 @@ spec/
   AST_JSON_SCHEMA.md   # serialized AST schema for tooling
 vscode-aether/         # VS Code extension: syntax + snippets + LSP client
 playground/            # browser REPL
-examples/              # 28 runnable programs covering every feature
+examples/              # 30 runnable programs covering every feature
 CHANGELOG.md           # release notes per version
 ROADMAP.md             # planned work
 CONTRIBUTING.md        # contribution guide
@@ -239,9 +241,9 @@ SECURITY.md            # security policy
 
 **v0.3 — a complete, well-tested language implementation and research artifact.**
 
-Aether implements a full language pipeline: lexer → parser → type checker (HM + effects + refinements) → two runtimes (tree-walker + bytecode VM) → LSP → 21 stdlib modules → browser playground. 386 tests pass across 13 crates; differential testing between the runtimes is active.
+Aether implements a full language pipeline: lexer → parser → type checker (HM + effects + refinements + generics) → two runtimes (tree-walker + bytecode VM) → LSP → 29 stdlib modules → browser playground. 414 tests pass across 12 crates; differential testing locks the two runtimes to identical behavior.
 
-**Not production-hardened.** Error messages are functional but terse. The bytecode VM does not yet support closures (the tree-walker fallback is automatic). The refinement solver covers linear arithmetic; nonlinear constraints yield a warning, not an error. This is a research artifact and exploration vehicle, not a production runtime.
+**Not production-hardened.** Error messages are functional but terse. The refinement solver decides linear arithmetic in-process; non-linear goals are escalated to `z3` when it is installed, and otherwise yield a warning rather than an error. The bytecode VM still routes `provenance`/`introspect` (eval-only values) through the tree-walker. This is a research artifact and exploration vehicle, not a production runtime.
 
 See [ROADMAP.md](ROADMAP.md) for planned work. See [spec/RATIONALE.md](spec/RATIONALE.md) for what was built and why.
 
