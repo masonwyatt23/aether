@@ -1056,8 +1056,8 @@ mod proptest_soundness {
 
     // ── soundness property ────────────────────────────────────────────────────
 
-    /// **Soundness**: if our solver says `Proved`, there must be no counterexample
-    /// in the brute-force grid `[-10, 10]^4`.
+    // Soundness: if our solver says `Proved`, there must be no counterexample
+    // in the brute-force grid `[-10, 10]^4`.
     proptest! {
         #![proptest_config(ProptestConfig {
             cases: 256,
