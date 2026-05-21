@@ -1,0 +1,6 @@
+---
+source: crates/aether-types/tests/diagnostics_snapshots.rs
+assertion_line: 105
+expression: diagnostics(src)
+---
+Error @ 30..34: no function named `prnt`. did you mean `print`?

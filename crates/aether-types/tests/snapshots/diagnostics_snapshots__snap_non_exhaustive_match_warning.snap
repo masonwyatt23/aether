@@ -1,0 +1,6 @@
+---
+source: crates/aether-types/tests/diagnostics_snapshots.rs
+assertion_line: 169
+expression: diagnostics(src)
+---
+Warning @ 115..189: non-exhaustive match on `Shape`: missing constructor(s) Triangle

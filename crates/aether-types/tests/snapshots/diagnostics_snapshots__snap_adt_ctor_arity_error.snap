@@ -1,0 +1,6 @@
+---
+source: crates/aether-types/tests/diagnostics_snapshots.rs
+assertion_line: 154
+expression: diagnostics(src)
+---
+Error @ 74..90: too many arguments to `Circle`: expected 1 got 2

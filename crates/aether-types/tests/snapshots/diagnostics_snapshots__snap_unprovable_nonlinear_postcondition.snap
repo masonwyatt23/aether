@@ -1,0 +1,6 @@
+---
+source: crates/aether-types/tests/diagnostics_snapshots.rs
+assertion_line: 191
+expression: diagnostics(src)
+---
+Warning @ 56..61: postcondition `x * x >= 0` could not be verified (outside linear-arithmetic fragment or beyond solver budget)

@@ -1,0 +1,6 @@
+## Solution by Claude (Opus 4.7) — written from prompt + signature.
+fn lower_mid(a: Int, b: Int{x: x >= a}) -> Int
+  where result >= a && result <= b
+  effects {} {
+  a
+}

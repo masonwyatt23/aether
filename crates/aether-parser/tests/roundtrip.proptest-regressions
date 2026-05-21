@@ -1,0 +1,11 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 4b5d978173f384456ac83d39c89aa1eed75b6adc6fe0b384dbc0c8e4efeee071 # shrinks to src = "fn a(x: Int, y: Int) -> Int effects {} { a }"
+cc ea6b8c4e9cebf7784c33e6de43a7b9fa38aaf32e5f64cec3905d1dacdacab5e6 # shrinks to src = "a(x:I,y:I):I!{} = a"
+cc 1ba2a433ac6584ea865bf1d57f2e572455f36ad96fa0ed0c2c2fd99c575eb99a # shrinks to src = "a(x:I,y:I):I!{} = x - 1"
+cc aa6d8ad5b71cb3f93b94d802c70e37ad82448fdb5e7cef9e5e725c2f7e58a272 # shrinks to src = "fn a(x: Int, y: Int) -> Int effects {} { x - 1 }"
+cc 28a2ad14db96c71e7b826c1fe690e3d14549a7242ec13d78c449fee7373def27 # shrinks to src = "if(x:I,y:I):I!{} = x"

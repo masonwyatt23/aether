@@ -1,0 +1,6 @@
+## Solution by Claude (Opus 4.7) — written from prompt + signature.
+fn min(a: Int, b: Int) -> Int
+  where result <= a && result <= b
+  effects {} {
+  if a <= b then a else b
+}

@@ -1,0 +1,5 @@
+fn max(a: Int, b: Int) -> Int
+  where result >= a && result >= b
+  effects {} {
+  if a >= b { a } else { b }
+}

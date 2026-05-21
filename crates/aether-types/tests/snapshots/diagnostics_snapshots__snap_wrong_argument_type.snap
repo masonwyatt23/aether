@@ -1,0 +1,6 @@
+---
+source: crates/aether-types/tests/diagnostics_snapshots.rs
+assertion_line: 144
+expression: diagnostics(src)
+---
+Error @ 83..89: argument 1: expected Int, got Str

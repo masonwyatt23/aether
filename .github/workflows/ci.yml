@@ -125,3 +125,41 @@ jobs:
         # With z3 on PATH the z3-gated tests in the smt module run for real,
         # verifying the SMT-LIB2 translation and verdict parsing.
         run: "cargo test -p aether-types smt::tests"
+
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Install z3
+        # The SMT-escalation tests need z3; without it they self-skip and
+        # that code path shows as uncovered.
+        run: sudo apt-get update && sudo apt-get install -y z3
+
+      # Measurement only — there is intentionally no coverage threshold gate.
+      # A maintainer can add one later with `--fail-under-lines <N>`.
+      - name: Measure coverage
+        run: cargo llvm-cov --workspace --exclude aether-wasm --lcov --output-path lcov.info
+
+      - name: Coverage summary
+        run: |
+          echo '### Coverage' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cargo llvm-cov report --summary-only >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload lcov artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: lcov.info
+          retention-days: 14

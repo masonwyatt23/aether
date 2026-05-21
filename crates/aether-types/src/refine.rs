@@ -244,7 +244,7 @@ fn expr_to_form_forall_in(args: &[Arg]) -> Option<Form> {
 ///
 /// - `x % k` where `k` is a positive integer constant: introduces a fresh
 ///   variable `_mod_<k>_<base>` bounded `[0, k)`.  The bound constraints are
-///   emitted automatically by [`clause_mod_div_bounds`] during the SAT call.
+///   emitted automatically by `clause_mod_div_bounds` during the SAT call.
 /// - `x / k` where `k` is a positive integer constant: introduces a fresh
 ///   variable `_div_<k>_<base>`.  No bounds are added in the MVP — this is
 ///   conservative (sound but incomplete).

@@ -1,0 +1,6 @@
+---
+source: crates/aether-types/tests/diagnostics_snapshots.rs
+assertion_line: 179
+expression: diagnostics(src)
+---
+Error @ 58..60: postcondition refuted: a counterexample exists for `-1 > 0`

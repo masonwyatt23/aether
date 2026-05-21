@@ -1,0 +1,6 @@
+## Solution by Claude (Opus 4.7) — written from prompt + signature.
+fn abs(n: Int) -> Int
+  where result >= 0
+  effects {} {
+  if n >= 0 then n else -n
+}

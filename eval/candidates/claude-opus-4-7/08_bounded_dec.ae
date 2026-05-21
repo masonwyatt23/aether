@@ -1,0 +1,6 @@
+## Solution by Claude (Opus 4.7) — written from prompt + signature.
+fn bounded_dec(x: Int, lo: Int{l: l <= x}) -> Int
+  where result <= x && result >= lo - 1
+  effects {} {
+  x - 1
+}

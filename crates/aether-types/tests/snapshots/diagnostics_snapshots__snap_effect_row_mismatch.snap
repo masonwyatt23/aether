@@ -1,0 +1,7 @@
+---
+source: crates/aether-types/tests/diagnostics_snapshots.rs
+assertion_line: 86
+expression: diagnostics(src)
+---
+Error @ 41..53: function `combined` returns Str but body has type Unit
+Error @ 41..53: function `combined` uses effect `IO` but declares effects {Net}

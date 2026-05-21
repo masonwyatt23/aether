@@ -112,7 +112,7 @@ pub enum Op {
     /// Build a `Value::Ctor { name, args }` from the top `argc` stack values.
     ///
     /// `name_idx` indexes `Program::constants` (a `Constant::Str`).
-    /// Args are popped left-to-right (first pushed = args[0]).
+    /// Args are popped left-to-right (first pushed is `args[0]`).
     Ctor {
         name_idx: u32,
         argc: u8,

@@ -9,3 +9,5 @@
 | [`../DEMO.md`](../DEMO.md) | Step-by-step command walkthrough |
 | [`../ROADMAP.md`](../ROADMAP.md) | Shipped features, planned work, and non-goals |
 | [`INTERNALS.md`](INTERNALS.md) | Annotated walkthrough of the compiler pipeline for contributors |
+| [`TESTING.md`](TESTING.md) | Testing strategy: current inventory, gap analysis, and prioritised plan |
+| [`PERFORMANCE.md`](PERFORMANCE.md) | Measured tree-walker vs bytecode-VM benchmarks |

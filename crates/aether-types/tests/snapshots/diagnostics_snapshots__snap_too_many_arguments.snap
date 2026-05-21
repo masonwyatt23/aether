@@ -1,0 +1,6 @@
+---
+source: crates/aether-types/tests/diagnostics_snapshots.rs
+assertion_line: 134
+expression: diagnostics(src)
+---
+Error @ 81..93: too many arguments to `add`: expected 2 got 3

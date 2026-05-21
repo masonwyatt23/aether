@@ -18,6 +18,7 @@ thiserror.workspace = true
 
 [dev-dependencies]
 proptest = "1"
+insta = "1"
 
 [lints]
 workspace = true

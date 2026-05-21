@@ -1,0 +1,6 @@
+---
+source: crates/aether-types/tests/diagnostics_snapshots.rs
+assertion_line: 212
+expression: diagnostics(src)
+---
+Error @ 42..72: branches of `if` have incompatible types: Int vs Str

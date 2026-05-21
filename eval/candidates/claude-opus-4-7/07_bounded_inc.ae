@@ -1,0 +1,6 @@
+## Solution by Claude (Opus 4.7) — written from prompt + signature.
+fn bounded_inc(x: Int, hi: Int{h: h >= x}) -> Int
+  where result >= x && result <= hi + 1
+  effects {} {
+  x + 1
+}

@@ -16,5 +16,9 @@ aether-ast.workspace = true
 aether-lexer.workspace = true
 thiserror.workspace = true
 
+[dev-dependencies]
+aether-types = { path = "../aether-types" }
+proptest = "1"
+
 [lints]
 workspace = true

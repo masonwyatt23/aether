@@ -1,0 +1,6 @@
+---
+source: crates/aether-types/tests/diagnostics_snapshots.rs
+assertion_line: 201
+expression: diagnostics(src)
+---
+Error @ 65..75: function `main` returns Str but body has type Int

@@ -1,0 +1,6 @@
+---
+source: crates/aether-types/tests/diagnostics_snapshots.rs
+assertion_line: 95
+expression: diagnostics(src)
+---
+Error @ 33..48: function `get_count` returns Int but body has type Str

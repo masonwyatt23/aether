@@ -1,0 +1,6 @@
+---
+source: crates/aether-types/tests/diagnostics_snapshots.rs
+assertion_line: 114
+expression: diagnostics(src)
+---
+Error @ 28..40: unbound identifier `xyzqwerty123`
