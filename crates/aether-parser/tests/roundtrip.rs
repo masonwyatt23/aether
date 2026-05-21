@@ -166,27 +166,33 @@ fn golden_multi_decl_compact() {
 
 // ── documented finding: Bug 1 — subtraction ambiguity ────────────────────────
 //
-// Compact printer emits `x-1` without spaces. The lexer tokenises `-1` as
-// Tok::Int(-1), so re-parsing treats `x-1` as `x; -1` (two stmts in a block).
-// Fix: emit spaces around `-` in the compact printer, or make the lexer
-// context-sensitive (not recognise negative literals after a value token).
+// FIXED (printer): the compact printer used to emit `x-1` without spaces, and
+// the lexer tokenises `-1` as `Tok::Int(-1)`, so printed `x-1` re-parsed as
+// `x; -1`. The compact printer now spaces subtraction, so any AST containing
+// subtraction round-trips. (Hand-written `x-1` *source* still mis-lexes —
+// that is a separate lexer-greediness issue, tracked below.)
 
 #[test]
-#[ignore = "known printer bug: compact `x-1` re-parses as `x; -1` (subtraction ambiguity with negative literals)"]
-fn bug1_subtraction_ambiguity_compact() {
+fn bug1_subtraction_roundtrips_compact() {
+    // A subtraction AST prints and re-parses to itself.
+    assert_roundtrip("f(x:I):I!{} = x - 1", Form::Compact);
+}
+
+#[test]
+#[ignore = "lexer greedily lexes `-1` as a negative literal, so hand-written \
+            `x-1` (no spaces) mis-tokenises as `x` then `-1` — separate from \
+            the (fixed) printer bug; needs a context-sensitive lexer/parser"]
+fn lexer_subtraction_no_spaces() {
     assert_roundtrip("f(x:I):I!{} = x-1", Form::Compact);
 }
 
-// ── documented finding: Bug 2 — verbose body double-wrapping ─────────────────
+// ── FIXED: Bug 2 — verbose body double-wrapping ──────────────────────────────
 //
-// `fn f() -> Int effects {} { x + y }` first-prints as
-// `fn f() -> Int effects {} { x + y }`, which second-prints as
-// `fn f() -> Int effects {} { { x + y } }` — extra block wrapper.
-// Fix: verbose fn-body printer should not add `{ }` when the body is already
-// a block expression, or the parser should unwrap a single-expression block.
+// The verbose fn-body printer used to add `{ }` around a body that is already
+// a `Block`, so re-printing produced `{ { x + y } }`. It now emits a `Block`
+// body directly (the Block prints its own braces), so it round-trips.
 
 #[test]
-#[ignore = "known printer bug: verbose fn body gets double-wrapped in braces on re-parse"]
 fn bug2_verbose_body_double_wrap() {
     assert_roundtrip(
         "fn add(x: Int, y: Int) -> Int effects {} { x + y }",

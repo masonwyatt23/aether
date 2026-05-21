@@ -122,9 +122,18 @@ fn fn_decl(f: &FnDecl, form: Form, out: &mut String) {
             }
             out.push_str(" effects ");
             out.push_str(&effects(&f.effects));
-            out.push_str(" { ");
-            out.push_str(&expr_body(&f.body, form));
-            out.push_str(" }");
+            out.push(' ');
+            // A function body parses as a `Block`, which prints its own
+            // braces — emit it directly so the output is not double-wrapped
+            // (`{ { ... } }`). A non-block body gets a brace pair.
+            match &f.body {
+                Expr::Block { .. } => out.push_str(&expr_body(&f.body, form)),
+                other => {
+                    out.push_str("{ ");
+                    out.push_str(&expr(other, form));
+                    out.push_str(" }");
+                }
+            }
         }
         Form::Compact => {
             out.push_str(&f.name);
@@ -339,6 +348,11 @@ fn expr_prec(e: &Expr, form: Form, parent_bp: u8) -> String {
                 expr_prec(l, form, lbp),
                 if form == Form::Verbose {
                     format!(" {} ", op.as_str())
+                } else if *op == BinOp::Sub {
+                    // Compact form omits operator spaces for density, but
+                    // `x-1` would re-lex as `x` then the negative literal
+                    // `-1`. Space subtraction so it round-trips.
+                    " - ".to_string()
                 } else {
                     op.as_str().to_string()
                 },

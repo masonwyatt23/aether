@@ -56,7 +56,16 @@ struct Parser<'a> {
     /// signature. A name listed here is a generic parameter and shadows any
     /// builtin type abbreviation (e.g. `B` is the generic, not `Bool`).
     active_generics: Vec<String>,
+    /// Current expression-nesting depth. Guards against unbounded recursive
+    /// descent on pathological input (e.g. thousands of nested parens) — a
+    /// compiler must reject such input, not overflow the stack.
+    depth: usize,
 }
+
+/// Maximum expression-nesting depth before the parser bails with an error.
+/// Far deeper than any real program; well below the recursion that would
+/// exhaust the native stack.
+const MAX_EXPR_DEPTH: usize = 64;
 
 impl<'a> Parser<'a> {
     fn new(file: FileId, source: &'a str, toks: Vec<Token>) -> Self {
@@ -67,6 +76,7 @@ impl<'a> Parser<'a> {
             pos: 0,
             doc_buf: Vec::new(),
             active_generics: Vec::new(),
+            depth: 0,
         }
     }
 
@@ -777,7 +787,25 @@ impl<'a> Parser<'a> {
         self.parse_expr_bp(0)
     }
 
+    /// Depth-guarded entry to `parse_expr_bp`. Increments the nesting counter,
+    /// rejects pathologically deep input before it can exhaust the stack, and
+    /// always decrements on the way out (so sequential — non-nested —
+    /// expressions don't accumulate depth).
     fn parse_expr_bp(&mut self, min_bp: u8) -> PResult<Expr> {
+        self.depth += 1;
+        if self.depth > MAX_EXPR_DEPTH {
+            self.depth -= 1;
+            return Err(ParseError::at(
+                self.peek_span(),
+                "expression nesting too deep",
+            ));
+        }
+        let result = self.parse_expr_bp_inner(min_bp);
+        self.depth -= 1;
+        result
+    }
+
+    fn parse_expr_bp_inner(&mut self, min_bp: u8) -> PResult<Expr> {
         let mut lhs = self.parse_expr_unary()?;
         loop {
             let (op, lbp, rbp) = match self.peek() {

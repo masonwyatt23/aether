@@ -156,8 +156,10 @@ fn regression_unterminated_string() {
     let _ = parse_expr(FileId(0), src);
 }
 
-// FINDING: parser has no recursion depth guard. Depths >= ~100 overflow the
-// stack. The _safe variants use depth=20. The ignored variants document the bug.
+// FIXED: the parser now has a recursion-depth guard (`MAX_EXPR_DEPTH`) — input
+// nested past the limit returns a clean `ParseError` instead of overflowing
+// the stack. The _safe variants stay shallow; the deep variants confirm the
+// guard fires (a returned `Err` is the correct, non-panicking outcome).
 
 #[test]
 fn regression_deeply_nested_parens_safe() {
@@ -166,7 +168,6 @@ fn regression_deeply_nested_parens_safe() {
 }
 
 #[test]
-#[ignore = "known bug: no recursion depth guard; 200-deep parens overflows the stack"]
 fn regression_deeply_nested_parens_200() {
     let src = format!("{}42{}", "(".repeat(200), ")".repeat(200));
     pipeline(&src);
@@ -179,7 +180,6 @@ fn regression_deeply_nested_brackets_safe() {
 }
 
 #[test]
-#[ignore = "known bug: no recursion depth guard; 200-deep brackets overflows the stack"]
 fn regression_deeply_nested_brackets_200() {
     let src = format!("{}0{}", "[".repeat(200), "]".repeat(200));
     pipeline(&src);
@@ -192,7 +192,6 @@ fn regression_deeply_nested_braces_safe() {
 }
 
 #[test]
-#[ignore = "known bug: no recursion depth guard; 200-deep braces overflows the stack"]
 fn regression_deeply_nested_braces_200() {
     let src = format!("{}{}", "{".repeat(200), "}".repeat(200));
     pipeline(&src);
@@ -248,11 +247,9 @@ fn regression_null_byte() {
     pipeline("fn\x00foo() -> Int effects {} { 0 }");
 }
 
-// FINDING: 10 000-deep nesting causes SIGABRT (stack overflow).
-// Fix needed: add a depth counter to parse_expr and return ParseError::Bad
-// when it exceeds a safe limit (e.g. 512). Tracked as a parser bug.
+// FIXED: 10 000-deep nesting once caused SIGABRT. The `MAX_EXPR_DEPTH` guard
+// in `parse_expr_bp` now rejects it with a clean `ParseError`.
 #[test]
-#[ignore = "known bug: no recursion depth guard; 10k nesting overflows the stack (add depth limit to parse_expr)"]
 fn regression_10000_deep_nesting_stack_overflow() {
     let src = format!("{}0{}", "(".repeat(10_000), ")".repeat(10_000));
     pipeline(&src);
