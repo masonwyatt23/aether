@@ -3439,6 +3439,7 @@ mod builtin_tests {
         Value::List(items, prov)
     }
 
+    #[allow(dead_code)]
     fn list_strs(rt: &Runtime, ss: &[&str]) -> Value {
         let prov = ProvChain::singleton(
             rt.arena.clone(),
@@ -4191,7 +4192,6 @@ mod builtin_tests {
         let mut rt = rt();
         let cmd = str_val(&rt, "echo");
         let arg = str_val(&rt, "hello");
-        let argv = list_strs(&rt, &[]);
         // Build [Str] with one element manually
         let prov = aether_ast::ProvChain::singleton(
             rt.arena.clone(),
