@@ -34,81 +34,152 @@ pub enum Tok {
     Ident(String),
 
     // Keywords (shared between compact + verbose)
-    #[token("fn")] Fn,
-    #[token("let")] Let,
-    #[token("in")] In,
-    #[token("if")] If,
-    #[token("then")] Then,
-    #[token("else")] Else,
-    #[token("match")] Match,
-    #[token("with")] With,
-    #[token("type")] Type,
-    #[token("import")] Import,
-    #[token("from")] From,
-    #[token("as")] As,
-    #[token("module")] Module,
-    #[token("effects")] Effects,
-    #[token("effect")] Effect,
-    #[token("where")] Where,
-    #[token("ensuring")] Ensuring,
-    #[token("requires")] Requires,
-    #[token("ensures")] Ensures,
-    #[token("spec")] Spec,
-    #[token("tool")] Tool,
-    #[token("introspect")] Introspect,
-    #[token("summarize")] Summarize,
-    #[token("provenance")] Provenance,
-    #[token("confident")] Confident,
-    #[token("assume")] Assume,
-    #[token("confidence")] Confidence,
-    #[token("result")] Result_,
-    #[token("not")] NotKw,
-    #[token("and")] AndKw,
-    #[token("or")] OrKw,
-    #[token("do")] Do,
+    #[token("fn")]
+    Fn,
+    #[token("let")]
+    Let,
+    #[token("in")]
+    In,
+    #[token("if")]
+    If,
+    #[token("then")]
+    Then,
+    #[token("else")]
+    Else,
+    #[token("match")]
+    Match,
+    #[token("with")]
+    With,
+    #[token("type")]
+    Type,
+    #[token("import")]
+    Import,
+    #[token("from")]
+    From,
+    #[token("as")]
+    As,
+    #[token("module")]
+    Module,
+    #[token("effects")]
+    Effects,
+    #[token("effect")]
+    Effect,
+    #[token("where")]
+    Where,
+    #[token("ensuring")]
+    Ensuring,
+    #[token("requires")]
+    Requires,
+    #[token("ensures")]
+    Ensures,
+    #[token("spec")]
+    Spec,
+    #[token("tool")]
+    Tool,
+    #[token("introspect")]
+    Introspect,
+    #[token("summarize")]
+    Summarize,
+    #[token("provenance")]
+    Provenance,
+    #[token("confident")]
+    Confident,
+    #[token("assume")]
+    Assume,
+    #[token("confidence")]
+    Confidence,
+    #[token("result")]
+    Result_,
+    #[token("not")]
+    NotKw,
+    #[token("and")]
+    AndKw,
+    #[token("or")]
+    OrKw,
+    #[token("do")]
+    Do,
 
     // Annotations
-    #[token("@no_prov")] AtNoProv,
-    #[token("@pure")] AtPure,
-    #[token("@inline")] AtInline,
+    #[token("@no_prov")]
+    AtNoProv,
+    #[token("@pure")]
+    AtPure,
+    #[token("@inline")]
+    AtInline,
 
     // Punctuation & operators
-    #[token("(")] LParen,
-    #[token(")")] RParen,
-    #[token("{")] LBrace,
-    #[token("}")] RBrace,
-    #[token("[")] LBracket,
-    #[token("]")] RBracket,
-    #[token(",")] Comma,
-    #[token(";")] Semi,
-    #[token(":")] Colon,
-    #[token("::")] ColonColon,
-    #[token(".")] Dot,
-    #[token("?")] Question,
-    #[token("~")] Tilde,
-    #[token("|")] Pipe,
-    #[token("|>")] PipeForward,
-    #[token("->")] Arrow,
-    #[token("=>")] FatArrow,
-    #[token("=")] Eq,
-    #[token(":=")] Walrus,
-    #[token("==")] EqEq,
-    #[token("!=")] BangEq,
-    #[token("<")] Lt,
-    #[token("<=")] Le,
-    #[token(">")] Gt,
-    #[token(">=")] Ge,
-    #[token("+")] Plus,
-    #[token("-")] Minus,
-    #[token("*")] Star,
-    #[token("/")] Slash,
-    #[token("%")] Percent,
-    #[token("++")] PlusPlus,
-    #[token("&&")] AndAnd,
-    #[token("||")] OrOr,
-    #[token("!")] Bang,
-    #[token("&")] Amp,
-    #[token("??")] QuestionQuestion,
+    #[token("(")]
+    LParen,
+    #[token(")")]
+    RParen,
+    #[token("{")]
+    LBrace,
+    #[token("}")]
+    RBrace,
+    #[token("[")]
+    LBracket,
+    #[token("]")]
+    RBracket,
+    #[token(",")]
+    Comma,
+    #[token(";")]
+    Semi,
+    #[token(":")]
+    Colon,
+    #[token("::")]
+    ColonColon,
+    #[token(".")]
+    Dot,
+    #[token("?")]
+    Question,
+    #[token("~")]
+    Tilde,
+    #[token("|")]
+    Pipe,
+    #[token("|>")]
+    PipeForward,
+    #[token("->")]
+    Arrow,
+    #[token("=>")]
+    FatArrow,
+    #[token("=")]
+    Eq,
+    #[token(":=")]
+    Walrus,
+    #[token("==")]
+    EqEq,
+    #[token("!=")]
+    BangEq,
+    #[token("<")]
+    Lt,
+    #[token("<=")]
+    Le,
+    #[token(">")]
+    Gt,
+    #[token(">=")]
+    Ge,
+    #[token("+")]
+    Plus,
+    #[token("-")]
+    Minus,
+    #[token("*")]
+    Star,
+    #[token("/")]
+    Slash,
+    #[token("%")]
+    Percent,
+    #[token("++")]
+    PlusPlus,
+    #[token("&&")]
+    AndAnd,
+    #[token("||")]
+    OrOr,
+    #[token("!")]
+    Bang,
+    #[token("&")]
+    Amp,
+    #[token("??")]
+    QuestionQuestion,
 
     // Doc string lines starting with `##`. Captured intact (without the leading `## `).
     #[regex(r"##[^\n]*", |lex| {
@@ -155,7 +226,11 @@ pub struct Token {
 #[derive(Debug, thiserror::Error)]
 pub enum LexError {
     #[error("unexpected character at byte {start}-{end}: {snippet:?}")]
-    Unexpected { start: u32, end: u32, snippet: String },
+    Unexpected {
+        start: u32,
+        end: u32,
+        snippet: String,
+    },
 }
 
 /// Tokenize an entire source string. Skips comments and whitespace.
@@ -165,7 +240,10 @@ pub fn lex(file: FileId, source: &str) -> Result<Vec<Token>, LexError> {
     while let Some(res) = lex.next() {
         let r = lex.span();
         match res {
-            Ok(tok) => out.push(Token { tok, span: Span::new(file, r) }),
+            Ok(tok) => out.push(Token {
+                tok,
+                span: Span::new(file, r),
+            }),
             Err(()) => {
                 return Err(LexError::Unexpected {
                     start: r.start as u32,
@@ -183,15 +261,26 @@ mod tests {
     use super::*;
 
     fn ts(src: &str) -> Vec<Tok> {
-        lex(FileId(0), src).unwrap().into_iter().map(|t| t.tok).collect()
+        lex(FileId(0), src)
+            .unwrap()
+            .into_iter()
+            .map(|t| t.tok)
+            .collect()
     }
 
     #[test]
     fn integers_floats_bools() {
-        assert_eq!(ts("0 1 -2 3.14 true false"), vec![
-            Tok::Int(0), Tok::Int(1), Tok::Int(-2), Tok::Float(3.14),
-            Tok::Bool(true), Tok::Bool(false),
-        ]);
+        assert_eq!(
+            ts("0 1 -2 3.14 true false"),
+            vec![
+                Tok::Int(0),
+                Tok::Int(1),
+                Tok::Int(-2),
+                Tok::Float(3.14),
+                Tok::Bool(true),
+                Tok::Bool(false),
+            ]
+        );
     }
 
     #[test]

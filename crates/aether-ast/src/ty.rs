@@ -114,14 +114,20 @@ pub struct EffectRow {
 
 impl EffectRow {
     pub fn pure_() -> Self {
-        EffectRow { effects: vec![], tail: None }
+        EffectRow {
+            effects: vec![],
+            tail: None,
+        }
     }
 
     pub fn from_iter<I: IntoIterator<Item = Effect>>(iter: I) -> Self {
         let mut effects: Vec<Effect> = iter.into_iter().collect();
         effects.sort_by(|a, b| a.as_str().cmp(b.as_str()));
         effects.dedup();
-        EffectRow { effects, tail: None }
+        EffectRow {
+            effects,
+            tail: None,
+        }
     }
 
     pub fn is_pure(&self) -> bool {
@@ -183,21 +189,40 @@ pub enum Type {
     /// `T?` — optional.
     Option(Box<Type>, Span),
     /// `T ~ confidence(p)` — confidence-tagged value.
-    Confidence { base: Box<Type>, p: Box<Expr>, span: Span },
+    Confidence {
+        base: Box<Type>,
+        p: Box<Expr>,
+        span: Span,
+    },
     /// User-defined or stdlib parameterized type, e.g. `Map<K, V>`.
-    Generic { name: String, args: Vec<Type>, span: Span },
+    Generic {
+        name: String,
+        args: Vec<Type>,
+        span: Span,
+    },
     /// Algebraic data type: `type Shape = Circle(Float) | Square(Float)`.
     /// `name` is the ADT name; `ctors` is the list of `(CtorName, [FieldType])`.
-    Adt { name: String, ctors: Vec<(String, Vec<Type>)>, span: Span },
+    Adt {
+        name: String,
+        ctors: Vec<(String, Vec<Type>)>,
+        span: Span,
+    },
 }
 
 impl Type {
     pub fn span(&self) -> Span {
         match self {
-            Type::Var(_, s) | Type::Con(_, s) | Type::Fun { span: s, .. }
-            | Type::Refined { span: s, .. } | Type::Tuple(_, s) | Type::List(_, s)
-            | Type::Record(_, s) | Type::Sum(_, s) | Type::Option(_, s)
-            | Type::Confidence { span: s, .. } | Type::Generic { span: s, .. }
+            Type::Var(_, s)
+            | Type::Con(_, s)
+            | Type::Fun { span: s, .. }
+            | Type::Refined { span: s, .. }
+            | Type::Tuple(_, s)
+            | Type::List(_, s)
+            | Type::Record(_, s)
+            | Type::Sum(_, s)
+            | Type::Option(_, s)
+            | Type::Confidence { span: s, .. }
+            | Type::Generic { span: s, .. }
             | Type::Adt { span: s, .. } => *s,
         }
     }

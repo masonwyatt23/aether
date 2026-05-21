@@ -22,7 +22,11 @@ fn check_all_examples() {
             continue;
         }
         found += 1;
-        let out = aether().arg("check").arg(&path).output().expect("invoke aether check");
+        let out = aether()
+            .arg("check")
+            .arg(&path)
+            .output()
+            .expect("invoke aether check");
         assert!(
             out.status.success(),
             "example {} failed to check:\nstdout:\n{}\nstderr:\n{}",
@@ -47,7 +51,11 @@ fn run_examples() {
         if path.extension().and_then(|s| s.to_str()) != Some("ae") {
             continue;
         }
-        let out = aether().arg("run").arg(&path).output().expect("invoke aether run");
+        let out = aether()
+            .arg("run")
+            .arg(&path)
+            .output()
+            .expect("invoke aether run");
         assert!(
             out.status.success(),
             "example {} failed to run:\nstderr:\n{}",
@@ -91,7 +99,11 @@ fn mul(a: Int, b: Int) -> Int effects {} {
     )
     .unwrap();
 
-    let out = aether().arg("doc").arg(&tmp).output().expect("invoke aether doc");
+    let out = aether()
+        .arg("doc")
+        .arg(&tmp)
+        .output()
+        .expect("invoke aether doc");
     assert!(
         out.status.success(),
         "aether doc failed:\nstderr:\n{}",
@@ -107,11 +119,7 @@ fn mul(a: Int, b: Int) -> Int effects {} {
 fn doc_writes_to_file() {
     let src = tempfile_path("doc_out_src.ae");
     let out_path = tempfile_path("doc_out.md");
-    std::fs::write(
-        &src,
-        "fn greet(name: Str) -> Str effects {} { name }\n",
-    )
-    .unwrap();
+    std::fs::write(&src, "fn greet(name: Str) -> Str effects {} { name }\n").unwrap();
 
     let out = aether()
         .arg("doc")
@@ -203,7 +211,10 @@ fn init_bin_template() {
     assert!(!dir.join("lib.ae").exists(), "bin: lib.ae should not exist");
 
     let toml = std::fs::read_to_string(dir.join("Aether.toml")).unwrap();
-    assert!(toml.contains("[project]"), "bin: Aether.toml missing [project]");
+    assert!(
+        toml.contains("[project]"),
+        "bin: Aether.toml missing [project]"
+    );
 
     let main_ae = std::fs::read_to_string(dir.join("main.ae")).unwrap();
     assert!(main_ae.contains("fn main"), "bin: main.ae missing fn main");
@@ -229,14 +240,23 @@ fn init_lib_template() {
     );
     assert!(dir.join("Aether.toml").exists(), "lib: Aether.toml missing");
     assert!(dir.join("lib.ae").exists(), "lib: lib.ae missing");
-    assert!(!dir.join("main.ae").exists(), "lib: main.ae should not exist");
+    assert!(
+        !dir.join("main.ae").exists(),
+        "lib: main.ae should not exist"
+    );
 
     let toml = std::fs::read_to_string(dir.join("Aether.toml")).unwrap();
     assert!(toml.contains("[project]"), "lib: missing [project]");
-    assert!(toml.contains("[lib]"), "lib: Aether.toml missing [lib] section");
+    assert!(
+        toml.contains("[lib]"),
+        "lib: Aether.toml missing [lib] section"
+    );
 
     let lib_ae = std::fs::read_to_string(dir.join("lib.ae")).unwrap();
-    assert!(lib_ae.contains("fn double"), "lib: lib.ae missing fn double");
+    assert!(
+        lib_ae.contains("fn double"),
+        "lib: lib.ae missing fn double"
+    );
 }
 
 #[test]
@@ -254,15 +274,33 @@ fn init_agent_template() {
         "aether init --template agent failed:\nstderr:\n{}",
         String::from_utf8_lossy(&out.stderr)
     );
-    assert!(dir.join("Aether.toml").exists(), "agent: Aether.toml missing");
+    assert!(
+        dir.join("Aether.toml").exists(),
+        "agent: Aether.toml missing"
+    );
     assert!(dir.join("main.ae").exists(), "agent: main.ae missing");
 
     let toml = std::fs::read_to_string(dir.join("Aether.toml")).unwrap();
-    assert!(toml.contains("[agent]"), "agent: Aether.toml missing [agent] section");
-    assert!(toml.contains("entry = \"main.ae\""), "agent: missing entry point");
+    assert!(
+        toml.contains("[agent]"),
+        "agent: Aether.toml missing [agent] section"
+    );
+    assert!(
+        toml.contains("entry = \"main.ae\""),
+        "agent: missing entry point"
+    );
 
     let main_ae = std::fs::read_to_string(dir.join("main.ae")).unwrap();
-    assert!(main_ae.contains("mem_get"), "agent: main.ae missing mem_get");
-    assert!(main_ae.contains("mem_set"), "agent: main.ae missing mem_set");
-    assert!(main_ae.contains("tool "), "agent: main.ae missing tool declaration");
+    assert!(
+        main_ae.contains("mem_get"),
+        "agent: main.ae missing mem_get"
+    );
+    assert!(
+        main_ae.contains("mem_set"),
+        "agent: main.ae missing mem_set"
+    );
+    assert!(
+        main_ae.contains("tool "),
+        "agent: main.ae missing tool declaration"
+    );
 }

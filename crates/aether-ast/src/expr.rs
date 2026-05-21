@@ -17,22 +17,39 @@ pub enum Lit {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BinOp {
-    Add, Sub, Mul, Div, Mod,
-    Eq, Neq, Lt, Le, Gt, Ge,
-    And, Or,
-    Concat,        // ++ on strings / lists
-    Implies,       // => for refinements
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+    Eq,
+    Neq,
+    Lt,
+    Le,
+    Gt,
+    Ge,
+    And,
+    Or,
+    Concat,  // ++ on strings / lists
+    Implies, // => for refinements
 }
 
 impl BinOp {
     pub fn as_str(self) -> &'static str {
         match self {
-            BinOp::Add => "+", BinOp::Sub => "-", BinOp::Mul => "*",
-            BinOp::Div => "/", BinOp::Mod => "%",
-            BinOp::Eq => "==", BinOp::Neq => "!=",
-            BinOp::Lt => "<", BinOp::Le => "<=",
-            BinOp::Gt => ">", BinOp::Ge => ">=",
-            BinOp::And => "&&", BinOp::Or => "||",
+            BinOp::Add => "+",
+            BinOp::Sub => "-",
+            BinOp::Mul => "*",
+            BinOp::Div => "/",
+            BinOp::Mod => "%",
+            BinOp::Eq => "==",
+            BinOp::Neq => "!=",
+            BinOp::Lt => "<",
+            BinOp::Le => "<=",
+            BinOp::Gt => ">",
+            BinOp::Ge => ">=",
+            BinOp::And => "&&",
+            BinOp::Or => "||",
             BinOp::Concat => "++",
             BinOp::Implies => "=>",
         }
@@ -101,26 +118,65 @@ pub enum Expr {
     Var(String, Span),
     Bin(BinOp, Box<Expr>, Box<Expr>, Span),
     Un(UnOp, Box<Expr>, Span),
-    Call { callee: Box<Expr>, args: Vec<Arg>, span: Span },
-    Lambda { params: Vec<crate::decl::Param>, ret: Option<Type>, body: Box<Expr>, span: Span },
-    Let { pat: Pattern, ty: Option<Type>, value: Box<Expr>, body: Box<Expr>, span: Span },
-    If { cond: Box<Expr>, then_branch: Box<Expr>, else_branch: Box<Expr>, span: Span },
-    Block { stmts: Vec<Stmt>, tail: Option<Box<Expr>>, span: Span },
+    Call {
+        callee: Box<Expr>,
+        args: Vec<Arg>,
+        span: Span,
+    },
+    Lambda {
+        params: Vec<crate::decl::Param>,
+        ret: Option<Type>,
+        body: Box<Expr>,
+        span: Span,
+    },
+    Let {
+        pat: Pattern,
+        ty: Option<Type>,
+        value: Box<Expr>,
+        body: Box<Expr>,
+        span: Span,
+    },
+    If {
+        cond: Box<Expr>,
+        then_branch: Box<Expr>,
+        else_branch: Box<Expr>,
+        span: Span,
+    },
+    Block {
+        stmts: Vec<Stmt>,
+        tail: Option<Box<Expr>>,
+        span: Span,
+    },
     Record(Vec<(String, Expr)>, Span),
     Tuple(Vec<Expr>, Span),
     List(Vec<Expr>, Span),
     Field(Box<Expr>, String, Span),
     Index(Box<Expr>, Box<Expr>, Span),
-    Match { scrutinee: Box<Expr>, arms: Vec<MatchArm>, span: Span },
+    Match {
+        scrutinee: Box<Expr>,
+        arms: Vec<MatchArm>,
+        span: Span,
+    },
     /// `confident(value, p)` - tag a value with confidence probability.
-    Confident { value: Box<Expr>, p: Box<Expr>, span: Span },
+    Confident {
+        value: Box<Expr>,
+        p: Box<Expr>,
+        span: Span,
+    },
     /// `assume(predicate)` - inject an axiom into the solver context, surfaces in provenance.
     Assume(Box<Expr>, Span),
     /// `value : Type` ascription.
-    Annot { expr: Box<Expr>, ty: Type, span: Span },
+    Annot {
+        expr: Box<Expr>,
+        ty: Type,
+        span: Span,
+    },
     /// Interpolated string `"hello ${name}, you are ${age} years"`.
     /// `parts` alternates literal text chunks and embedded expressions.
-    StrInterp { parts: Vec<StrPart>, span: Span },
+    StrInterp {
+        parts: Vec<StrPart>,
+        span: Span,
+    },
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -133,14 +189,25 @@ pub enum StrPart {
 impl Expr {
     pub fn span(&self) -> Span {
         match self {
-            Expr::Lit(_, s) | Expr::Var(_, s) | Expr::Record(_, s) | Expr::Tuple(_, s)
-            | Expr::List(_, s) | Expr::Assume(_, s) => *s,
-            Expr::Bin(_, _, _, s) | Expr::Un(_, _, s) | Expr::Call { span: s, .. }
-            | Expr::Lambda { span: s, .. } | Expr::Let { span: s, .. }
-            | Expr::If { span: s, .. } | Expr::Block { span: s, .. }
-            | Expr::Field(_, _, s) | Expr::Index(_, _, s)
-            | Expr::Match { span: s, .. } | Expr::Confident { span: s, .. }
-            | Expr::Annot { span: s, .. } | Expr::StrInterp { span: s, .. } => *s,
+            Expr::Lit(_, s)
+            | Expr::Var(_, s)
+            | Expr::Record(_, s)
+            | Expr::Tuple(_, s)
+            | Expr::List(_, s)
+            | Expr::Assume(_, s) => *s,
+            Expr::Bin(_, _, _, s)
+            | Expr::Un(_, _, s)
+            | Expr::Call { span: s, .. }
+            | Expr::Lambda { span: s, .. }
+            | Expr::Let { span: s, .. }
+            | Expr::If { span: s, .. }
+            | Expr::Block { span: s, .. }
+            | Expr::Field(_, _, s)
+            | Expr::Index(_, _, s)
+            | Expr::Match { span: s, .. }
+            | Expr::Confident { span: s, .. }
+            | Expr::Annot { span: s, .. }
+            | Expr::StrInterp { span: s, .. } => *s,
         }
     }
 }

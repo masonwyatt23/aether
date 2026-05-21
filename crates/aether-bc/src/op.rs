@@ -28,13 +28,25 @@ pub enum Op {
     StoreLocal(u16),
 
     // ── arithmetic ───────────────────────────────────────────────────────────
-    Add, Sub, Mul, Div, Mod,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
 
     // ── comparison ───────────────────────────────────────────────────────────
-    Eq, Neq, Lt, Le, Gt, Ge,
+    Eq,
+    Neq,
+    Lt,
+    Le,
+    Gt,
+    Ge,
 
     // ── logic ────────────────────────────────────────────────────────────────
-    And, Or, Not, Implies,
+    And,
+    Or,
+    Not,
+    Implies,
 
     // ── unary ────────────────────────────────────────────────────────────────
     Neg,
@@ -58,20 +70,31 @@ pub enum Op {
 
     // ── calls ────────────────────────────────────────────────────────────────
     /// Call a user-defined function from `Program::fns` with `argc` args.
-    Call { fn_idx: u32, argc: u8 },
+    Call {
+        fn_idx: u32,
+        argc: u8,
+    },
     /// Call a built-in function by ID with `argc` args.
-    CallBuiltin { id: u16, argc: u8 },
+    CallBuiltin {
+        id: u16,
+        argc: u8,
+    },
     /// Call a builtin by name (dynamic dispatch via `BuiltinDispatcher`).
     ///
     /// Used as a fallback for builtins not natively implemented in the BC VM.
     /// `name_idx` indexes `Program::constants` for the function name string.
     /// The VM delegates to the registered `BuiltinDispatcher` at runtime.
-    CallBuiltinDyn { name_idx: u32, argc: u8 },
+    CallBuiltinDyn {
+        name_idx: u32,
+        argc: u8,
+    },
     /// Call a `Value::Closure` sitting below `argc` args on the stack.
     ///
     /// Stack layout before: `[... | closure | arg0 | ... | argN-1]`
     /// Pops closure + args; pushes result.
-    CallClosure { argc: u8 },
+    CallClosure {
+        argc: u8,
+    },
     /// Return the top-of-stack from the current call frame.
     Ret,
 
@@ -80,14 +103,20 @@ pub enum Op {
     ///
     /// `captured` lists the local-slot indices (of the **enclosing** frame) to
     /// capture by value at the point of closure creation.
-    MakeClosure { fn_idx: u32, captured: Vec<u16> },
+    MakeClosure {
+        fn_idx: u32,
+        captured: Vec<u16>,
+    },
 
     // ── constructors (ADTs) ──────────────────────────────────────────────────
     /// Build a `Value::Ctor { name, args }` from the top `argc` stack values.
     ///
     /// `name_idx` indexes `Program::constants` (a `Constant::Str`).
     /// Args are popped left-to-right (first pushed = args[0]).
-    Ctor { name_idx: u32, argc: u8 },
+    Ctor {
+        name_idx: u32,
+        argc: u8,
+    },
 
     /// Test whether the top-of-stack is a `Value::Ctor` with the given name
     /// and arity — **without popping** the scrutinee.
@@ -96,7 +125,11 @@ pub enum Op {
     /// On miss:  pushes `false` and additionally jumps by `jump_if_miss`
     ///           (relative to the instruction after this one) so the VM skips
     ///           the arm body sequence.
-    MatchCtor { name_idx: u32, expect_arity: u8, jump_if_miss: i32 },
+    MatchCtor {
+        name_idx: u32,
+        expect_arity: u8,
+        jump_if_miss: i32,
+    },
 
     /// Extract field at `field_idx` from the `Value::Ctor` on top of stack.
     ///
@@ -115,7 +148,9 @@ pub enum Op {
     /// Pop `n` values from the stack (first pushed = field 0's value) and
     /// assemble them with the parallel `field_names` vector into a
     /// `Value::Record`.
-    MakeRecord { field_names: Vec<u32> },
+    MakeRecord {
+        field_names: Vec<u32>,
+    },
 
     /// Pop a `Value::Record`; push the value of the field named by `name_idx`.
     /// Uses a linear scan (records are small).
@@ -150,13 +185,13 @@ pub enum Op {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u16)]
 pub enum BuiltinId {
-    Print  = 0,
-    Str    = 1,
-    Int    = 2,
-    Len    = 3,
-    Abs    = 4,
-    Max    = 5,
-    Min    = 6,
+    Print = 0,
+    Str = 1,
+    Int = 2,
+    Len = 3,
+    Abs = 4,
+    Max = 5,
+    Min = 6,
 }
 
 impl BuiltinId {
@@ -164,13 +199,13 @@ impl BuiltinId {
     pub fn from_name(name: &str) -> Option<Self> {
         match name {
             "print" | "println" => Some(Self::Print),
-            "str"   => Some(Self::Str),
-            "int"   => Some(Self::Int),
-            "len"   => Some(Self::Len),
-            "abs"   => Some(Self::Abs),
-            "max"   => Some(Self::Max),
-            "min"   => Some(Self::Min),
-            _       => None,
+            "str" => Some(Self::Str),
+            "int" => Some(Self::Int),
+            "len" => Some(Self::Len),
+            "abs" => Some(Self::Abs),
+            "max" => Some(Self::Max),
+            "min" => Some(Self::Min),
+            _ => None,
         }
     }
 }

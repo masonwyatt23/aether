@@ -12,7 +12,7 @@
 
 const PLAN_SRC: &str = include_str!("../aether/std/plan.ae");
 const ITER_SRC: &str = include_str!("../aether/std/iter.ae");
-const MEM_SRC: &str  = include_str!("../aether/std/mem.ae");
+const MEM_SRC: &str = include_str!("../aether/std/mem.ae");
 const PROOF_SRC: &str = include_str!("../aether/std/proof.ae");
 const JSON_SRC: &str = include_str!("../aether/std/json.ae");
 const LIST_SRC: &str = include_str!("../aether/std/list.ae");
@@ -20,25 +20,25 @@ const STRING_SRC: &str = include_str!("../aether/std/string.ae");
 const MAP_SRC: &str = include_str!("../aether/std/map.ae");
 const PATH_SRC: &str = include_str!("../aether/std/path.ae");
 const TIME_SRC: &str = include_str!("../aether/std/time.ae");
-const ENV_SRC: &str  = include_str!("../aether/std/env.ae");
-const FMT_SRC: &str  = include_str!("../aether/std/fmt.ae");
+const ENV_SRC: &str = include_str!("../aether/std/env.ae");
+const FMT_SRC: &str = include_str!("../aether/std/fmt.ae");
 const RESULT_SRC: &str = include_str!("../aether/std/result.ae");
-const REGEX_SRC: &str  = include_str!("../aether/std/regex.ae");
-const SYS_SRC: &str    = include_str!("../aether/std/sys.ae");
-const MATH_SRC: &str   = include_str!("../aether/std/math.ae");
+const REGEX_SRC: &str = include_str!("../aether/std/regex.ae");
+const SYS_SRC: &str = include_str!("../aether/std/sys.ae");
+const MATH_SRC: &str = include_str!("../aether/std/math.ae");
 const BASE64_SRC: &str = include_str!("../aether/std/base64.ae");
-const HASH_SRC: &str   = include_str!("../aether/std/hash.ae");
-const UUID_SRC: &str   = include_str!("../aether/std/uuid.ae");
+const HASH_SRC: &str = include_str!("../aether/std/hash.ae");
+const UUID_SRC: &str = include_str!("../aether/std/uuid.ae");
 const RANDOM_SRC: &str = include_str!("../aether/std/random.ae");
-const DATE_SRC: &str   = include_str!("../aether/std/date.ae");
-const LOG_SRC: &str    = include_str!("../aether/std/log.ae");
-const TERM_SRC: &str   = include_str!("../aether/std/term.ae");
-const YAML_SRC: &str        = include_str!("../aether/std/yaml.ae");
-const FS_SRC: &str          = include_str!("../aether/std/fs.ae");
-const CACHE_SRC: &str       = include_str!("../aether/std/cache.ae");
-const RETRY_SRC: &str       = include_str!("../aether/std/retry.ae");
+const DATE_SRC: &str = include_str!("../aether/std/date.ae");
+const LOG_SRC: &str = include_str!("../aether/std/log.ae");
+const TERM_SRC: &str = include_str!("../aether/std/term.ae");
+const YAML_SRC: &str = include_str!("../aether/std/yaml.ae");
+const FS_SRC: &str = include_str!("../aether/std/fs.ae");
+const CACHE_SRC: &str = include_str!("../aether/std/cache.ae");
+const RETRY_SRC: &str = include_str!("../aether/std/retry.ae");
 const HTTP_SERVER_SRC: &str = include_str!("../aether/std/http_server.ae");
-const STRLIST_SRC: &str     = include_str!("../aether/std/strlist.ae");
+const STRLIST_SRC: &str = include_str!("../aether/std/strlist.ae");
 
 // ── public surface ─────────────────────────────────────────────────────────
 
@@ -47,35 +47,35 @@ const STRLIST_SRC: &str     = include_str!("../aether/std/strlist.ae");
 /// The qualified name is the module path an agent would use in an `import`
 /// declaration, e.g. `import std::plan`.
 pub const STD_MODULES: &[(&str, &str)] = &[
-    ("std::plan",   PLAN_SRC),
-    ("std::iter",   ITER_SRC),
-    ("std::mem",    MEM_SRC),
-    ("std::proof",  PROOF_SRC),
-    ("std::json",   JSON_SRC),
-    ("std::list",   LIST_SRC),
+    ("std::plan", PLAN_SRC),
+    ("std::iter", ITER_SRC),
+    ("std::mem", MEM_SRC),
+    ("std::proof", PROOF_SRC),
+    ("std::json", JSON_SRC),
+    ("std::list", LIST_SRC),
     ("std::string", STRING_SRC),
-    ("std::map",    MAP_SRC),
-    ("std::path",   PATH_SRC),
-    ("std::time",   TIME_SRC),
-    ("std::env",    ENV_SRC),
-    ("std::fmt",    FMT_SRC),
+    ("std::map", MAP_SRC),
+    ("std::path", PATH_SRC),
+    ("std::time", TIME_SRC),
+    ("std::env", ENV_SRC),
+    ("std::fmt", FMT_SRC),
     ("std::result", RESULT_SRC),
-    ("std::regex",  REGEX_SRC),
-    ("std::sys",    SYS_SRC),
-    ("std::math",   MATH_SRC),
+    ("std::regex", REGEX_SRC),
+    ("std::sys", SYS_SRC),
+    ("std::math", MATH_SRC),
     ("std::base64", BASE64_SRC),
-    ("std::hash",   HASH_SRC),
-    ("std::uuid",   UUID_SRC),
+    ("std::hash", HASH_SRC),
+    ("std::uuid", UUID_SRC),
     ("std::random", RANDOM_SRC),
-    ("std::date",   DATE_SRC),
-    ("std::log",    LOG_SRC),
-    ("std::term",   TERM_SRC),
-    ("std::yaml",       YAML_SRC),
-    ("std::fs",         FS_SRC),
-    ("std::cache",      CACHE_SRC),
-    ("std::retry",      RETRY_SRC),
+    ("std::date", DATE_SRC),
+    ("std::log", LOG_SRC),
+    ("std::term", TERM_SRC),
+    ("std::yaml", YAML_SRC),
+    ("std::fs", FS_SRC),
+    ("std::cache", CACHE_SRC),
+    ("std::retry", RETRY_SRC),
     ("std::http_server", HTTP_SERVER_SRC),
-    ("std::strlist",     STRLIST_SRC),
+    ("std::strlist", STRLIST_SRC),
 ];
 
 /// Return the full `STD_MODULES` slice (ergonomic alias for dynamic callers).
@@ -101,12 +101,24 @@ fn iter(seed: Int, step: Str, budget: Int) -> Int effects {} {
 pub fn prelude_names() -> &'static [&'static str] {
     &[
         // Agent primitives (also keywords in the grammar)
-        "introspect", "summarize", "provenance", "confident", "assume", "spec",
+        "introspect",
+        "summarize",
+        "provenance",
+        "confident",
+        "assume",
+        "spec",
         // Stdlib builtins implemented in aether-eval::builtins
-        "print", "println", "str", "int", "len",
-        "abs", "max", "min",
+        "print",
+        "println",
+        "str",
+        "int",
+        "len",
+        "abs",
+        "max",
+        "min",
         "iter_refine",
-        "print_module_surface", "print_prov",
+        "print_module_surface",
+        "print_prov",
         "http_get",
     ]
 }
@@ -135,10 +147,7 @@ mod tests {
                 .filter(|d| d.severity == Severity::Error)
                 .collect();
 
-            assert!(
-                errors.is_empty(),
-                "type errors in {name}: {errors:#?}"
-            );
+            assert!(errors.is_empty(), "type errors in {name}: {errors:#?}");
         }
     }
 

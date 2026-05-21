@@ -73,7 +73,9 @@ fn mem_path() -> std::path::PathBuf {
 
 fn mem_load() -> std::collections::BTreeMap<String, String> {
     let path = mem_path();
-    let Ok(bytes) = std::fs::read(&path) else { return Default::default(); };
+    let Ok(bytes) = std::fs::read(&path) else {
+        return Default::default();
+    };
     parse_flat_json_object(std::str::from_utf8(&bytes).unwrap_or("")).unwrap_or_default()
 }
 
@@ -99,28 +101,44 @@ fn mem_save(store: &std::collections::BTreeMap<String, String>) -> Result<(), st
 }
 
 fn mem_get_file(args: &[Value]) -> EResult<Value> {
-    let key = args.first().and_then(Value::as_str).unwrap_or("").to_string();
+    let key = args
+        .first()
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
     let store = mem_load();
     let value = store.get(&key).cloned().unwrap_or_default();
     let arena = aether_ast::ProvArena::new();
     Ok(Value::Str(
         value,
-        aether_ast::ProvChain::singleton(arena, aether_ast::ProvOp::Tool("mem_get".into()), aether_ast::Span::DUMMY),
+        aether_ast::ProvChain::singleton(
+            arena,
+            aether_ast::ProvOp::Tool("mem_get".into()),
+            aether_ast::Span::DUMMY,
+        ),
     ))
 }
 
 fn mem_set_file(args: &[Value]) -> EResult<Value> {
-    let key = args.first().and_then(Value::as_str)
+    let key = args
+        .first()
+        .and_then(Value::as_str)
         .ok_or_else(|| crate::EvalError::TypeError("mem_set: key must be Str".into()))?
         .to_string();
-    let value = args.get(1).and_then(Value::as_str).unwrap_or("").to_string();
+    let value = args
+        .get(1)
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
     let mut store = mem_load();
     store.insert(key, value);
     mem_save(&store).map_err(|e| crate::EvalError::User(format!("mem_set: write failed: {e}")))?;
     let arena = aether_ast::ProvArena::new();
-    Ok(Value::Unit(
-        aether_ast::ProvChain::singleton(arena, aether_ast::ProvOp::Tool("mem_set".into()), aether_ast::Span::DUMMY),
-    ))
+    Ok(Value::Unit(aether_ast::ProvChain::singleton(
+        arena,
+        aether_ast::ProvOp::Tool("mem_set".into()),
+        aether_ast::Span::DUMMY,
+    )))
 }
 
 // ── tiny JSON helpers (avoid serde_json as a dep here) ──────────────────────
@@ -129,7 +147,7 @@ fn json_escape(s: &str, out: &mut String) {
     out.push('"');
     for c in s.chars() {
         match c {
-            '"'  => out.push_str("\\\""),
+            '"' => out.push_str("\\\""),
             '\\' => out.push_str("\\\\"),
             '\n' => out.push_str("\\n"),
             '\r' => out.push_str("\\r"),
@@ -146,7 +164,7 @@ fn parse_flat_json_object(s: &str) -> Option<std::collections::BTreeMap<String, 
     if !s.starts_with('{') || !s.ends_with('}') {
         return None;
     }
-    let body = &s[1..s.len()-1];
+    let body = &s[1..s.len() - 1];
     let mut out = std::collections::BTreeMap::new();
     let mut chars = body.chars().peekable();
     loop {
@@ -154,13 +172,25 @@ fn parse_flat_json_object(s: &str) -> Option<std::collections::BTreeMap<String, 
         while matches!(chars.peek(), Some(c) if c.is_whitespace() || *c == ',') {
             chars.next();
         }
-        if chars.peek().is_none() { break; }
-        if chars.peek() != Some(&'"') { return None; }
+        if chars.peek().is_none() {
+            break;
+        }
+        if chars.peek() != Some(&'"') {
+            return None;
+        }
         let key = read_json_str(&mut chars)?;
-        while matches!(chars.peek(), Some(c) if c.is_whitespace()) { chars.next(); }
-        if chars.next() != Some(':') { return None; }
-        while matches!(chars.peek(), Some(c) if c.is_whitespace()) { chars.next(); }
-        if chars.peek() != Some(&'"') { return None; }
+        while matches!(chars.peek(), Some(c) if c.is_whitespace()) {
+            chars.next();
+        }
+        if chars.next() != Some(':') {
+            return None;
+        }
+        while matches!(chars.peek(), Some(c) if c.is_whitespace()) {
+            chars.next();
+        }
+        if chars.peek() != Some(&'"') {
+            return None;
+        }
         let val = read_json_str(&mut chars)?;
         out.insert(key, val);
     }
@@ -168,18 +198,23 @@ fn parse_flat_json_object(s: &str) -> Option<std::collections::BTreeMap<String, 
 }
 
 fn read_json_str(chars: &mut std::iter::Peekable<std::str::Chars<'_>>) -> Option<String> {
-    if chars.next() != Some('"') { return None; }
+    if chars.next() != Some('"') {
+        return None;
+    }
     let mut out = String::new();
     loop {
         match chars.next()? {
-            '"'  => return Some(out),
+            '"' => return Some(out),
             '\\' => match chars.next()? {
-                '"'  => out.push('"'),
+                '"' => out.push('"'),
                 '\\' => out.push('\\'),
-                'n'  => out.push('\n'),
-                't'  => out.push('\t'),
-                'r'  => out.push('\r'),
-                other => { out.push('\\'); out.push(other); }
+                'n' => out.push('\n'),
+                't' => out.push('\t'),
+                'r' => out.push('\r'),
+                other => {
+                    out.push('\\');
+                    out.push(other);
+                }
             },
             c => out.push(c),
         }
@@ -215,9 +250,20 @@ mod tests {
         let mut r = ToolRegistry::new();
         assert!(r.is_empty());
         r.register("echo", |args| {
-            let s = args.first().and_then(Value::as_str).unwrap_or("").to_string();
+            let s = args
+                .first()
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string();
             let arena = aether_ast::ProvArena::new();
-            Ok(Value::Str(s, aether_ast::ProvChain::singleton(arena, aether_ast::ProvOp::Tool("echo".into()), aether_ast::Span::DUMMY)))
+            Ok(Value::Str(
+                s,
+                aether_ast::ProvChain::singleton(
+                    arena,
+                    aether_ast::ProvOp::Tool("echo".into()),
+                    aether_ast::Span::DUMMY,
+                ),
+            ))
         });
         assert_eq!(r.len(), 1);
         assert!(r.get("echo").is_some());
@@ -232,7 +278,11 @@ mod tests {
         std::env::set_var("AETHER_MEM_PATH", &tmp);
 
         let arena = aether_ast::ProvArena::new();
-        let prov = aether_ast::ProvChain::singleton(arena, aether_ast::ProvOp::Lit, aether_ast::Span::DUMMY);
+        let prov = aether_ast::ProvChain::singleton(
+            arena,
+            aether_ast::ProvOp::Lit,
+            aether_ast::Span::DUMMY,
+        );
         let key = Value::Str("greeting".into(), prov.clone());
         let val = Value::Str("hello, world".into(), prov.clone());
 
@@ -255,7 +305,11 @@ mod tests {
         install_defaults(&mut r);
         let f = r.get("llm_complete").unwrap();
         let arena = aether_ast::ProvArena::new();
-        let prov = aether_ast::ProvChain::singleton(arena, aether_ast::ProvOp::Lit, aether_ast::Span::DUMMY);
+        let prov = aether_ast::ProvChain::singleton(
+            arena,
+            aether_ast::ProvOp::Lit,
+            aether_ast::Span::DUMMY,
+        );
         let a = f(&[Value::Str("hello".into(), prov.clone())]).unwrap();
         let b = f(&[Value::Str("hello".into(), prov)]).unwrap();
         assert_eq!(a.as_str(), b.as_str());

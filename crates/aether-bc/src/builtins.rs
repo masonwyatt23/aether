@@ -39,36 +39,32 @@ pub fn call(id: BuiltinId, args: &[Value], vm: &mut Vm<'_>) -> Result<Value, VmE
             Ok(Value::Int(n))
         }
 
-        BuiltinId::Len => {
-            match args.first() {
-                Some(Value::Str(s))   => Ok(Value::Int(s.chars().count() as i64)),
-                Some(Value::List(vs)) => Ok(Value::Int(vs.len() as i64)),
-                _ => Err(VmError::TypeError("len(): expected Str or List".into())),
-            }
-        }
+        BuiltinId::Len => match args.first() {
+            Some(Value::Str(s)) => Ok(Value::Int(s.chars().count() as i64)),
+            Some(Value::List(vs)) => Ok(Value::Int(vs.len() as i64)),
+            _ => Err(VmError::TypeError("len(): expected Str or List".into())),
+        },
 
-        BuiltinId::Abs => {
-            match args.first() {
-                Some(Value::Int(n))   => Ok(Value::Int(n.abs())),
-                Some(Value::Float(f)) => Ok(Value::Float(f.abs())),
-                _ => Err(VmError::TypeError("abs(): expected Int or Float".into())),
-            }
-        }
+        BuiltinId::Abs => match args.first() {
+            Some(Value::Int(n)) => Ok(Value::Int(n.abs())),
+            Some(Value::Float(f)) => Ok(Value::Float(f.abs())),
+            _ => Err(VmError::TypeError("abs(): expected Int or Float".into())),
+        },
 
-        BuiltinId::Max => {
-            match (args.first(), args.get(1)) {
-                (Some(Value::Int(a)), Some(Value::Int(b)))     => Ok(Value::Int((*a).max(*b))),
-                (Some(Value::Float(a)), Some(Value::Float(b))) => Ok(Value::Float(a.max(*b))),
-                _ => Err(VmError::TypeError("max(): expected two Int or two Float args".into())),
-            }
-        }
+        BuiltinId::Max => match (args.first(), args.get(1)) {
+            (Some(Value::Int(a)), Some(Value::Int(b))) => Ok(Value::Int((*a).max(*b))),
+            (Some(Value::Float(a)), Some(Value::Float(b))) => Ok(Value::Float(a.max(*b))),
+            _ => Err(VmError::TypeError(
+                "max(): expected two Int or two Float args".into(),
+            )),
+        },
 
-        BuiltinId::Min => {
-            match (args.first(), args.get(1)) {
-                (Some(Value::Int(a)), Some(Value::Int(b)))     => Ok(Value::Int((*a).min(*b))),
-                (Some(Value::Float(a)), Some(Value::Float(b))) => Ok(Value::Float(a.min(*b))),
-                _ => Err(VmError::TypeError("min(): expected two Int or two Float args".into())),
-            }
-        }
+        BuiltinId::Min => match (args.first(), args.get(1)) {
+            (Some(Value::Int(a)), Some(Value::Int(b))) => Ok(Value::Int((*a).min(*b))),
+            (Some(Value::Float(a)), Some(Value::Float(b))) => Ok(Value::Float(a.min(*b))),
+            _ => Err(VmError::TypeError(
+                "min(): expected two Int or two Float args".into(),
+            )),
+        },
     }
 }

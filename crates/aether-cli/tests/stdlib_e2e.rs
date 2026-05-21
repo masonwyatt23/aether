@@ -35,7 +35,11 @@ fn main() -> Unit effects {IO, Throw} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::list check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -58,9 +62,15 @@ fn main() -> Unit effects {IO, Throw} {
     // list_max = 9
     assert!(stdout.contains("9"), "expected list_max=9, got: {stdout}");
     // list_contains 4 -> true
-    assert!(stdout.contains("true"), "expected list_contains=true, got: {stdout}");
+    assert!(
+        stdout.contains("true"),
+        "expected list_contains=true, got: {stdout}"
+    );
     // list_contains 7 -> false
-    assert!(stdout.contains("false"), "expected list_contains=false, got: {stdout}");
+    assert!(
+        stdout.contains("false"),
+        "expected list_contains=false, got: {stdout}"
+    );
     // list_count 1 -> 2
     assert!(stdout.contains("2"), "expected list_count=2, got: {stdout}");
 }
@@ -89,7 +99,10 @@ fn main() -> Unit effects {IO} {
     );
     // sum is unchanged by reversal
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("6"), "expected sum=6 after reversal, got: {stdout}");
+    assert!(
+        stdout.contains("6"),
+        "expected sum=6 after reversal, got: {stdout}"
+    );
 }
 
 // ── std::string ───────────────────────────────────────────────────────────────
@@ -113,7 +126,11 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::string check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -129,11 +146,20 @@ fn main() -> Unit effects {IO} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("HELLO"),  "expected HELLO, got: {stdout}");
-    assert!(stdout.contains("world"),  "expected world, got: {stdout}");
-    assert!(stdout.contains("true"),   "expected str_contains=true, got: {stdout}");
-    assert!(stdout.contains("false"),  "expected str_starts_with=false, got: {stdout}");
-    assert!(stdout.contains("spaces"), "expected trimmed 'spaces', got: {stdout}");
+    assert!(stdout.contains("HELLO"), "expected HELLO, got: {stdout}");
+    assert!(stdout.contains("world"), "expected world, got: {stdout}");
+    assert!(
+        stdout.contains("true"),
+        "expected str_contains=true, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("false"),
+        "expected str_starts_with=false, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("spaces"),
+        "expected trimmed 'spaces', got: {stdout}"
+    );
 }
 
 #[test]
@@ -181,7 +207,11 @@ fn main() -> Unit effects {IO, FS} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::path check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -197,11 +227,26 @@ fn main() -> Unit effects {IO, FS} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("hello.txt"),  "expected joined path, got: {stdout}");
-    assert!(stdout.contains("file.rs"),    "expected basename, got: {stdout}");
-    assert!(stdout.contains("user"),       "expected dirname contains 'user', got: {stdout}");
-    assert!(stdout.contains("gz"),         "expected extension 'gz', got: {stdout}");
-    assert!(stdout.contains("true"),       "expected path_exists('/')=true, got: {stdout}");
+    assert!(
+        stdout.contains("hello.txt"),
+        "expected joined path, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("file.rs"),
+        "expected basename, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("user"),
+        "expected dirname contains 'user', got: {stdout}"
+    );
+    assert!(
+        stdout.contains("gz"),
+        "expected extension 'gz', got: {stdout}"
+    );
+    assert!(
+        stdout.contains("true"),
+        "expected path_exists('/')=true, got: {stdout}"
+    );
 }
 
 // ── std::time ─────────────────────────────────────────────────────────────────
@@ -223,7 +268,11 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::time check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -239,8 +288,11 @@ fn main() -> Unit effects {IO} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("true"),             "expected ms>0=true, got: {stdout}");
-    assert!(stdout.contains("1970-01-01T00:00:00Z"), "expected epoch ISO, got: {stdout}");
+    assert!(stdout.contains("true"), "expected ms>0=true, got: {stdout}");
+    assert!(
+        stdout.contains("1970-01-01T00:00:00Z"),
+        "expected epoch ISO, got: {stdout}"
+    );
 }
 
 // ── std::env ──────────────────────────────────────────────────────────────────
@@ -262,7 +314,11 @@ fn main() -> Unit effects {IO, State} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::env check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -278,9 +334,18 @@ fn main() -> Unit effects {IO, State} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("false"),               "expected env_has(absent)=false, got: {stdout}");
-    assert!(stdout.contains("hello_from_aether"),   "expected env_get round-trip, got: {stdout}");
-    assert!(stdout.contains("true"),                "expected env_has(set key)=true, got: {stdout}");
+    assert!(
+        stdout.contains("false"),
+        "expected env_has(absent)=false, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("hello_from_aether"),
+        "expected env_get round-trip, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("true"),
+        "expected env_has(set key)=true, got: {stdout}"
+    );
 }
 
 // ── std::fmt ──────────────────────────────────────────────────────────────────
@@ -303,7 +368,11 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::fmt check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -319,11 +388,26 @@ fn main() -> Unit effects {IO} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("Hello, Aether!"), "expected fmt1 output, got: {stdout}");
-    assert!(stdout.contains("1 + 2 = 3"),      "expected fmt2 output, got: {stdout}");
-    assert!(stdout.contains("a-b-c"),           "expected fmt3 output, got: {stdout}");
-    assert!(stdout.contains("007"),             "expected pad_left output, got: {stdout}");
-    assert!(stdout.contains("hi..."),           "expected pad_right output, got: {stdout}");
+    assert!(
+        stdout.contains("Hello, Aether!"),
+        "expected fmt1 output, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("1 + 2 = 3"),
+        "expected fmt2 output, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("a-b-c"),
+        "expected fmt3 output, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("007"),
+        "expected pad_left output, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("hi..."),
+        "expected pad_right output, got: {stdout}"
+    );
 }
 
 // ── std::result ───────────────────────────────────────────────────────────────
@@ -349,7 +433,11 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::result check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -365,11 +453,26 @@ fn main() -> Unit effects {IO} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("true"),         "expected result_is_ok(Ok)=true, got: {stdout}");
-    assert!(stdout.contains("false"),        "expected result_is_ok(Err)=false, got: {stdout}");
-    assert!(stdout.contains("success"),      "expected unwrap_or(Ok)=success, got: {stdout}");
-    assert!(stdout.contains("fallback"),     "expected unwrap_or(Err)=fallback, got: {stdout}");
-    assert!(stdout.contains("prefix:success"), "expected result_map_str output, got: {stdout}");
+    assert!(
+        stdout.contains("true"),
+        "expected result_is_ok(Ok)=true, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("false"),
+        "expected result_is_ok(Err)=false, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("success"),
+        "expected unwrap_or(Ok)=success, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("fallback"),
+        "expected unwrap_or(Err)=fallback, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("prefix:success"),
+        "expected result_map_str output, got: {stdout}"
+    );
 }
 
 // ── std::regex ────────────────────────────────────────────────────────────────
@@ -395,7 +498,11 @@ fn main() -> Unit effects {IO, Throw} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::regex check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -411,14 +518,32 @@ fn main() -> Unit effects {IO, Throw} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("true"),  "expected regex_match=true, got: {stdout}");
-    assert!(stdout.contains("false"), "expected regex_match=false, got: {stdout}");
-    assert!(stdout.contains("42"),    "expected regex_find=42, got: {stdout}");
-    assert!(stdout.contains("NUM"),   "expected regex_replace=NUM, got: {stdout}");
+    assert!(
+        stdout.contains("true"),
+        "expected regex_match=true, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("false"),
+        "expected regex_match=false, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("42"),
+        "expected regex_find=42, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("NUM"),
+        "expected regex_replace=NUM, got: {stdout}"
+    );
     // split "a,b,c" on "," → 3 parts
-    assert!(stdout.contains("3"),     "expected regex_split len=3, got: {stdout}");
+    assert!(
+        stdout.contains("3"),
+        "expected regex_split len=3, got: {stdout}"
+    );
     // captures 2 groups
-    assert!(stdout.contains("2"),     "expected regex_captures len=2, got: {stdout}");
+    assert!(
+        stdout.contains("2"),
+        "expected regex_captures len=2, got: {stdout}"
+    );
 }
 
 // ── std::sys ──────────────────────────────────────────────────────────────────
@@ -442,7 +567,11 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::sys check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -459,9 +588,15 @@ fn main() -> Unit effects {IO} {
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
     // secs > 0 = true
-    assert!(stdout.contains("true"), "expected sys_now_unix>0=true, got: {stdout}");
+    assert!(
+        stdout.contains("true"),
+        "expected sys_now_unix>0=true, got: {stdout}"
+    );
     // hostname non-empty = true (appears twice: secs>0 and len(host)>0)
-    assert!(stdout.matches("true").count() >= 2, "expected at least 2 trues, got: {stdout}");
+    assert!(
+        stdout.matches("true").count() >= 2,
+        "expected at least 2 trues, got: {stdout}"
+    );
 }
 
 // ── std::math ─────────────────────────────────────────────────────────────────
@@ -489,7 +624,11 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::math check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -505,11 +644,20 @@ fn main() -> Unit effects {IO} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("7"),    "expected math_abs_int=7, got: {stdout}");
-    assert!(stdout.contains("256"),  "expected math_pow=256, got: {stdout}");
-    assert!(stdout.contains("4"),    "expected math_sqrt=4, got: {stdout}");
-    assert!(stdout.contains("3"),    "expected math_floor=3, got: {stdout}");
-    assert!(stdout.contains("true"), "expected pi>3.14=true, got: {stdout}");
+    assert!(
+        stdout.contains("7"),
+        "expected math_abs_int=7, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("256"),
+        "expected math_pow=256, got: {stdout}"
+    );
+    assert!(stdout.contains("4"), "expected math_sqrt=4, got: {stdout}");
+    assert!(stdout.contains("3"), "expected math_floor=3, got: {stdout}");
+    assert!(
+        stdout.contains("true"),
+        "expected pi>3.14=true, got: {stdout}"
+    );
 }
 
 // ── std::map ──────────────────────────────────────────────────────────────────
@@ -535,7 +683,11 @@ fn main() -> Unit effects {IO, Throw} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::map check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -551,11 +703,23 @@ fn main() -> Unit effects {IO, Throw} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("true"),  "expected map_has(x)=true, got: {stdout}");
-    assert!(stdout.contains("false"), "expected map_has(z)=false, got: {stdout}");
-    assert!(stdout.contains("10"),    "expected map_get(x)=10, got: {stdout}");
-    assert!(stdout.contains("20"),    "expected map_get(y)=20, got: {stdout}");
-    assert!(stdout.contains("2"),     "expected map_size=2, got: {stdout}");
+    assert!(
+        stdout.contains("true"),
+        "expected map_has(x)=true, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("false"),
+        "expected map_has(z)=false, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("10"),
+        "expected map_get(x)=10, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("20"),
+        "expected map_get(y)=20, got: {stdout}"
+    );
+    assert!(stdout.contains("2"), "expected map_size=2, got: {stdout}");
 }
 
 // ── std::base64 ───────────────────────────────────────────────────────────────
@@ -578,17 +742,36 @@ fn main() -> Unit effects {IO, Throw} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
-    assert!(check.status.success(),
-        "std::base64 check failed:\nstderr:\n{}", String::from_utf8_lossy(&check.stderr));
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
+    assert!(
+        check.status.success(),
+        "std::base64 check failed:\nstderr:\n{}",
+        String::from_utf8_lossy(&check.stderr)
+    );
 
     let run = aether().arg("run").arg(&src).output().expect("aether run");
-    assert!(run.status.success(),
-        "std::base64 run failed:\nstderr:\n{}", String::from_utf8_lossy(&run.stderr));
+    assert!(
+        run.status.success(),
+        "std::base64 run failed:\nstderr:\n{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("aGVsbG8="), "expected base64 of 'hello': {stdout}");
-    assert!(stdout.contains("hello"),    "expected decoded 'hello': {stdout}");
-    assert!(stdout.contains("true"),     "expected round-trip == true: {stdout}");
+    assert!(
+        stdout.contains("aGVsbG8="),
+        "expected base64 of 'hello': {stdout}"
+    );
+    assert!(
+        stdout.contains("hello"),
+        "expected decoded 'hello': {stdout}"
+    );
+    assert!(
+        stdout.contains("true"),
+        "expected round-trip == true: {stdout}"
+    );
 }
 
 // ── std::hash ─────────────────────────────────────────────────────────────────
@@ -610,19 +793,32 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
-    assert!(check.status.success(),
-        "std::hash check failed:\nstderr:\n{}", String::from_utf8_lossy(&check.stderr));
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
+    assert!(
+        check.status.success(),
+        "std::hash check failed:\nstderr:\n{}",
+        String::from_utf8_lossy(&check.stderr)
+    );
 
     let run = aether().arg("run").arg(&src).output().expect("aether run");
-    assert!(run.status.success(),
-        "std::hash run failed:\nstderr:\n{}", String::from_utf8_lossy(&run.stderr));
+    assert!(
+        run.status.success(),
+        "std::hash run failed:\nstderr:\n{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
     let stdout = String::from_utf8_lossy(&run.stdout);
     assert!(
         stdout.contains("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"),
         "expected SHA-256 of 'hello': {stdout}"
     );
-    assert!(stdout.contains("true"), "expected hash_default deterministic: {stdout}");
+    assert!(
+        stdout.contains("true"),
+        "expected hash_default deterministic: {stdout}"
+    );
 }
 
 // ── std::uuid ─────────────────────────────────────────────────────────────────
@@ -644,15 +840,28 @@ fn main() -> Unit effects {IO, Rand} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
-    assert!(check.status.success(),
-        "std::uuid check failed:\nstderr:\n{}", String::from_utf8_lossy(&check.stderr));
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
+    assert!(
+        check.status.success(),
+        "std::uuid check failed:\nstderr:\n{}",
+        String::from_utf8_lossy(&check.stderr)
+    );
 
     let run = aether().arg("run").arg(&src).output().expect("aether run");
-    assert!(run.status.success(),
-        "std::uuid run failed:\nstderr:\n{}", String::from_utf8_lossy(&run.stderr));
+    assert!(
+        run.status.success(),
+        "std::uuid run failed:\nstderr:\n{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("true"), "expected len checks true: {stdout}");
+    assert!(
+        stdout.contains("true"),
+        "expected len checks true: {stdout}"
+    );
 }
 
 // ── std::random ───────────────────────────────────────────────────────────────
@@ -674,15 +883,28 @@ fn main() -> Unit effects {IO, Rand} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
-    assert!(check.status.success(),
-        "std::random check failed:\nstderr:\n{}", String::from_utf8_lossy(&check.stderr));
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
+    assert!(
+        check.status.success(),
+        "std::random check failed:\nstderr:\n{}",
+        String::from_utf8_lossy(&check.stderr)
+    );
 
     let run = aether().arg("run").arg(&src).output().expect("aether run");
-    assert!(run.status.success(),
-        "std::random run failed:\nstderr:\n{}", String::from_utf8_lossy(&run.stderr));
+    assert!(
+        run.status.success(),
+        "std::random run failed:\nstderr:\n{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("true"), "expected deterministic random_int(1,1)==1: {stdout}");
+    assert!(
+        stdout.contains("true"),
+        "expected deterministic random_int(1,1)==1: {stdout}"
+    );
 }
 
 // ── std::log ──────────────────────────────────────────────────────────────────
@@ -704,7 +926,11 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::log check failed:\nstderr:\n{}",
@@ -720,12 +946,24 @@ fn main() -> Unit effects {IO} {
     );
     // stdout should only contain our explicit println, not log lines (those go to stderr)
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("done"), "expected 'done' on stdout, got: {stdout}");
+    assert!(
+        stdout.contains("done"),
+        "expected 'done' on stdout, got: {stdout}"
+    );
     // log lines should appear on stderr
     let stderr = String::from_utf8_lossy(&run.stderr);
-    assert!(stderr.contains("[INFO]"),  "expected [INFO] on stderr, got: {stderr}");
-    assert!(stderr.contains("[WARN]"),  "expected [WARN] on stderr, got: {stderr}");
-    assert!(stderr.contains("[ERROR]"), "expected [ERROR] on stderr, got: {stderr}");
+    assert!(
+        stderr.contains("[INFO]"),
+        "expected [INFO] on stderr, got: {stderr}"
+    );
+    assert!(
+        stderr.contains("[WARN]"),
+        "expected [WARN] on stderr, got: {stderr}"
+    );
+    assert!(
+        stderr.contains("[ERROR]"),
+        "expected [ERROR] on stderr, got: {stderr}"
+    );
 }
 
 // ── std::term ─────────────────────────────────────────────────────────────────
@@ -747,7 +985,11 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::term check failed:\nstderr:\n{}",
@@ -768,9 +1010,9 @@ fn main() -> Unit effects {IO} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("red"),   "expected 'red', got: {stdout}");
+    assert!(stdout.contains("red"), "expected 'red', got: {stdout}");
     assert!(stdout.contains("green"), "expected 'green', got: {stdout}");
-    assert!(stdout.contains("bold"),  "expected 'bold', got: {stdout}");
+    assert!(stdout.contains("bold"), "expected 'bold', got: {stdout}");
 }
 
 // ── std::json (real parser) ────────────────────────────────────────────────────
@@ -796,7 +1038,11 @@ fn main() -> Unit effects {IO, Throw} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::json (real) check failed:\nstderr:\n{}",
@@ -811,10 +1057,16 @@ fn main() -> Unit effects {IO, Throw} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("true"),   "expected canonical len>0=true, got: {stdout}");
-    assert!(stdout.contains("Aether"), "expected name=Aether, got: {stdout}");
-    assert!(stdout.contains("3"),      "expected version=3, got: {stdout}");
-    assert!(stdout.contains("3"),      "expected 3 keys, got: {stdout}");
+    assert!(
+        stdout.contains("true"),
+        "expected canonical len>0=true, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("Aether"),
+        "expected name=Aether, got: {stdout}"
+    );
+    assert!(stdout.contains("3"), "expected version=3, got: {stdout}");
+    assert!(stdout.contains("3"), "expected 3 keys, got: {stdout}");
 }
 
 // ── std::yaml ─────────────────────────────────────────────────────────────────
@@ -846,7 +1098,11 @@ fn main() -> Unit effects {IO, Throw} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::yaml check failed:\nstderr:\n{}",
@@ -861,10 +1117,13 @@ fn main() -> Unit effects {IO, Throw} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("Aether"), "expected name=Aether, got: {stdout}");
-    assert!(stdout.contains("3"),      "expected version=3, got: {stdout}");
+    assert!(
+        stdout.contains("Aether"),
+        "expected name=Aether, got: {stdout}"
+    );
+    assert!(stdout.contains("3"), "expected version=3, got: {stdout}");
     // 3 keys: name, version, author
-    assert!(stdout.contains("3"),      "expected 3 keys, got: {stdout}");
+    assert!(stdout.contains("3"), "expected 3 keys, got: {stdout}");
 }
 
 // ── std::date ─────────────────────────────────────────────────────────────────
@@ -887,20 +1146,35 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
-    assert!(check.status.success(),
-        "std::date check failed:\nstderr:\n{}", String::from_utf8_lossy(&check.stderr));
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
+    assert!(
+        check.status.success(),
+        "std::date check failed:\nstderr:\n{}",
+        String::from_utf8_lossy(&check.stderr)
+    );
 
     let run = aether().arg("run").arg(&src).output().expect("aether run");
-    assert!(run.status.success(),
-        "std::date run failed:\nstderr:\n{}", String::from_utf8_lossy(&run.stderr));
+    assert!(
+        run.status.success(),
+        "std::date run failed:\nstderr:\n{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
     let stdout = String::from_utf8_lossy(&run.stdout);
     assert!(stdout.contains("1970"), "expected year=1970: {stdout}");
-    assert!(stdout.contains("4"),    "expected weekday=4 (Thursday): {stdout}");
+    assert!(
+        stdout.contains("4"),
+        "expected weekday=4 (Thursday): {stdout}"
+    );
     // date_compose(1970,1,1) == 0 — the "0" appears on its own line
     let lines: Vec<&str> = stdout.lines().collect();
-    assert!(lines.last().map(|l| l.trim() == "0").unwrap_or(false),
-        "expected date_compose(1970,1,1)==0 on last line, got: {stdout}");
+    assert!(
+        lines.last().map(|l| l.trim() == "0").unwrap_or(false),
+        "expected date_compose(1970,1,1)==0 on last line, got: {stdout}"
+    );
 }
 
 // ── std::fs ───────────────────────────────────────────────────────────────────
@@ -920,7 +1194,8 @@ fn fs_e2e() {
 
     std::fs::write(
         &src,
-        format!(r#"import std::fs
+        format!(
+            r#"import std::fs
 
 fn main() -> Unit effects {{IO, FS, Throw}} {{
   fs_mkdir_all("{dir_str}")
@@ -933,11 +1208,16 @@ fn main() -> Unit effects {{IO, FS, Throw}} {{
   fs_remove("{file_str}")
   print(str(fs_exists("{file_str}")))
 }}
-"#),
+"#
+        ),
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::fs check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -953,11 +1233,23 @@ fn main() -> Unit effects {{IO, FS, Throw}} {{
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("hello world"), "expected file contents, got: {stdout}");
-    assert!(stdout.contains("true"),  "expected exists=true after write, got: {stdout}");
-    assert!(stdout.contains("false"), "expected exists=false after remove, got: {stdout}");
+    assert!(
+        stdout.contains("hello world"),
+        "expected file contents, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("true"),
+        "expected exists=true after write, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("false"),
+        "expected exists=false after remove, got: {stdout}"
+    );
     // 1 file in dir
-    assert!(stdout.contains("1"), "expected 1 entry in dir, got: {stdout}");
+    assert!(
+        stdout.contains("1"),
+        "expected 1 entry in dir, got: {stdout}"
+    );
 
     // cleanup
     let _ = std::fs::remove_dir_all(&dir);
@@ -987,7 +1279,11 @@ fn main() -> Unit effects {IO, State} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::cache check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -1005,17 +1301,41 @@ fn main() -> Unit effects {IO, State} {
     let stdout = String::from_utf8_lossy(&run.stdout);
     let lines: Vec<&str> = stdout.lines().collect();
     // has("k") before set -> false
-    assert_eq!(lines.get(0).copied(), Some("false"), "expected false before set, got: {stdout}");
+    assert_eq!(
+        lines.get(0).copied(),
+        Some("false"),
+        "expected false before set, got: {stdout}"
+    );
     // has("k") after set -> true
-    assert_eq!(lines.get(1).copied(), Some("true"),  "expected true after set, got: {stdout}");
+    assert_eq!(
+        lines.get(1).copied(),
+        Some("true"),
+        "expected true after set, got: {stdout}"
+    );
     // get("k") == "v1"
-    assert_eq!(lines.get(2).copied(), Some("v1"),    "expected v1, got: {stdout}");
+    assert_eq!(
+        lines.get(2).copied(),
+        Some("v1"),
+        "expected v1, got: {stdout}"
+    );
     // overwrite -> "v2"
-    assert_eq!(lines.get(3).copied(), Some("v2"),    "expected v2 after overwrite, got: {stdout}");
+    assert_eq!(
+        lines.get(3).copied(),
+        Some("v2"),
+        "expected v2 after overwrite, got: {stdout}"
+    );
     // has after clear -> false
-    assert_eq!(lines.get(4).copied(), Some("false"), "expected false after clear, got: {stdout}");
+    assert_eq!(
+        lines.get(4).copied(),
+        Some("false"),
+        "expected false after clear, got: {stdout}"
+    );
     // get after clear -> ""
-    assert_eq!(lines.get(5).copied(), Some(""),      "expected empty string after clear, got: {stdout}");
+    assert_eq!(
+        lines.get(5).copied(),
+        Some(""),
+        "expected empty string after clear, got: {stdout}"
+    );
 }
 
 // ── std::retry ────────────────────────────────────────────────────────────────
@@ -1040,7 +1360,11 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::retry check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -1057,13 +1381,41 @@ fn main() -> Unit effects {IO} {
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
     let lines: Vec<&str> = stdout.lines().collect();
-    assert_eq!(lines.get(0).copied(), Some("100"),   "backoff(0) should be 100");
-    assert_eq!(lines.get(1).copied(), Some("200"),   "backoff(1) should be 200");
-    assert_eq!(lines.get(2).copied(), Some("400"),   "backoff(2) should be 400");
-    assert_eq!(lines.get(3).copied(), Some("800"),   "backoff(3) should be 800");
-    assert_eq!(lines.get(4).copied(), Some("25600"), "backoff(8) should be 25600");
-    assert_eq!(lines.get(5).copied(), Some("30000"), "backoff(9) should be capped at 30000");
-    assert_eq!(lines.get(6).copied(), Some("3"),     "retry_attempts() should be 3");
+    assert_eq!(
+        lines.get(0).copied(),
+        Some("100"),
+        "backoff(0) should be 100"
+    );
+    assert_eq!(
+        lines.get(1).copied(),
+        Some("200"),
+        "backoff(1) should be 200"
+    );
+    assert_eq!(
+        lines.get(2).copied(),
+        Some("400"),
+        "backoff(2) should be 400"
+    );
+    assert_eq!(
+        lines.get(3).copied(),
+        Some("800"),
+        "backoff(3) should be 800"
+    );
+    assert_eq!(
+        lines.get(4).copied(),
+        Some("25600"),
+        "backoff(8) should be 25600"
+    );
+    assert_eq!(
+        lines.get(5).copied(),
+        Some("30000"),
+        "backoff(9) should be capped at 30000"
+    );
+    assert_eq!(
+        lines.get(6).copied(),
+        Some("3"),
+        "retry_attempts() should be 3"
+    );
 }
 
 // ── std::http_server ──────────────────────────────────────────────────────────
@@ -1088,7 +1440,11 @@ fn main() -> Unit effects {{Net, IO}} {{
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&server_src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&server_src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::http_server check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -1112,7 +1468,11 @@ fn main() -> Unit effects {{IO, Net, Throw}} {{
     )
     .unwrap();
 
-    let check2 = aether().arg("check").arg(&client_src).output().expect("aether check client");
+    let check2 = aether()
+        .arg("check")
+        .arg(&client_src)
+        .output()
+        .expect("aether check client");
     assert!(
         check2.status.success(),
         "http_get_local check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -1176,7 +1536,11 @@ fn main() -> Unit effects {IO, Throw} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "regex_replace_all check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -1192,9 +1556,15 @@ fn main() -> Unit effects {IO, Throw} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("bXnXnX"),              "expected bXnXnX, got: {stdout}");
-    assert!(stdout.contains("foo NUM bar NUM baz NUM"), "expected all digits replaced, got: {stdout}");
-    assert!(stdout.contains("banana"),              "expected no-match unchanged, got: {stdout}");
+    assert!(stdout.contains("bXnXnX"), "expected bXnXnX, got: {stdout}");
+    assert!(
+        stdout.contains("foo NUM bar NUM baz NUM"),
+        "expected all digits replaced, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("banana"),
+        "expected no-match unchanged, got: {stdout}"
+    );
 }
 
 // ── fmt arities ───────────────────────────────────────────────────────────────
@@ -1217,7 +1587,11 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "fmt_arities check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -1233,11 +1607,26 @@ fn main() -> Unit effects {IO} {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("a b c d"),   "expected fmt4 result, got: {stdout}");
-    assert!(stdout.contains("1 2 3 4 5"), "expected fmt5 result, got: {stdout}");
-    assert!(stdout.contains("x y z"),     "expected fmt_list 3-arg result, got: {stdout}");
-    assert!(stdout.contains("only"),      "expected fmt_list single arg, got: {stdout}");
-    assert!(stdout.contains("p {}"),      "expected leftover placeholder, got: {stdout}");
+    assert!(
+        stdout.contains("a b c d"),
+        "expected fmt4 result, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("1 2 3 4 5"),
+        "expected fmt5 result, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("x y z"),
+        "expected fmt_list 3-arg result, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("only"),
+        "expected fmt_list single arg, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("p {}"),
+        "expected leftover placeholder, got: {stdout}"
+    );
 }
 
 // ── std::strlist ──────────────────────────────────────────────────────────────
@@ -1268,7 +1657,11 @@ fn main() -> Unit effects {IO, Throw} {
     )
     .unwrap();
 
-    let check = aether().arg("check").arg(&src).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "std::strlist check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -1287,17 +1680,35 @@ fn main() -> Unit effects {IO, Throw} {
     // strlist_len = 3
     assert!(stdout.contains('3'), "expected len=3, got: {stdout}");
     // strlist_get(1) = "banana"
-    assert!(stdout.contains("banana"), "expected get(1)=banana, got: {stdout}");
+    assert!(
+        stdout.contains("banana"),
+        "expected get(1)=banana, got: {stdout}"
+    );
     // strlist_join = "apple, banana, cherry"
-    assert!(stdout.contains("apple, banana, cherry"), "expected join, got: {stdout}");
+    assert!(
+        stdout.contains("apple, banana, cherry"),
+        "expected join, got: {stdout}"
+    );
     // contains "banana" -> true
-    assert!(stdout.contains("true"),  "expected contains=true, got: {stdout}");
+    assert!(
+        stdout.contains("true"),
+        "expected contains=true, got: {stdout}"
+    );
     // contains "grape" -> false
-    assert!(stdout.contains("false"), "expected contains=false, got: {stdout}");
+    assert!(
+        stdout.contains("false"),
+        "expected contains=false, got: {stdout}"
+    );
     // reversed head = "cherry"
-    assert!(stdout.contains("cherry"), "expected reversed head=cherry, got: {stdout}");
+    assert!(
+        stdout.contains("cherry"),
+        "expected reversed head=cherry, got: {stdout}"
+    );
     // tail of 3-elem list has len 2
     assert!(stdout.contains('2'), "expected tail len=2, got: {stdout}");
     // tail of single-element list has len 0
-    assert!(stdout.contains('0'), "expected single-elem tail len=0, got: {stdout}");
+    assert!(
+        stdout.contains('0'),
+        "expected single-elem tail len=0, got: {stdout}"
+    );
 }

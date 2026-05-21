@@ -7,14 +7,16 @@
 
 #![allow(clippy::module_inception)]
 
-pub mod span;
+pub mod decl;
 pub mod expr;
 pub mod pat;
-pub mod ty;
-pub mod decl;
 pub mod prov;
+pub mod span;
+pub mod ty;
 
-pub use decl::{Decl, FnDecl, ImportDecl, LetDecl, Module, Param, SpecBlock, ToolDecl, TypeAliasDecl};
+pub use decl::{
+    Decl, FnDecl, ImportDecl, LetDecl, Module, Param, SpecBlock, ToolDecl, TypeAliasDecl,
+};
 pub use expr::{Arg, BinOp, Expr, Lit, MatchArm, Stmt, StrPart, UnOp};
 pub use pat::Pattern;
 pub use prov::{ProvArena, ProvChain, ProvNode, ProvOp};

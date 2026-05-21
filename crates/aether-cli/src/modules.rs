@@ -13,8 +13,8 @@
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
-use aether_ast::{FileId, Module, SourceMap};
 use aether_ast::decl::Decl;
+use aether_ast::{FileId, Module, SourceMap};
 use aether_parser::parse_module;
 
 // ── error type ──────────────────────────────────────────────────────────────
@@ -42,7 +42,10 @@ impl std::fmt::Display for LoadError {
                 write!(f, "import cycle detected: {}", chain.join(" -> "))
             }
             LoadError::NotFound(name) => {
-                write!(f, "unknown module `{name}` (not in stdlib and no file found)")
+                write!(
+                    f,
+                    "unknown module `{name}` (not in stdlib and no file found)"
+                )
             }
             LoadError::AliasNotSupported(name) => {
                 write!(
@@ -79,11 +82,7 @@ impl Loader {
 
     /// Parse `entry`, resolve all imports transitively, and return a merged
     /// flat `Module`.  Any `Import` decls in the merged module are stripped.
-    pub fn load(
-        &mut self,
-        entry: &Path,
-        sm: &mut SourceMap,
-    ) -> Result<Module, LoadError> {
+    pub fn load(&mut self, entry: &Path, sm: &mut SourceMap) -> Result<Module, LoadError> {
         let mut visiting: HashSet<String> = HashSet::new();
         let mut stack: Vec<String> = Vec::new();
         self.load_file(entry, sm, &mut visiting, &mut stack)
@@ -156,22 +155,21 @@ impl Loader {
                     }
 
                     // Resolve: stdlib first, then filesystem.
-                    let import_decls =
-                        if let Some(std_src) = stdlib_source(&qname) {
-                            load_stdlib_module(&qname, std_src, sm)?
-                        } else {
-                            // Map "foo::bar::baz" -> "<root>/foo/bar/baz.ae"
-                            let rel: PathBuf = imp.path.iter().collect::<PathBuf>()
-                                .with_extension("ae");
-                            let abs = self.project_root.join(&rel);
-                            if !abs.exists() {
-                                visiting.remove(&canonical);
-                                stack.pop();
-                                return Err(LoadError::NotFound(qname));
-                            }
-                            let sub = self.load_file(&abs, sm, visiting, stack)?;
-                            sub.decls
-                        };
+                    let import_decls = if let Some(std_src) = stdlib_source(&qname) {
+                        load_stdlib_module(&qname, std_src, sm)?
+                    } else {
+                        // Map "foo::bar::baz" -> "<root>/foo/bar/baz.ae"
+                        let rel: PathBuf =
+                            imp.path.iter().collect::<PathBuf>().with_extension("ae");
+                        let abs = self.project_root.join(&rel);
+                        if !abs.exists() {
+                            visiting.remove(&canonical);
+                            stack.pop();
+                            return Err(LoadError::NotFound(qname));
+                        }
+                        let sub = self.load_file(&abs, sm, visiting, stack)?;
+                        sub.decls
+                    };
 
                     self.cache.insert(qname.clone(), import_decls.clone());
                     merged.extend(import_decls);

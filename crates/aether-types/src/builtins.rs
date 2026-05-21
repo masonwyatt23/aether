@@ -9,7 +9,10 @@ fn ty_con(c: TyCon) -> Type {
 
 fn sig(params: Vec<(&str, Type)>, ret: Type, effects: Vec<Effect>) -> FnSig {
     FnSig {
-        params: params.into_iter().map(|(n, t)| (n.to_string(), t)).collect(),
+        params: params
+            .into_iter()
+            .map(|(n, t)| (n.to_string(), t))
+            .collect(),
         ret,
         effects: EffectRow::from_iter(effects),
         requires: vec![],
@@ -90,17 +93,18 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     // len(list-or-str) -> Int
     ctx.insert_fn(
         "len".to_string(),
-        sig(vec![("value", Type::Var("a".into(), Span::DUMMY))], ty_con(Int), vec![]),
+        sig(
+            vec![("value", Type::Var("a".into(), Span::DUMMY))],
+            ty_con(Int),
+            vec![],
+        ),
     );
 
     // introspect(target [, depth]) -> ModuleSurface
     ctx.insert_fn(
         "introspect".to_string(),
         sig(
-            vec![
-                ("target", ty_con(Str)),
-                ("depth", ty_con(Int)),
-            ],
+            vec![("target", ty_con(Str)), ("depth", ty_con(Int))],
             ty_con(ModuleSurface),
             vec![],
         ),
@@ -129,7 +133,11 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     // print_module_surface(s) - IO
     ctx.insert_fn(
         "print_module_surface".to_string(),
-        sig(vec![("surface", ty_con(ModuleSurface))], ty_con(Unit), vec![IO]),
+        sig(
+            vec![("surface", ty_con(ModuleSurface))],
+            ty_con(Unit),
+            vec![IO],
+        ),
     );
 
     // print_prov(chain) - IO
@@ -151,11 +159,19 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     );
     ctx.insert_fn(
         "max".to_string(),
-        sig(vec![("a", ty_con(Int)), ("b", ty_con(Int))], ty_con(Int), vec![]),
+        sig(
+            vec![("a", ty_con(Int)), ("b", ty_con(Int))],
+            ty_con(Int),
+            vec![],
+        ),
     );
     ctx.insert_fn(
         "min".to_string(),
-        sig(vec![("a", ty_con(Int)), ("b", ty_con(Int))], ty_con(Int), vec![]),
+        sig(
+            vec![("a", ty_con(Int)), ("b", ty_con(Int))],
+            ty_con(Int),
+            vec![],
+        ),
     );
 
     // std.iter.refine(seed, step, budget) - iterate `step` budget times.
@@ -176,11 +192,19 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
 
     ctx.insert_fn(
         "list_sum_native".to_string(),
-        sig(vec![("xs", Type::List(Box::new(ty_con(Int)), Span::DUMMY))], ty_con(Int), vec![]),
+        sig(
+            vec![("xs", Type::List(Box::new(ty_con(Int)), Span::DUMMY))],
+            ty_con(Int),
+            vec![],
+        ),
     );
     ctx.insert_fn(
         "list_max_native".to_string(),
-        sig(vec![("xs", Type::List(Box::new(ty_con(Int)), Span::DUMMY))], ty_con(Int), vec![Throw]),
+        sig(
+            vec![("xs", Type::List(Box::new(ty_con(Int)), Span::DUMMY))],
+            ty_con(Int),
+            vec![Throw],
+        ),
     );
     ctx.insert_fn(
         "list_contains_native".to_string(),
@@ -217,7 +241,11 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
 
     ctx.insert_fn(
         "strlist_len_native".to_string(),
-        sig(vec![("xs", Type::List(Box::new(ty_con(Str)), Span::DUMMY))], ty_con(Int), vec![]),
+        sig(
+            vec![("xs", Type::List(Box::new(ty_con(Str)), Span::DUMMY))],
+            ty_con(Int),
+            vec![],
+        ),
     );
     ctx.insert_fn(
         "strlist_get_native".to_string(),
@@ -262,7 +290,11 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     );
     ctx.insert_fn(
         "strlist_head_native".to_string(),
-        sig(vec![("xs", Type::List(Box::new(ty_con(Str)), Span::DUMMY))], ty_con(Str), vec![Throw]),
+        sig(
+            vec![("xs", Type::List(Box::new(ty_con(Str)), Span::DUMMY))],
+            ty_con(Str),
+            vec![Throw],
+        ),
     );
     ctx.insert_fn(
         "strlist_tail_native".to_string(),
@@ -285,11 +317,19 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     );
     ctx.insert_fn(
         "str_contains_native".to_string(),
-        sig(vec![("s", ty_con(Str)), ("needle", ty_con(Str))], ty_con(Bool), vec![]),
+        sig(
+            vec![("s", ty_con(Str)), ("needle", ty_con(Str))],
+            ty_con(Bool),
+            vec![],
+        ),
     );
     ctx.insert_fn(
         "str_starts_with_native".to_string(),
-        sig(vec![("s", ty_con(Str)), ("prefix", ty_con(Str))], ty_con(Bool), vec![]),
+        sig(
+            vec![("s", ty_con(Str)), ("prefix", ty_con(Str))],
+            ty_con(Bool),
+            vec![],
+        ),
     );
     ctx.insert_fn(
         "str_split_on_native".to_string(),
@@ -324,26 +364,42 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
 
     ctx.insert_fn(
         "map_get_native".to_string(),
-        sig(vec![("m", map_list_var()), ("key", ty_con(Str))], ty_con(Int), vec![Throw]),
+        sig(
+            vec![("m", map_list_var()), ("key", ty_con(Str))],
+            ty_con(Int),
+            vec![Throw],
+        ),
     );
     ctx.insert_fn(
         "map_set_native".to_string(),
         sig(
-            vec![("m", map_list_var()), ("key", ty_con(Str)), ("value", ty_con(Int))],
+            vec![
+                ("m", map_list_var()),
+                ("key", ty_con(Str)),
+                ("value", ty_con(Int)),
+            ],
             map_list_var(),
             vec![],
         ),
     );
     ctx.insert_fn(
         "map_has_native".to_string(),
-        sig(vec![("m", map_list_var()), ("key", ty_con(Str))], ty_con(Bool), vec![]),
+        sig(
+            vec![("m", map_list_var()), ("key", ty_con(Str))],
+            ty_con(Bool),
+            vec![],
+        ),
     );
 
     // ── std::path natives ─────────────────────────────────────────────────────
 
     ctx.insert_fn(
         "path_join_native".to_string(),
-        sig(vec![("a", ty_con(Str)), ("b", ty_con(Str))], ty_con(Str), vec![]),
+        sig(
+            vec![("a", ty_con(Str)), ("b", ty_con(Str))],
+            ty_con(Str),
+            vec![],
+        ),
     );
     ctx.insert_fn(
         "path_basename_native".to_string(),
@@ -389,19 +445,31 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     );
     ctx.insert_fn(
         "env_set_native".to_string(),
-        sig(vec![("name", ty_con(Str)), ("value", ty_con(Str))], ty_con(Unit), vec![State]),
+        sig(
+            vec![("name", ty_con(Str)), ("value", ty_con(Str))],
+            ty_con(Unit),
+            vec![State],
+        ),
     );
 
     // ── std::fmt natives ──────────────────────────────────────────────────────
 
     ctx.insert_fn(
         "fmt1_native".to_string(),
-        sig(vec![("template", ty_con(Str)), ("a", ty_con(Str))], ty_con(Str), vec![]),
+        sig(
+            vec![("template", ty_con(Str)), ("a", ty_con(Str))],
+            ty_con(Str),
+            vec![],
+        ),
     );
     ctx.insert_fn(
         "fmt2_native".to_string(),
         sig(
-            vec![("template", ty_con(Str)), ("a", ty_con(Str)), ("b", ty_con(Str))],
+            vec![
+                ("template", ty_con(Str)),
+                ("a", ty_con(Str)),
+                ("b", ty_con(Str)),
+            ],
             ty_con(Str),
             vec![],
         ),
@@ -494,16 +562,28 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
 
     ctx.insert_fn(
         "regex_match_native".to_string(),
-        sig(vec![("pattern", ty_con(Str)), ("input", ty_con(Str))], ty_con(Bool), vec![Throw]),
+        sig(
+            vec![("pattern", ty_con(Str)), ("input", ty_con(Str))],
+            ty_con(Bool),
+            vec![Throw],
+        ),
     );
     ctx.insert_fn(
         "regex_find_native".to_string(),
-        sig(vec![("pattern", ty_con(Str)), ("input", ty_con(Str))], ty_con(Str), vec![Throw]),
+        sig(
+            vec![("pattern", ty_con(Str)), ("input", ty_con(Str))],
+            ty_con(Str),
+            vec![Throw],
+        ),
     );
     ctx.insert_fn(
         "regex_replace_native".to_string(),
         sig(
-            vec![("pattern", ty_con(Str)), ("input", ty_con(Str)), ("replacement", ty_con(Str))],
+            vec![
+                ("pattern", ty_con(Str)),
+                ("input", ty_con(Str)),
+                ("replacement", ty_con(Str)),
+            ],
             ty_con(Str),
             vec![Throw],
         ),
@@ -511,7 +591,11 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     ctx.insert_fn(
         "regex_replace_all_native".to_string(),
         sig(
-            vec![("pattern", ty_con(Str)), ("input", ty_con(Str)), ("replacement", ty_con(Str))],
+            vec![
+                ("pattern", ty_con(Str)),
+                ("input", ty_con(Str)),
+                ("replacement", ty_con(Str)),
+            ],
             ty_con(Str),
             vec![Throw],
         ),
@@ -541,7 +625,11 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     );
     ctx.insert_fn(
         "sys_args_native".to_string(),
-        sig(vec![], Type::List(Box::new(ty_con(Str)), Span::DUMMY), vec![]),
+        sig(
+            vec![],
+            Type::List(Box::new(ty_con(Str)), Span::DUMMY),
+            vec![],
+        ),
     );
     ctx.insert_fn(
         "sys_stdin_line_native".to_string(),
@@ -575,7 +663,11 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
 
     ctx.insert_fn(
         "math_pow_native".to_string(),
-        sig(vec![("base", ty_con(Int)), ("exp", ty_con(Int))], ty_con(Int), vec![]),
+        sig(
+            vec![("base", ty_con(Int)), ("exp", ty_con(Int))],
+            ty_con(Int),
+            vec![],
+        ),
     );
     ctx.insert_fn(
         "math_sqrt_native".to_string(),
@@ -595,11 +687,19 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     );
     ctx.insert_fn(
         "math_min_f_native".to_string(),
-        sig(vec![("a", ty_con(Float)), ("b", ty_con(Float))], ty_con(Float), vec![]),
+        sig(
+            vec![("a", ty_con(Float)), ("b", ty_con(Float))],
+            ty_con(Float),
+            vec![],
+        ),
     );
     ctx.insert_fn(
         "math_max_f_native".to_string(),
-        sig(vec![("a", ty_con(Float)), ("b", ty_con(Float))], ty_con(Float), vec![]),
+        sig(
+            vec![("a", ty_con(Float)), ("b", ty_con(Float))],
+            ty_con(Float),
+            vec![],
+        ),
     );
     ctx.insert_fn(
         "math_pi_native".to_string(),
@@ -643,7 +743,11 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
 
     ctx.insert_fn(
         "random_int_native".to_string(),
-        sig(vec![("lo", ty_con(Int)), ("hi", ty_con(Int))], ty_con(Int), vec![Rand]),
+        sig(
+            vec![("lo", ty_con(Int)), ("hi", ty_con(Int))],
+            ty_con(Int),
+            vec![Rand],
+        ),
     );
     ctx.insert_fn(
         "random_bool_native".to_string(),
@@ -683,7 +787,11 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     ctx.insert_fn(
         "date_compose_native".to_string(),
         sig(
-            vec![("year", ty_con(Int)), ("month", ty_con(Int)), ("day", ty_con(Int))],
+            vec![
+                ("year", ty_con(Int)),
+                ("month", ty_con(Int)),
+                ("day", ty_con(Int)),
+            ],
             ty_con(Int),
             vec![],
         ),
@@ -697,15 +805,27 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     );
     ctx.insert_fn(
         "json_get_str_native".to_string(),
-        sig(vec![("json", ty_con(Str)), ("key", ty_con(Str))], ty_con(Str), vec![Throw]),
+        sig(
+            vec![("json", ty_con(Str)), ("key", ty_con(Str))],
+            ty_con(Str),
+            vec![Throw],
+        ),
     );
     ctx.insert_fn(
         "json_get_int_native".to_string(),
-        sig(vec![("json", ty_con(Str)), ("key", ty_con(Str))], ty_con(Int), vec![Throw]),
+        sig(
+            vec![("json", ty_con(Str)), ("key", ty_con(Str))],
+            ty_con(Int),
+            vec![Throw],
+        ),
     );
     ctx.insert_fn(
         "json_get_bool_native".to_string(),
-        sig(vec![("json", ty_con(Str)), ("key", ty_con(Str))], ty_con(Bool), vec![Throw]),
+        sig(
+            vec![("json", ty_con(Str)), ("key", ty_con(Str))],
+            ty_con(Bool),
+            vec![Throw],
+        ),
     );
     ctx.insert_fn(
         "json_keys_native".to_string(),
@@ -766,11 +886,19 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
 
     ctx.insert_fn(
         "yaml_get_str_native".to_string(),
-        sig(vec![("yaml", ty_con(Str)), ("key", ty_con(Str))], ty_con(Str), vec![Throw]),
+        sig(
+            vec![("yaml", ty_con(Str)), ("key", ty_con(Str))],
+            ty_con(Str),
+            vec![Throw],
+        ),
     );
     ctx.insert_fn(
         "yaml_get_int_native".to_string(),
-        sig(vec![("yaml", ty_con(Str)), ("key", ty_con(Str))], ty_con(Int), vec![Throw]),
+        sig(
+            vec![("yaml", ty_con(Str)), ("key", ty_con(Str))],
+            ty_con(Int),
+            vec![Throw],
+        ),
     );
     ctx.insert_fn(
         "yaml_keys_native".to_string(),
@@ -789,11 +917,19 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     );
     ctx.insert_fn(
         "fs_write_native".to_string(),
-        sig(vec![("path", ty_con(Str)), ("contents", ty_con(Str))], ty_con(Unit), vec![FS, Throw]),
+        sig(
+            vec![("path", ty_con(Str)), ("contents", ty_con(Str))],
+            ty_con(Unit),
+            vec![FS, Throw],
+        ),
     );
     ctx.insert_fn(
         "fs_append_native".to_string(),
-        sig(vec![("path", ty_con(Str)), ("contents", ty_con(Str))], ty_con(Unit), vec![FS, Throw]),
+        sig(
+            vec![("path", ty_con(Str)), ("contents", ty_con(Str))],
+            ty_con(Unit),
+            vec![FS, Throw],
+        ),
     );
     ctx.insert_fn(
         "fs_exists_native".to_string(),
@@ -824,7 +960,11 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
     );
     ctx.insert_fn(
         "cache_set_native".to_string(),
-        sig(vec![("key", ty_con(Str)), ("value", ty_con(Str))], ty_con(Unit), vec![State]),
+        sig(
+            vec![("key", ty_con(Str)), ("value", ty_con(Str))],
+            ty_con(Unit),
+            vec![State],
+        ),
     );
     ctx.insert_fn(
         "cache_has_native".to_string(),
@@ -850,10 +990,18 @@ pub fn install_builtins(ctx: &mut TypeCtx) {
 
     ctx.insert_fn(
         "http_serve_static_native".to_string(),
-        sig(vec![("port", ty_con(Int)), ("body", ty_con(Str))], ty_con(Unit), vec![Net, IO]),
+        sig(
+            vec![("port", ty_con(Int)), ("body", ty_con(Str))],
+            ty_con(Unit),
+            vec![Net, IO],
+        ),
     );
     ctx.insert_fn(
         "http_get_local_native".to_string(),
-        sig(vec![("port", ty_con(Int)), ("path", ty_con(Str))], ty_con(Str), vec![Net, Throw]),
+        sig(
+            vec![("port", ty_con(Int)), ("path", ty_con(Str))],
+            ty_con(Str),
+            vec![Net, Throw],
+        ),
     );
 }

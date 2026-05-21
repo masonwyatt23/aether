@@ -44,12 +44,18 @@ impl Lin {
         Self::default()
     }
     pub fn constant(n: i64) -> Self {
-        Self { terms: BTreeMap::new(), constant: n }
+        Self {
+            terms: BTreeMap::new(),
+            constant: n,
+        }
     }
     pub fn var(name: &str) -> Self {
         let mut m = BTreeMap::new();
         m.insert(name.to_string(), 1);
-        Self { terms: m, constant: 0 }
+        Self {
+            terms: m,
+            constant: 0,
+        }
     }
     pub fn add(mut self, other: Self) -> Self {
         for (k, v) in other.terms {
@@ -110,9 +116,18 @@ impl Constraint {
     /// Negate the constraint. `lhs <= 0` becomes `lhs > 0`, i.e. `-lhs < 0`.
     pub fn negate(self) -> Self {
         match self.cmp {
-            Cmp::Le => Constraint { lhs: self.lhs.neg(), cmp: Cmp::Lt },
-            Cmp::Lt => Constraint { lhs: self.lhs.neg(), cmp: Cmp::Le },
-            Cmp::Eq => Constraint { lhs: self.lhs, cmp: Cmp::Eq }, // handled by disjunction in caller
+            Cmp::Le => Constraint {
+                lhs: self.lhs.neg(),
+                cmp: Cmp::Lt,
+            },
+            Cmp::Lt => Constraint {
+                lhs: self.lhs.neg(),
+                cmp: Cmp::Le,
+            },
+            Cmp::Eq => Constraint {
+                lhs: self.lhs,
+                cmp: Cmp::Eq,
+            }, // handled by disjunction in caller
         }
     }
 }
@@ -362,7 +377,12 @@ pub fn subst(e: &Expr, name: &str, value: &Expr) -> Expr {
                     .collect(),
                 span: *span,
             },
-            Expr::If { cond, then_branch, else_branch, span } => Expr::If {
+            Expr::If {
+                cond,
+                then_branch,
+                else_branch,
+                span,
+            } => Expr::If {
                 cond: Box::new(go(cond, name, value)),
                 then_branch: Box::new(go(then_branch, name, value)),
                 else_branch: Box::new(go(else_branch, name, value)),
@@ -451,11 +471,17 @@ fn push_not(f: Form) -> Form {
             Form::Diseq(l) => Form::Atom(Constraint::new(l, Cmp::Eq)),
             Form::Not(x) => push_not(*x),
             Form::And(parts) => {
-                let ors = parts.into_iter().map(|p| push_not(Form::Not(Box::new(p)))).collect();
+                let ors = parts
+                    .into_iter()
+                    .map(|p| push_not(Form::Not(Box::new(p))))
+                    .collect();
                 Form::Or(ors)
             }
             Form::Or(parts) => {
-                let ands = parts.into_iter().map(|p| push_not(Form::Not(Box::new(p)))).collect();
+                let ands = parts
+                    .into_iter()
+                    .map(|p| push_not(Form::Not(Box::new(p))))
+                    .collect();
                 Form::And(ands)
             }
         },
@@ -586,39 +612,49 @@ fn fm_check_sat(clause: &[Constraint]) -> FmResult {
 
         // Compute best-effort integer bounds for the witness.
         // Upper: a*x + A <=/<  0  (a > 0)  =>  x <=  -A/a  => x_max = floor(-A/a)
-        let upper_bound: Option<i64> = pos.iter().filter_map(|u| {
-            let a = u.lhs.coef(&x);
-            let mut rest = u.lhs.clone();
-            rest.terms.remove(&x);
-            if rest.is_const() {
-                // a*x <= -rest  =>  x <= -rest/a
-                let num = -rest.constant;
-                // floor division for potentially negative numerator
-                Some(if num >= 0 { num / a } else { -((-num + a - 1) / a) })
-            } else {
-                None
-            }
-        }).min();
+        let upper_bound: Option<i64> = pos
+            .iter()
+            .filter_map(|u| {
+                let a = u.lhs.coef(&x);
+                let mut rest = u.lhs.clone();
+                rest.terms.remove(&x);
+                if rest.is_const() {
+                    // a*x <= -rest  =>  x <= -rest/a
+                    let num = -rest.constant;
+                    // floor division for potentially negative numerator
+                    Some(if num >= 0 {
+                        num / a
+                    } else {
+                        -((-num + a - 1) / a)
+                    })
+                } else {
+                    None
+                }
+            })
+            .min();
 
         // Lower: b*x + B <=/<  0  (b < 0)  =>  x >= -B/b  => x_min = ceil(-B/b)
-        let lower_bound: Option<i64> = neg_bounds.iter().filter_map(|l| {
-            let b = l.lhs.coef(&x); // negative
-            let neg_b = -b; // positive
-            let mut rest = l.lhs.clone();
-            rest.terms.remove(&x);
-            if rest.is_const() {
-                // b*x <= -rest  =>  x >= -rest/b = rest/neg_b  (ceil)
-                let num = rest.constant;
-                // ceil(num / neg_b)
-                Some(if num >= 0 {
-                    (num + neg_b - 1) / neg_b
+        let lower_bound: Option<i64> = neg_bounds
+            .iter()
+            .filter_map(|l| {
+                let b = l.lhs.coef(&x); // negative
+                let neg_b = -b; // positive
+                let mut rest = l.lhs.clone();
+                rest.terms.remove(&x);
+                if rest.is_const() {
+                    // b*x <= -rest  =>  x >= -rest/b = rest/neg_b  (ceil)
+                    let num = rest.constant;
+                    // ceil(num / neg_b)
+                    Some(if num >= 0 {
+                        (num + neg_b - 1) / neg_b
+                    } else {
+                        -((-num) / neg_b)
+                    })
                 } else {
-                    -((-num) / neg_b)
-                })
-            } else {
-                None
-            }
-        }).max();
+                    None
+                }
+            })
+            .max();
 
         let val = match (lower_bound, upper_bound) {
             (Some(lo), _) => lo,
@@ -821,7 +857,11 @@ mod tests {
 
     fn forall_in_call(x: &str, lo: i64, hi: i64, pred: Expr) -> Expr {
         let s = Span::DUMMY;
-        let mk_arg = |v: Expr| Arg { name: None, value: v, span: s };
+        let mk_arg = |v: Expr| Arg {
+            name: None,
+            value: v,
+            span: s,
+        };
         Expr::Call {
             callee: Box::new(Expr::Var("forall_in".into(), s)),
             args: vec![
@@ -886,7 +926,11 @@ mod tests {
         let v = p(&[], "1 > 2");
         match &v {
             Verdict::RefutedWith { values } => {
-                assert!(values.is_empty(), "expected empty witness, got {:?}", values);
+                assert!(
+                    values.is_empty(),
+                    "expected empty witness, got {:?}",
+                    values
+                );
             }
             other => panic!("expected RefutedWith, got {:?}", other),
         }

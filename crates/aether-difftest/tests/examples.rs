@@ -21,7 +21,10 @@ fn workspace_root() -> PathBuf {
             }
         }
         if !dir.pop() {
-            panic!("could not locate workspace root from {}", env!("CARGO_MANIFEST_DIR"));
+            panic!(
+                "could not locate workspace root from {}",
+                env!("CARGO_MANIFEST_DIR")
+            );
         }
     }
 }
@@ -45,7 +48,11 @@ fn diff_all_examples() {
         .collect();
     ae_files.sort();
 
-    assert!(!ae_files.is_empty(), "no .ae files found in {}", examples_dir.display());
+    assert!(
+        !ae_files.is_empty(),
+        "no .ae files found in {}",
+        examples_dir.display()
+    );
 
     let mut n_match = 0usize;
     let mut n_skipped = 0usize;
@@ -57,8 +64,8 @@ fn diff_all_examples() {
 
     for path in &ae_files {
         let name = path.file_name().unwrap_or_default().to_string_lossy();
-        let result = diff_file(path)
-            .unwrap_or_else(|e| panic!("I/O error reading {}: {e}", path.display()));
+        let result =
+            diff_file(path).unwrap_or_else(|e| panic!("I/O error reading {}: {e}", path.display()));
 
         match &result.agreement {
             Agreement::Match => {
@@ -75,7 +82,10 @@ fn diff_all_examples() {
                 n_skipped += 1;
                 println!("[SKIP-BC] {name}  (unsupported: {reason})");
             }
-            Agreement::BothFailed { tree_error, bc_error } => {
+            Agreement::BothFailed {
+                tree_error,
+                bc_error,
+            } => {
                 n_both_failed += 1;
                 println!("[BOTH-FAIL] {name}");
                 println!("           tree: {tree_error}");
@@ -97,9 +107,7 @@ fn diff_all_examples() {
                 println!("[NONDET]  {name}  ({reason})");
             }
             Agreement::Differ { tree, bc } => {
-                let msg = format!(
-                    "DIVERGENCE\n  tree: {tree:?}\n  bc:   {bc:?}"
-                );
+                let msg = format!("DIVERGENCE\n  tree: {tree:?}\n  bc:   {bc:?}");
                 divergences.push((path.clone(), msg.clone()));
                 println!("[DIFFER]  {name}");
                 println!("          {msg}");
@@ -126,7 +134,10 @@ fn diff_all_examples() {
     // after each call, so print-style builtins (print_module_surface, print_prov)
     // should no longer cause spurious divergences.
     if !divergences.is_empty() {
-        eprintln!("\n⚠ {} example(s) diverged between tree-walker and bytecode VM.", divergences.len());
+        eprintln!(
+            "\n⚠ {} example(s) diverged between tree-walker and bytecode VM.",
+            divergences.len()
+        );
         for (path, detail) in &divergences {
             eprintln!("  {}: {detail}", path.display());
         }

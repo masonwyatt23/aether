@@ -18,7 +18,11 @@ pub fn lint_module(m: &Module) -> Vec<Diagnostic> {
 }
 
 fn warn(span: Span, msg: impl Into<String>) -> Diagnostic {
-    Diagnostic { severity: Severity::Warning, span, msg: msg.into() }
+    Diagnostic {
+        severity: Severity::Warning,
+        span,
+        msg: msg.into(),
+    }
 }
 
 // ── lints ────────────────────────────────────────────────────────────────────
@@ -66,7 +70,11 @@ fn lint_unused_imports(m: &Module, out: &mut Vec<Diagnostic>) {
                 let path = imp.path.join("::");
                 out.push(warn(
                     imp.span,
-                    format!("import `{{ {} }} from {}` is unused", imp.names.join(", "), path),
+                    format!(
+                        "import `{{ {} }} from {}` is unused",
+                        imp.names.join(", "),
+                        path
+                    ),
                 ));
             }
         }
@@ -135,7 +143,9 @@ fn collect_used_idents(d: &Decl, out: &mut HashSet<String>) {
 
 fn collect_idents_in_expr(e: &Expr, out: &mut HashSet<String>) {
     match e {
-        Expr::Var(n, _) => { out.insert(n.clone()); }
+        Expr::Var(n, _) => {
+            out.insert(n.clone());
+        }
         Expr::Call { callee, args, .. } => {
             collect_idents_in_expr(callee, out);
             for a in args {
@@ -147,7 +157,12 @@ fn collect_idents_in_expr(e: &Expr, out: &mut HashSet<String>) {
             collect_idents_in_expr(r, out);
         }
         Expr::Un(_, x, _) => collect_idents_in_expr(x, out),
-        Expr::If { cond, then_branch, else_branch, .. } => {
+        Expr::If {
+            cond,
+            then_branch,
+            else_branch,
+            ..
+        } => {
             collect_idents_in_expr(cond, out);
             collect_idents_in_expr(then_branch, out);
             collect_idents_in_expr(else_branch, out);
@@ -163,23 +178,33 @@ fn collect_idents_in_expr(e: &Expr, out: &mut HashSet<String>) {
                     Stmt::Expr(e) => collect_idents_in_expr(e, out),
                 }
             }
-            if let Some(t) = tail { collect_idents_in_expr(t, out); }
+            if let Some(t) = tail {
+                collect_idents_in_expr(t, out);
+            }
         }
         Expr::Tuple(xs, _) | Expr::List(xs, _) => {
-            for x in xs { collect_idents_in_expr(x, out); }
+            for x in xs {
+                collect_idents_in_expr(x, out);
+            }
         }
         Expr::Record(fs, _) => {
-            for (_, e) in fs { collect_idents_in_expr(e, out); }
+            for (_, e) in fs {
+                collect_idents_in_expr(e, out);
+            }
         }
         Expr::Field(e, _, _) => collect_idents_in_expr(e, out),
         Expr::Index(e, i, _) => {
             collect_idents_in_expr(e, out);
             collect_idents_in_expr(i, out);
         }
-        Expr::Match { scrutinee, arms, .. } => {
+        Expr::Match {
+            scrutinee, arms, ..
+        } => {
             collect_idents_in_expr(scrutinee, out);
             for a in arms {
-                if let Some(g) = &a.guard { collect_idents_in_expr(g, out); }
+                if let Some(g) = &a.guard {
+                    collect_idents_in_expr(g, out);
+                }
                 collect_idents_in_expr(&a.body, out);
             }
         }
@@ -216,7 +241,12 @@ fn collect_called_names(e: &Expr, out: &mut HashSet<String>) {
             collect_called_names(r, out);
         }
         Expr::Un(_, x, _) => collect_called_names(x, out),
-        Expr::If { cond, then_branch, else_branch, .. } => {
+        Expr::If {
+            cond,
+            then_branch,
+            else_branch,
+            ..
+        } => {
             collect_called_names(cond, out);
             collect_called_names(then_branch, out);
             collect_called_names(else_branch, out);
@@ -232,23 +262,33 @@ fn collect_called_names(e: &Expr, out: &mut HashSet<String>) {
                     Stmt::Expr(e) => collect_called_names(e, out),
                 }
             }
-            if let Some(t) = tail { collect_called_names(t, out); }
+            if let Some(t) = tail {
+                collect_called_names(t, out);
+            }
         }
         Expr::Tuple(xs, _) | Expr::List(xs, _) => {
-            for x in xs { collect_called_names(x, out); }
+            for x in xs {
+                collect_called_names(x, out);
+            }
         }
         Expr::Record(fs, _) => {
-            for (_, e) in fs { collect_called_names(e, out); }
+            for (_, e) in fs {
+                collect_called_names(e, out);
+            }
         }
         Expr::Field(e, _, _) => collect_called_names(e, out),
         Expr::Index(e, i, _) => {
             collect_called_names(e, out);
             collect_called_names(i, out);
         }
-        Expr::Match { scrutinee, arms, .. } => {
+        Expr::Match {
+            scrutinee, arms, ..
+        } => {
             collect_called_names(scrutinee, out);
             for a in arms {
-                if let Some(g) = &a.guard { collect_called_names(g, out); }
+                if let Some(g) = &a.guard {
+                    collect_called_names(g, out);
+                }
                 collect_called_names(&a.body, out);
             }
         }
@@ -275,8 +315,14 @@ fn walk_for_unused_lets(e: &Expr, out: &mut Vec<Diagnostic>) {
         Expr::Block { stmts, tail, .. } => {
             // Build the set of identifiers used by everything that follows each let.
             for (i, st) in stmts.iter().enumerate() {
-                if let Stmt::Let { pat: Pattern::Var(name, span), .. } = st {
-                    if name.starts_with('_') { continue; }
+                if let Stmt::Let {
+                    pat: Pattern::Var(name, span),
+                    ..
+                } = st
+                {
+                    if name.starts_with('_') {
+                        continue;
+                    }
                     let mut used = HashSet::new();
                     for later in &stmts[i + 1..] {
                         match later {
@@ -301,16 +347,25 @@ fn walk_for_unused_lets(e: &Expr, out: &mut Vec<Diagnostic>) {
                     Stmt::Expr(e) | Stmt::Let { value: e, .. } => walk_for_unused_lets(e, out),
                 }
             }
-            if let Some(t) = tail { walk_for_unused_lets(t, out); }
+            if let Some(t) = tail {
+                walk_for_unused_lets(t, out);
+            }
         }
-        Expr::If { cond, then_branch, else_branch, .. } => {
+        Expr::If {
+            cond,
+            then_branch,
+            else_branch,
+            ..
+        } => {
             walk_for_unused_lets(cond, out);
             walk_for_unused_lets(then_branch, out);
             walk_for_unused_lets(else_branch, out);
         }
         Expr::Let { body, .. } => walk_for_unused_lets(body, out),
         Expr::Match { arms, .. } => {
-            for a in arms { walk_for_unused_lets(&a.body, out); }
+            for a in arms {
+                walk_for_unused_lets(&a.body, out);
+            }
         }
         Expr::Lambda { body, .. } => walk_for_unused_lets(body, out),
         _ => {}
@@ -322,16 +377,34 @@ fn walk_for_unused_lets(e: &Expr, out: &mut Vec<Diagnostic>) {
 fn builtins_with_effect(effect: &str) -> HashSet<String> {
     let names: &[&str] = match effect {
         "IO" => &[
-            "print", "println", "print_module_surface", "print_prov",
-            "sys_exit", "sys_stdin_line", "sys_now_unix", "sys_spawn", "sys_hostname",
-            "time_now_ms", "time_monotonic_ms",
+            "print",
+            "println",
+            "print_module_surface",
+            "print_prov",
+            "sys_exit",
+            "sys_stdin_line",
+            "sys_now_unix",
+            "sys_spawn",
+            "sys_hostname",
+            "time_now_ms",
+            "time_monotonic_ms",
         ],
         "Net" => &["http_get", "llm_complete"],
         "FS" => &["path_exists", "mem_get", "mem_set", "snap_expect"],
         "Throw" => &[
-            "int", "http_get", "llm_complete", "list_max",
-            "result_unwrap", "assert", "assert_eq", "snap_expect",
-            "regex_match", "regex_find", "regex_replace", "regex_split", "regex_captures",
+            "int",
+            "http_get",
+            "llm_complete",
+            "list_max",
+            "result_unwrap",
+            "assert",
+            "assert_eq",
+            "snap_expect",
+            "regex_match",
+            "regex_find",
+            "regex_replace",
+            "regex_split",
+            "regex_captures",
             "sys_spawn",
         ],
         "Rand" => &[],
@@ -361,7 +434,9 @@ mod tests {
     #[test]
     fn flags_unused_let() {
         let diags = lints(r#"fn main() -> Unit effects {} { let unused = 5; () }"#);
-        assert!(diags.iter().any(|d| d.msg.contains("`let unused` is unused")));
+        assert!(diags
+            .iter()
+            .any(|d| d.msg.contains("`let unused` is unused")));
     }
 
     #[test]

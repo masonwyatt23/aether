@@ -12,14 +12,22 @@ pub enum Pattern {
     Tuple(Vec<Pattern>, Span),
     Record(Vec<(String, Pattern)>, Span),
     /// `Some(x)`, `Ok(v)`, etc.
-    Ctor { name: String, args: Vec<Pattern>, span: Span },
+    Ctor {
+        name: String,
+        args: Vec<Pattern>,
+        span: Span,
+    },
 }
 
 impl Pattern {
     pub fn span(&self) -> Span {
         match self {
-            Pattern::Wild(s) | Pattern::Var(_, s) | Pattern::Lit(_, s)
-            | Pattern::Tuple(_, s) | Pattern::Record(_, s) | Pattern::Ctor { span: s, .. } => *s,
+            Pattern::Wild(s)
+            | Pattern::Var(_, s)
+            | Pattern::Lit(_, s)
+            | Pattern::Tuple(_, s)
+            | Pattern::Record(_, s)
+            | Pattern::Ctor { span: s, .. } => *s,
         }
     }
 }

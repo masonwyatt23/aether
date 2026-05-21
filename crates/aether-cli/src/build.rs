@@ -39,7 +39,10 @@ pub fn run_build(project_dir: PathBuf, release: bool) -> ExitCode {
     let manifest = match parse_manifest(&manifest_src) {
         Ok(m) => m,
         Err(e) => {
-            eprintln!("error: {} is malformed: {e}", project_dir.join("Aether.toml").display());
+            eprintln!(
+                "error: {} is malformed: {e}",
+                project_dir.join("Aether.toml").display()
+            );
             return ExitCode::from(1);
         }
     };
@@ -88,7 +91,10 @@ pub fn run_build(project_dir: PathBuf, release: bool) -> ExitCode {
 
         // 1. Type-check.
         let (_, diags) = check_module(&module);
-        let n_err = diags.iter().filter(|d| d.severity == Severity::Error).count();
+        let n_err = diags
+            .iter()
+            .filter(|d| d.severity == Severity::Error)
+            .count();
         if n_err > 0 {
             eprintln!("  ✗ check: {n_err} type error(s)");
             for d in &diags {
@@ -158,7 +164,10 @@ pub fn run_build(project_dir: PathBuf, release: bool) -> ExitCode {
                 eprintln!("  ✗ copy {}: {e}", out.display());
                 return ExitCode::from(1);
             }
-            println!("  ✓ library → dist/{}", out.file_name().unwrap_or_default().to_string_lossy());
+            println!(
+                "  ✓ library → dist/{}",
+                out.file_name().unwrap_or_default().to_string_lossy()
+            );
             emitted += 1;
         }
     }
@@ -226,7 +235,10 @@ fn parse_manifest(src: &str) -> Result<Manifest, String> {
             }
         }
     }
-    Ok(Manifest { entries, name: result_name })
+    Ok(Manifest {
+        entries,
+        name: result_name,
+    })
 }
 
 #[cfg(test)]

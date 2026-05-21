@@ -11,10 +11,10 @@
 
 #![allow(clippy::module_inception)]
 
+pub mod builtins;
 pub mod env;
 pub mod tools;
 pub mod value;
-pub mod builtins;
 
 pub use builtins::{ExportEntry, ModuleSurface};
 pub use tools::{ToolFn, ToolRegistry};
@@ -191,7 +191,11 @@ impl Runtime {
             }
             let total = start.elapsed();
             let total_us = total.as_micros() as u64;
-            let mean_us = if iters == 0 { 0.0 } else { total_us as f64 / iters as f64 };
+            let mean_us = if iters == 0 {
+                0.0
+            } else {
+                total_us as f64 / iters as f64
+            };
             reports.push(BenchReport {
                 name: display_name,
                 fn_name: f.name,
@@ -247,11 +251,7 @@ impl Runtime {
     ///
     /// `update` — when true, overwrite (or create) the golden file instead of
     /// comparing. First-run (file absent) always writes and reports "captured".
-    pub fn run_snapshots(
-        &mut self,
-        snap_path: &std::path::Path,
-        update: bool,
-    ) -> Vec<SnapReport> {
+    pub fn run_snapshots(&mut self, snap_path: &std::path::Path, update: bool) -> Vec<SnapReport> {
         let snap_fns: Vec<FnDecl> = self
             .module
             .decls
@@ -363,7 +363,13 @@ impl Runtime {
             .module
             .decls
             .iter()
-            .filter_map(|d| if let Decl::Let(l) = d { Some(l.clone()) } else { None })
+            .filter_map(|d| {
+                if let Decl::Let(l) = d {
+                    Some(l.clone())
+                } else {
+                    None
+                }
+            })
             .collect();
         for l in lets {
             let v = self.eval(&l.value, &mut env)?;
@@ -392,11 +398,19 @@ impl Runtime {
 
             match self.eval_tail(&current_fn.body, &mut local)? {
                 TailStep::Done(v) => return Ok(v),
-                TailStep::TailCall { fn_name, args: next_args, .. } => {
+                TailStep::TailCall {
+                    fn_name,
+                    args: next_args,
+                    ..
+                } => {
                     // Look up the target user function and loop.
                     match self.module.decls.iter().find_map(|d| {
                         if let Decl::Fn(f) = d {
-                            if f.name == fn_name { Some(f.clone()) } else { None }
+                            if f.name == fn_name {
+                                Some(f.clone())
+                            } else {
+                                None
+                            }
                         } else {
                             None
                         }
@@ -454,12 +468,20 @@ impl Runtime {
                 let mut inner = env.child();
                 for st in stmts {
                     match st {
-                        Stmt::Let { pat: Pattern::Var(name, _), value, .. } => {
+                        Stmt::Let {
+                            pat: Pattern::Var(name, _),
+                            value,
+                            ..
+                        } => {
                             let v = self.eval(value, &mut inner)?;
                             inner.bind(name.clone(), v);
                         }
-                        Stmt::Let { value, .. } => { self.eval(value, &mut inner)?; }
-                        Stmt::Expr(e) => { self.eval(e, &mut inner)?; }
+                        Stmt::Let { value, .. } => {
+                            self.eval(value, &mut inner)?;
+                        }
+                        Stmt::Expr(e) => {
+                            self.eval(e, &mut inner)?;
+                        }
                     }
                 }
                 if let Some(t) = tail {
@@ -470,22 +492,38 @@ impl Runtime {
             }
 
             // ── If: evaluate cond, recurse into the chosen branch. ──────────
-            Expr::If { cond, then_branch, else_branch, .. } => {
+            Expr::If {
+                cond,
+                then_branch,
+                else_branch,
+                ..
+            } => {
                 let cv = self.eval(cond, env)?;
-                let cb = cv.as_bool()
+                let cb = cv
+                    .as_bool()
                     .ok_or_else(|| EvalError::TypeError("if condition must be Bool".into()))?;
-                if cb { self.eval_tail(then_branch, env) } else { self.eval_tail(else_branch, env) }
+                if cb {
+                    self.eval_tail(then_branch, env)
+                } else {
+                    self.eval_tail(else_branch, env)
+                }
             }
 
             // ── Match: find the matched arm, recurse into its body. ─────────
-            Expr::Match { scrutinee, arms, span } => {
+            Expr::Match {
+                scrutinee,
+                arms,
+                span,
+            } => {
                 let scrut = self.eval(scrutinee, env)?;
                 for arm in arms {
                     let mut local = env.child();
                     if pattern_match(&arm.pat, &scrut, &mut local) {
                         if let Some(guard) = &arm.guard {
                             let gv = self.eval(guard, &mut local)?;
-                            if gv.as_bool() != Some(true) { continue; }
+                            if gv.as_bool() != Some(true) {
+                                continue;
+                            }
                         }
                         return match self.eval_tail(&arm.body, &mut local)? {
                             TailStep::Done(v) => {
@@ -517,7 +555,10 @@ impl Runtime {
                     // Only optimise if the name is NOT shadowed by a closure.
                     let shadowed = matches!(env.lookup(name), Some(Value::Closure { .. }));
                     if !shadowed {
-                        let is_user_fn = self.module.decls.iter()
+                        let is_user_fn = self
+                            .module
+                            .decls
+                            .iter()
                             .any(|d| matches!(d, Decl::Fn(f) if f.name == *name));
                         if is_user_fn {
                             // Evaluate args eagerly (left-to-right order preserved).
@@ -553,16 +594,28 @@ impl Runtime {
                 if let Some(v) = env.lookup(name) {
                     return Ok(v.clone());
                 }
-                let let_decl = self
-                    .module
-                    .decls
-                    .iter()
-                    .find_map(|d| if let Decl::Let(l) = d { if l.name == *name { Some(l.clone()) } else { None } } else { None });
+                let let_decl = self.module.decls.iter().find_map(|d| {
+                    if let Decl::Let(l) = d {
+                        if l.name == *name {
+                            Some(l.clone())
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                });
                 if let Some(l) = let_decl {
                     return self.eval(&l.value, env);
                 }
-                if self.module.decls.iter().any(|d| matches!(d, Decl::Fn(f) if f.name == *name)) {
-                    let prov = ProvChain::singleton(self.arena.clone(), ProvOp::Var(name.clone()), *s);
+                if self
+                    .module
+                    .decls
+                    .iter()
+                    .any(|d| matches!(d, Decl::Fn(f) if f.name == *name))
+                {
+                    let prov =
+                        ProvChain::singleton(self.arena.clone(), ProvOp::Var(name.clone()), *s);
                     return Ok(Value::Fn(name.clone(), prov));
                 }
                 Err(EvalError::Unbound(name.clone()))
@@ -591,18 +644,31 @@ impl Runtime {
                 Ok(result.with_prov(prov))
             }
             Expr::Call { callee, args, span } => self.eval_call(callee, args, *span, env),
-            Expr::If { cond, then_branch, else_branch, .. } => {
+            Expr::If {
+                cond,
+                then_branch,
+                else_branch,
+                ..
+            } => {
                 let cv = self.eval(cond, env)?;
                 let cb = cv
                     .as_bool()
                     .ok_or_else(|| EvalError::TypeError("if condition must be Bool".into()))?;
-                if cb { self.eval(then_branch, env) } else { self.eval(else_branch, env) }
+                if cb {
+                    self.eval(then_branch, env)
+                } else {
+                    self.eval(else_branch, env)
+                }
             }
             Expr::Block { stmts, tail, span } => {
                 let mut inner = env.child();
                 for st in stmts {
                     match st {
-                        Stmt::Let { pat: Pattern::Var(name, _), value, .. } => {
+                        Stmt::Let {
+                            pat: Pattern::Var(name, _),
+                            value,
+                            ..
+                        } => {
                             let v = self.eval(value, &mut inner)?;
                             inner.bind(name.clone(), v);
                         }
@@ -620,7 +686,12 @@ impl Runtime {
                     Ok(Value::unit(self.arena.clone(), *span))
                 }
             }
-            Expr::Let { pat: Pattern::Var(name, _), value, body, .. } => {
+            Expr::Let {
+                pat: Pattern::Var(name, _),
+                value,
+                body,
+                ..
+            } => {
                 let v = self.eval(value, env)?;
                 let mut inner = env.child();
                 inner.bind(name.clone(), v);
@@ -638,7 +709,12 @@ impl Runtime {
                     parents.push(v.prov().head);
                     vs.push(v);
                 }
-                let prov = ProvChain::extend(self.arena.clone(), ProvOp::Synthetic("tuple".into()), *s, parents);
+                let prov = ProvChain::extend(
+                    self.arena.clone(),
+                    ProvOp::Synthetic("tuple".into()),
+                    *s,
+                    parents,
+                );
                 Ok(Value::Tuple(vs, prov))
             }
             Expr::List(elts, s) => {
@@ -649,7 +725,12 @@ impl Runtime {
                     parents.push(v.prov().head);
                     vs.push(v);
                 }
-                let prov = ProvChain::extend(self.arena.clone(), ProvOp::Synthetic("list".into()), *s, parents);
+                let prov = ProvChain::extend(
+                    self.arena.clone(),
+                    ProvOp::Synthetic("list".into()),
+                    *s,
+                    parents,
+                );
                 Ok(Value::List(vs, prov))
             }
             Expr::Record(fields, s) => {
@@ -660,7 +741,12 @@ impl Runtime {
                     parents.push(v.prov().head);
                     out.push((n.clone(), v));
                 }
-                let prov = ProvChain::extend(self.arena.clone(), ProvOp::Synthetic("record".into()), *s, parents);
+                let prov = ProvChain::extend(
+                    self.arena.clone(),
+                    ProvOp::Synthetic("record".into()),
+                    *s,
+                    parents,
+                );
                 Ok(Value::Record(out, prov))
             }
             Expr::Field(e, name, s) => {
@@ -671,32 +757,57 @@ impl Runtime {
                         .find(|(n, _)| n == name)
                         .map(|(_, v)| v)
                         .ok_or_else(|| EvalError::TypeError(format!("no field `{name}`"))),
-                    _ => Err(EvalError::TypeError(format!("field access at {s:?} on non-record"))),
+                    _ => Err(EvalError::TypeError(format!(
+                        "field access at {s:?} on non-record"
+                    ))),
                 }
             }
             Expr::Index(e, i, _) => {
                 let v = self.eval(e, env)?;
                 let iv = self.eval(i, env)?;
-                let idx = iv.as_int().ok_or_else(|| EvalError::TypeError("index must be Int".into()))? as usize;
+                let idx = iv
+                    .as_int()
+                    .ok_or_else(|| EvalError::TypeError("index must be Int".into()))?
+                    as usize;
                 match v {
-                    Value::List(items, _) => items.get(idx).cloned().ok_or_else(|| EvalError::TypeError("index out of range".into())),
+                    Value::List(items, _) => items
+                        .get(idx)
+                        .cloned()
+                        .ok_or_else(|| EvalError::TypeError("index out of range".into())),
                     _ => Err(EvalError::TypeError("indexing non-list".into())),
                 }
             }
             Expr::Confident { value, p, span } => {
                 let vv = self.eval(value, env)?;
                 let pv = self.eval(p, env)?;
-                let pf = pv.as_float().ok_or_else(|| EvalError::TypeError("confidence must be a number".into()))?;
-                let prov = ProvChain::extend(self.arena.clone(), ProvOp::Confident(pf), *span, vec![vv.prov().head, pv.prov().head]);
-                Ok(Value::Confident { value: Box::new(vv), p: pf, prov })
+                let pf = pv
+                    .as_float()
+                    .ok_or_else(|| EvalError::TypeError("confidence must be a number".into()))?;
+                let prov = ProvChain::extend(
+                    self.arena.clone(),
+                    ProvOp::Confident(pf),
+                    *span,
+                    vec![vv.prov().head, pv.prov().head],
+                );
+                Ok(Value::Confident {
+                    value: Box::new(vv),
+                    p: pf,
+                    prov,
+                })
             }
             Expr::Assume(p, s) => {
                 let pv = self.eval(p, env)?;
                 if pv.as_bool() != Some(true) {
-                    return Err(EvalError::User("assume predicate evaluated to false at runtime".into()));
+                    return Err(EvalError::User(
+                        "assume predicate evaluated to false at runtime".into(),
+                    ));
                 }
                 self.assumed.push((**p).clone());
-                Ok(Value::unit_with_prov(ProvChain::singleton(self.arena.clone(), ProvOp::Assume, *s)))
+                Ok(Value::unit_with_prov(ProvChain::singleton(
+                    self.arena.clone(),
+                    ProvOp::Assume,
+                    *s,
+                )))
             }
             Expr::Annot { expr, .. } => self.eval(expr, env),
             Expr::StrInterp { parts, span } => {
@@ -720,8 +831,14 @@ impl Runtime {
                 );
                 Ok(Value::Str(out, prov))
             }
-            Expr::Lambda { params, body, span, .. } => {
-                let prov = ProvChain::singleton(self.arena.clone(), ProvOp::Synthetic("lambda".into()), *span);
+            Expr::Lambda {
+                params, body, span, ..
+            } => {
+                let prov = ProvChain::singleton(
+                    self.arena.clone(),
+                    ProvOp::Synthetic("lambda".into()),
+                    *span,
+                );
                 Ok(Value::Closure {
                     params: params.clone(),
                     body: body.clone(),
@@ -729,7 +846,11 @@ impl Runtime {
                     prov,
                 })
             }
-            Expr::Match { scrutinee, arms, span } => self.eval_match(scrutinee, arms, *span, env),
+            Expr::Match {
+                scrutinee,
+                arms,
+                span,
+            } => self.eval_match(scrutinee, arms, *span, env),
         }
     }
 
@@ -766,7 +887,13 @@ impl Runtime {
         )))
     }
 
-    fn eval_call(&mut self, callee: &Expr, args: &[Arg], span: Span, env: &mut Env) -> EResult<Value> {
+    fn eval_call(
+        &mut self,
+        callee: &Expr,
+        args: &[Arg],
+        span: Span,
+        env: &mut Env,
+    ) -> EResult<Value> {
         let mut arg_vals = Vec::with_capacity(args.len());
         let mut prov_parents = Vec::with_capacity(args.len());
         for a in args {
@@ -805,12 +932,24 @@ impl Runtime {
                         span,
                         prov_parents,
                     );
-                    return Ok(Value::Ctor { name: name.clone(), args: arg_vals, prov });
+                    return Ok(Value::Ctor {
+                        name: name.clone(),
+                        args: arg_vals,
+                        prov,
+                    });
                 }
             }
             // 4) User-defined fn declaration.
             if let Some(f) = self.module.decls.iter().find_map(|d| {
-                if let Decl::Fn(f) = d { if f.name == *name { Some(f.clone()) } else { None } } else { None }
+                if let Decl::Fn(f) = d {
+                    if f.name == *name {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
             }) {
                 if f.params.len() != arg_vals.len() {
                     return Err(EvalError::TypeError(format!(
@@ -820,7 +959,12 @@ impl Runtime {
                     )));
                 }
                 let result = self.eval_fn(&f, arg_vals, env)?;
-                let prov = ProvChain::extend(self.arena.clone(), ProvOp::Call(name.clone()), span, prov_parents);
+                let prov = ProvChain::extend(
+                    self.arena.clone(),
+                    ProvOp::Call(name.clone()),
+                    span,
+                    prov_parents,
+                );
                 return Ok(result.with_prov(prov));
             }
             // 4) Maybe it's a `Value::Fn` (function reference) in env.
@@ -830,10 +974,19 @@ impl Runtime {
                     return Ok(v);
                 }
                 if let Some(f) = self.module.decls.iter().find_map(|d| {
-                    if let Decl::Fn(f) = d { if f.name == n { Some(f.clone()) } else { None } } else { None }
+                    if let Decl::Fn(f) = d {
+                        if f.name == n {
+                            Some(f.clone())
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
                 }) {
                     let result = self.eval_fn(&f, arg_vals, env)?;
-                    let prov = ProvChain::extend(self.arena.clone(), ProvOp::Call(n), span, prov_parents);
+                    let prov =
+                        ProvChain::extend(self.arena.clone(), ProvOp::Call(n), span, prov_parents);
                     return Ok(result.with_prov(prov));
                 }
             }
@@ -843,16 +996,32 @@ impl Runtime {
         // Expression callee: must evaluate to a callable Value.
         let cv = self.eval(callee, env)?;
         match cv {
-            Value::Closure { .. } => self.apply_closure(cv, arg_vals, prov_parents, "<closure>", span),
+            Value::Closure { .. } => {
+                self.apply_closure(cv, arg_vals, prov_parents, "<closure>", span)
+            }
             Value::Fn(name, _) => {
                 if let Some(v) = builtins::dispatch(self, &name, &arg_vals, span)? {
                     return Ok(v);
                 }
-                let f = self.module.decls.iter().find_map(|d| {
-                    if let Decl::Fn(f) = d { if f.name == name { Some(f.clone()) } else { None } } else { None }
-                }).ok_or_else(|| EvalError::UndefinedFn(name.clone()))?;
+                let f = self
+                    .module
+                    .decls
+                    .iter()
+                    .find_map(|d| {
+                        if let Decl::Fn(f) = d {
+                            if f.name == name {
+                                Some(f.clone())
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    })
+                    .ok_or_else(|| EvalError::UndefinedFn(name.clone()))?;
                 let result = self.eval_fn(&f, arg_vals, env)?;
-                let prov = ProvChain::extend(self.arena.clone(), ProvOp::Call(name), span, prov_parents);
+                let prov =
+                    ProvChain::extend(self.arena.clone(), ProvOp::Call(name), span, prov_parents);
                 Ok(result.with_prov(prov))
             }
             other => Err(EvalError::TypeError(format!(
@@ -870,7 +1039,13 @@ impl Runtime {
         name: &str,
         span: Span,
     ) -> EResult<Value> {
-        let Value::Closure { params, body, env: captured, .. } = closure else {
+        let Value::Closure {
+            params,
+            body,
+            env: captured,
+            ..
+        } = closure
+        else {
             return Err(EvalError::TypeError("apply_closure: not a closure".into()));
         };
         if params.len() != args.len() {
@@ -885,7 +1060,12 @@ impl Runtime {
             local.bind(p.name.clone(), v);
         }
         let result = self.eval(&body, &mut local)?;
-        let prov = ProvChain::extend(self.arena.clone(), ProvOp::Call(name.into()), span, prov_parents);
+        let prov = ProvChain::extend(
+            self.arena.clone(),
+            ProvOp::Call(name.into()),
+            span,
+            prov_parents,
+        );
         Ok(result.with_prov(prov))
     }
 }
@@ -929,7 +1109,18 @@ fn pattern_match(pat: &Pattern, v: &Value, env: &mut Env) -> bool {
             }
             true
         }
-        (Pattern::Ctor { name: pname, args: pargs, .. }, Value::Ctor { name: vname, args: vargs, .. }) => {
+        (
+            Pattern::Ctor {
+                name: pname,
+                args: pargs,
+                ..
+            },
+            Value::Ctor {
+                name: vname,
+                args: vargs,
+                ..
+            },
+        ) => {
             if pname != vname || pargs.len() != vargs.len() {
                 return false;
             }
@@ -963,10 +1154,22 @@ fn eval_bin(op: BinOp, l: &Value, r: &Value) -> EResult<Value> {
 
         (BinOp::Eq, a, b) => Ok(Bool(a.eq_val(b), fake_prov())),
         (BinOp::Neq, a, b) => Ok(Bool(!a.eq_val(b), fake_prov())),
-        (BinOp::Lt, a, b) => Ok(Bool(a.cmp_val(b).map(|o| o.is_lt()).unwrap_or(false), fake_prov())),
-        (BinOp::Le, a, b) => Ok(Bool(a.cmp_val(b).map(|o| o.is_le()).unwrap_or(false), fake_prov())),
-        (BinOp::Gt, a, b) => Ok(Bool(a.cmp_val(b).map(|o| o.is_gt()).unwrap_or(false), fake_prov())),
-        (BinOp::Ge, a, b) => Ok(Bool(a.cmp_val(b).map(|o| o.is_ge()).unwrap_or(false), fake_prov())),
+        (BinOp::Lt, a, b) => Ok(Bool(
+            a.cmp_val(b).map(|o| o.is_lt()).unwrap_or(false),
+            fake_prov(),
+        )),
+        (BinOp::Le, a, b) => Ok(Bool(
+            a.cmp_val(b).map(|o| o.is_le()).unwrap_or(false),
+            fake_prov(),
+        )),
+        (BinOp::Gt, a, b) => Ok(Bool(
+            a.cmp_val(b).map(|o| o.is_gt()).unwrap_or(false),
+            fake_prov(),
+        )),
+        (BinOp::Ge, a, b) => Ok(Bool(
+            a.cmp_val(b).map(|o| o.is_ge()).unwrap_or(false),
+            fake_prov(),
+        )),
 
         (BinOp::And, Bool(a, _), Bool(b, _)) => Ok(Bool(*a && *b, fake_prov())),
         (BinOp::Or, Bool(a, _), Bool(b, _)) => Ok(Bool(*a || *b, fake_prov())),
@@ -1039,10 +1242,7 @@ impl SnapReport {
 }
 
 /// Compare golden entries against captured entries; return mismatches.
-fn diff_entries(
-    golden: &[(String, String)],
-    captured: &[(String, String)],
-) -> Vec<SnapMismatch> {
+fn diff_entries(golden: &[(String, String)], captured: &[(String, String)]) -> Vec<SnapMismatch> {
     let mut mismatches = Vec::new();
     // Check all golden labels appear in captured with correct value.
     for (label, expected) in golden {
@@ -1102,7 +1302,10 @@ fn load_snap_file(
             if let Some((label_part, val_part)) = line.split_once('=') {
                 let label = label_part.trim().to_string();
                 let val_trimmed = val_part.trim();
-                let value = if val_trimmed.starts_with('"') && val_trimmed.ends_with('"') && val_trimmed.len() >= 2 {
+                let value = if val_trimmed.starts_with('"')
+                    && val_trimmed.ends_with('"')
+                    && val_trimmed.len() >= 2
+                {
                     // Unescape \" and \\
                     val_trimmed[1..val_trimmed.len() - 1]
                         .replace("\\\"", "\"")
@@ -1190,9 +1393,21 @@ mod tests {
     }
 
     fn find_main(rt: &Runtime) -> FnDecl {
-        rt.module.decls.iter().find_map(|d| {
-            if let Decl::Fn(f) = d { if f.name == "main" { Some(f.clone()) } else { None } } else { None }
-        }).unwrap()
+        rt.module
+            .decls
+            .iter()
+            .find_map(|d| {
+                if let Decl::Fn(f) = d {
+                    if f.name == "main" {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .unwrap()
     }
 
     #[test]
@@ -1272,12 +1487,16 @@ mod tests {
 
     #[test]
     fn tool_registry_overrides_llm_stub() {
-        let mut rt = Runtime::new(parse_module(FileId(0), "fn main() -> Str effects {} { \"x\" }").unwrap());
+        let mut rt =
+            Runtime::new(parse_module(FileId(0), "fn main() -> Str effects {} { \"x\" }").unwrap());
         rt.capture_only = true;
         rt.tools.register("llm_complete", |args| {
             let prompt = args.first().and_then(Value::as_str).unwrap_or("");
             let arena = ProvArena::new();
-            Ok(Value::Str(format!("OVERRIDE:{prompt}"), ProvChain::singleton(arena, ProvOp::Tool("llm_complete".into()), Span::DUMMY)))
+            Ok(Value::Str(
+                format!("OVERRIDE:{prompt}"),
+                ProvChain::singleton(arena, ProvOp::Tool("llm_complete".into()), Span::DUMMY),
+            ))
         });
         let src = r#"fn main() -> Str effects {Net, Throw} { llm_complete("hi") }"#;
         rt.module = parse_module(FileId(0), src).unwrap();
@@ -1297,7 +1516,9 @@ mod tests {
         let v = rt.eval_fn(&f, vec![], &mut env).unwrap();
         let chain = v.prov();
         let nodes = chain.nodes_topo();
-        assert!(nodes.iter().any(|(_, n)| matches!(&n.op, ProvOp::BinOp(s) if s == "+")));
+        assert!(nodes
+            .iter()
+            .any(|(_, n)| matches!(&n.op, ProvOp::BinOp(s) if s == "+")));
     }
 
     // ── ADT eval tests ──────────────────────────────────────────────────────────
@@ -1433,7 +1654,12 @@ mod tests {
             fn main() -> Bool effects {} { is_even(100) }
         "#;
         let v = run(src).unwrap();
-        assert_eq!(v.as_bool(), Some(true), "is_even(100) should be true, got {:?}", v);
+        assert_eq!(
+            v.as_bool(),
+            Some(true),
+            "is_even(100) should be true, got {:?}",
+            v
+        );
     }
 
     #[test]
@@ -1456,7 +1682,11 @@ mod tests {
         // First run: capture (no golden file exists yet).
         let reports = rt.run_snapshots(&snap_ae, false);
         assert_eq!(reports.len(), 1);
-        assert!(reports[0].passed(), "first run should capture: {:?}", reports[0].status);
+        assert!(
+            reports[0].passed(),
+            "first run should capture: {:?}",
+            reports[0].status
+        );
         assert!(matches!(reports[0].status, SnapStatus::Captured));
 
         // Golden file must now exist.
@@ -1469,7 +1699,11 @@ mod tests {
         rt2.capture_only = true;
         let reports2 = rt2.run_snapshots(&snap_ae, false);
         assert_eq!(reports2.len(), 1);
-        assert!(reports2[0].passed(), "second run should pass: {:?}", reports2[0].status);
+        assert!(
+            reports2[0].passed(),
+            "second run should pass: {:?}",
+            reports2[0].status
+        );
         assert!(matches!(reports2[0].status, SnapStatus::Pass));
     }
 }

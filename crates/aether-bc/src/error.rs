@@ -27,7 +27,11 @@ pub enum VmError {
     #[error("unknown builtin id {0}")]
     UnknownBuiltin(u16),
     #[error("arity mismatch for `{name}`: expected {expected}, got {got}")]
-    ArityMismatch { name: String, expected: usize, got: usize },
+    ArityMismatch {
+        name: String,
+        expected: usize,
+        got: usize,
+    },
     #[error("type error: {0}")]
     TypeError(String),
     #[error("division by zero")]

@@ -13,7 +13,10 @@ pub fn emit(m: &Module, pretty: bool) -> String {
         module: &'a Module,
     }
 
-    let env = Envelope { version: "0.1", module: m };
+    let env = Envelope {
+        version: "0.1",
+        module: m,
+    };
     if pretty {
         serde_json::to_string_pretty(&env).expect("AST serialization is infallible")
     } else {

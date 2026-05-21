@@ -15,14 +15,14 @@
 
 mod ast_json;
 mod bc_runner;
+mod build;
+mod doc;
+mod docgen;
+mod init;
+mod lint;
+mod modules;
 mod repl;
 mod watch;
-mod doc;
-mod init;
-mod modules;
-mod lint;
-mod build;
-mod docgen;
 
 use std::fs;
 use std::path::PathBuf;
@@ -30,8 +30,8 @@ use std::process::ExitCode;
 
 use aether_ast::{FileId, SourceMap};
 use aether_eval::{Runtime, SnapStatus, Value};
-use aether_parser::pretty::{module as pp_module, Form};
 use aether_parser::parse_module;
+use aether_parser::pretty::{module as pp_module, Form};
 use aether_types::{check_module, Diagnostic, Severity};
 use ariadne::{Color, Label, Report, ReportKind};
 use clap::{Parser as ClapParser, Subcommand};
@@ -125,9 +125,7 @@ enum Cmd {
         title: Option<String>,
     },
     /// Pretty-print the module surface (uses `introspect`).
-    Explain {
-        file: PathBuf,
-    },
+    Explain { file: PathBuf },
     /// Show the canonical AST as JSON-ish debug repr (for tooling).
     Ast {
         file: PathBuf,
@@ -217,21 +215,45 @@ enum Cmd {
         no_imports: bool,
     },
     /// Execute a pre-compiled `.aebc` bytecode file (skips parse/typecheck).
-    Exec {
-        file: PathBuf,
-    },
+    Exec { file: PathBuf },
 }
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let network = cli.network;
     match cli.cmd {
-        Cmd::Check { file, strict, no_imports, json } => cmd_check(file, strict, no_imports, json),
-        Cmd::Lint { file, no_imports, deny_warnings } => cmd_lint(file, no_imports, deny_warnings),
-        Cmd::Build { path, release } => build::run_build(path.unwrap_or_else(|| std::path::PathBuf::from(".")), release),
-        Cmd::Docgen { path, out, title } => docgen::run_docgen(path.unwrap_or_else(|| std::path::PathBuf::from(".")), out, title),
-        Cmd::Run { file, no_check, no_imports, bc } => cmd_run(file, no_check, no_imports, network, bc),
-        Cmd::Fmt { file, verbose, compact: _, check } => cmd_fmt(file, verbose, check),
+        Cmd::Check {
+            file,
+            strict,
+            no_imports,
+            json,
+        } => cmd_check(file, strict, no_imports, json),
+        Cmd::Lint {
+            file,
+            no_imports,
+            deny_warnings,
+        } => cmd_lint(file, no_imports, deny_warnings),
+        Cmd::Build { path, release } => build::run_build(
+            path.unwrap_or_else(|| std::path::PathBuf::from(".")),
+            release,
+        ),
+        Cmd::Docgen { path, out, title } => docgen::run_docgen(
+            path.unwrap_or_else(|| std::path::PathBuf::from(".")),
+            out,
+            title,
+        ),
+        Cmd::Run {
+            file,
+            no_check,
+            no_imports,
+            bc,
+        } => cmd_run(file, no_check, no_imports, network, bc),
+        Cmd::Fmt {
+            file,
+            verbose,
+            compact: _,
+            check,
+        } => cmd_fmt(file, verbose, check),
         Cmd::Explain { file } => cmd_explain(file),
         Cmd::Ast { file, json, pretty } => cmd_ast(file, json || pretty, pretty),
         Cmd::Repl => {
@@ -249,37 +271,43 @@ fn main() -> ExitCode {
                 }
             }
         }
-        Cmd::Watch { file, run, bc } => {
-            match watch::run_watch(file, run, bc) {
-                Ok(()) => ExitCode::SUCCESS,
-                Err(e) => {
-                    eprintln!("watch error: {e}");
-                    ExitCode::from(1)
-                }
+        Cmd::Watch { file, run, bc } => match watch::run_watch(file, run, bc) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("watch error: {e}");
+                ExitCode::from(1)
             }
-        }
-        Cmd::Doc { file, output } => {
-            match doc::run_doc(file, output) {
-                Ok(()) => ExitCode::SUCCESS,
-                Err(e) => {
-                    eprintln!("{e}");
-                    ExitCode::from(1)
-                }
+        },
+        Cmd::Doc { file, output } => match doc::run_doc(file, output) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("{e}");
+                ExitCode::from(1)
             }
-        }
-        Cmd::Init { path, template } => {
-            match init::run_init(path, template) {
-                Ok(()) => ExitCode::SUCCESS,
-                Err(e) => {
-                    eprintln!("init error: {e}");
-                    ExitCode::from(1)
-                }
+        },
+        Cmd::Init { path, template } => match init::run_init(path, template) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("init error: {e}");
+                ExitCode::from(1)
             }
-        }
+        },
         Cmd::Test { file, no_imports } => cmd_test(file, no_imports, network),
-        Cmd::Bench { file, iters, no_imports } => cmd_bench(file, iters, no_imports, network),
-        Cmd::Snap { file, update, no_imports } => cmd_snap(file, update, no_imports, network),
-        Cmd::Compile { file, output, no_imports } => cmd_compile(file, output, no_imports),
+        Cmd::Bench {
+            file,
+            iters,
+            no_imports,
+        } => cmd_bench(file, iters, no_imports, network),
+        Cmd::Snap {
+            file,
+            update,
+            no_imports,
+        } => cmd_snap(file, update, no_imports, network),
+        Cmd::Compile {
+            file,
+            output,
+            no_imports,
+        } => cmd_compile(file, output, no_imports),
         Cmd::Exec { file } => cmd_exec(file),
     }
 }
@@ -292,7 +320,10 @@ fn cmd_test(file: PathBuf, no_imports: bool, network: bool) -> ExitCode {
     };
     // Static checks first so type errors don't get masked as runtime failures.
     let (_, diags) = check_module(&m);
-    let n_errors = diags.iter().filter(|d| d.severity == Severity::Error).count();
+    let n_errors = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .count();
     for d in &diags {
         if d.severity == Severity::Error {
             print_diagnostic(&sm, d);
@@ -341,7 +372,10 @@ fn cmd_snap(file: PathBuf, update: bool, no_imports: bool, network: bool) -> Exi
         Err(code) => return code,
     };
     let (_, diags) = check_module(&m);
-    let n_errors = diags.iter().filter(|d| d.severity == Severity::Error).count();
+    let n_errors = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .count();
     for d in &diags {
         if d.severity == Severity::Error {
             print_diagnostic(&sm, d);
@@ -358,7 +392,10 @@ fn cmd_snap(file: PathBuf, update: bool, no_imports: bool, network: bool) -> Exi
     rt.capture_only = true;
     let reports = rt.run_snapshots(&file, update);
     if reports.is_empty() {
-        eprintln!("no `snap \"...\" {{ ... }}` blocks found in {}", file.display());
+        eprintln!(
+            "no `snap \"...\" {{ ... }}` blocks found in {}",
+            file.display()
+        );
         return ExitCode::SUCCESS;
     }
     let mut failed = 0usize;
@@ -404,7 +441,10 @@ fn cmd_bench(file: PathBuf, iters: u32, no_imports: bool, network: bool) -> Exit
         Err(code) => return code,
     };
     let (_, diags) = check_module(&m);
-    let n_errors = diags.iter().filter(|d| d.severity == Severity::Error).count();
+    let n_errors = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .count();
     for d in &diags {
         if d.severity == Severity::Error {
             print_diagnostic(&sm, d);
@@ -421,7 +461,10 @@ fn cmd_bench(file: PathBuf, iters: u32, no_imports: bool, network: bool) -> Exit
     rt.capture_only = true;
     let reports = rt.run_benches(iters);
     if reports.is_empty() {
-        eprintln!("no `bench \"...\" {{ ... }}` blocks found in {}", file.display());
+        eprintln!(
+            "no `bench \"...\" {{ ... }}` blocks found in {}",
+            file.display()
+        );
         return ExitCode::SUCCESS;
     }
     let mut failed = 0usize;
@@ -504,8 +547,14 @@ fn cmd_check(file: PathBuf, strict: bool, no_imports: bool, json: bool) -> ExitC
         Err(code) => return code,
     };
     let (_, diags) = check_module(&m);
-    let n_errors = diags.iter().filter(|d| d.severity == Severity::Error).count();
-    let n_warnings = diags.iter().filter(|d| d.severity == Severity::Warning).count();
+    let n_errors = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .count();
+    let n_warnings = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Warning)
+        .count();
     if json {
         print_json_diagnostics(&sm, &diags, n_errors, n_warnings);
     } else {
@@ -515,7 +564,10 @@ fn cmd_check(file: PathBuf, strict: bool, no_imports: bool, json: bool) -> ExitC
         if n_errors > 0 || (strict && n_warnings > 0) {
             println!("\n✗ {} error(s), {} warning(s)", n_errors, n_warnings);
         } else if n_warnings > 0 {
-            println!("✓ types/effects ok ({} warning(s), refinements partially verified)", n_warnings);
+            println!(
+                "✓ types/effects ok ({} warning(s), refinements partially verified)",
+                n_warnings
+            );
         } else {
             println!("✓ types, effects, and refinements verified");
         }
@@ -535,7 +587,10 @@ fn cmd_lint(file: PathBuf, no_imports: bool, deny_warnings: bool) -> ExitCode {
     };
     // Run type-check first so lint output isn't drowned in type errors.
     let (_, mut diags) = check_module(&m);
-    let type_errors = diags.iter().filter(|d| d.severity == Severity::Error).count();
+    let type_errors = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .count();
     if type_errors > 0 {
         for d in &diags {
             if d.severity == Severity::Error {
@@ -547,8 +602,14 @@ fn cmd_lint(file: PathBuf, no_imports: bool, deny_warnings: bool) -> ExitCode {
     }
     let lints = lint::lint_module(&m);
     diags.extend(lints);
-    let warnings = diags.iter().filter(|d| d.severity == Severity::Warning).count();
-    let notes = diags.iter().filter(|d| d.severity == Severity::Note).count();
+    let warnings = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Warning)
+        .count();
+    let notes = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Note)
+        .count();
     for d in &diags {
         if matches!(d.severity, Severity::Warning | Severity::Note) {
             print_diagnostic(&sm, d);
@@ -567,18 +628,29 @@ fn cmd_lint(file: PathBuf, no_imports: bool, deny_warnings: bool) -> ExitCode {
     }
 }
 
-fn print_json_diagnostics(sm: &SourceMap, diags: &[Diagnostic], n_errors: usize, n_warnings: usize) {
+fn print_json_diagnostics(
+    sm: &SourceMap,
+    diags: &[Diagnostic],
+    n_errors: usize,
+    n_warnings: usize,
+) {
     use std::fmt::Write;
     let mut out = String::from("{\n  \"diagnostics\": [\n");
     for (i, d) in diags.iter().enumerate() {
-        if i > 0 { out.push_str(",\n"); }
+        if i > 0 {
+            out.push_str(",\n");
+        }
         let (line, col) = sm.line_col(d.span);
         let sev = match d.severity {
             Severity::Error => "error",
             Severity::Warning => "warning",
             Severity::Note => "note",
         };
-        let msg_escaped = d.msg.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n");
+        let msg_escaped = d
+            .msg
+            .replace('\\', "\\\\")
+            .replace('"', "\\\"")
+            .replace('\n', "\\n");
         let _ = write!(
             out,
             "    {{\"severity\":\"{}\",\"file\":\"{}\",\"line\":{},\"col\":{},\"start\":{},\"end\":{},\"message\":\"{}\"}}",
@@ -592,7 +664,10 @@ fn print_json_diagnostics(sm: &SourceMap, diags: &[Diagnostic], n_errors: usize,
         );
     }
     out.push_str("\n  ],\n");
-    let _ = write!(out, "  \"errors\": {n_errors},\n  \"warnings\": {n_warnings}\n}}\n");
+    let _ = write!(
+        out,
+        "  \"errors\": {n_errors},\n  \"warnings\": {n_warnings}\n}}\n"
+    );
     print!("{out}");
 }
 
@@ -604,7 +679,10 @@ fn cmd_run(file: PathBuf, no_check: bool, no_imports: bool, network: bool, bc: b
     };
     if !no_check {
         let (_, diags) = check_module(&m);
-        let n_errors = diags.iter().filter(|d| d.severity == Severity::Error).count();
+        let n_errors = diags
+            .iter()
+            .filter(|d| d.severity == Severity::Error)
+            .count();
         for d in &diags {
             if d.severity == Severity::Error {
                 print_diagnostic(&sm, d);
@@ -627,7 +705,9 @@ fn cmd_run(file: PathBuf, no_check: bool, no_imports: bool, network: bool, bc: b
             }
             Err(msg) => {
                 if let Some(what) = bc_runner::is_unsupported(&msg) {
-                    eprintln!("note: bytecode VM doesn't support {what} — falling back to tree-walker");
+                    eprintln!(
+                        "note: bytecode VM doesn't support {what} — falling back to tree-walker"
+                    );
                     // fall through to tree-walker below
                 } else {
                     eprintln!("runtime error: {msg}");
@@ -658,7 +738,9 @@ fn cmd_run(file: PathBuf, no_check: bool, no_imports: bool, network: bool, bc: b
 }
 
 fn cmd_fmt(file: PathBuf, verbose: bool, check: bool) -> ExitCode {
-    let Some(src) = read(&file) else { return ExitCode::from(2); };
+    let Some(src) = read(&file) else {
+        return ExitCode::from(2);
+    };
     let mut sm = SourceMap::new();
     let fid = sm.add(file.display().to_string(), src.clone());
     let m = match parse_module(fid, &src) {
@@ -668,7 +750,11 @@ fn cmd_fmt(file: PathBuf, verbose: bool, check: bool) -> ExitCode {
             return ExitCode::from(1);
         }
     };
-    let form = if verbose { Form::Verbose } else { Form::Compact };
+    let form = if verbose {
+        Form::Verbose
+    } else {
+        Form::Compact
+    };
     let formatted = pp_module(&m, form);
     if check {
         // Trim trailing whitespace/newlines before comparing to be lenient.
@@ -685,7 +771,9 @@ fn cmd_fmt(file: PathBuf, verbose: bool, check: bool) -> ExitCode {
 }
 
 fn cmd_explain(file: PathBuf) -> ExitCode {
-    let Some(src) = read(&file) else { return ExitCode::from(2); };
+    let Some(src) = read(&file) else {
+        return ExitCode::from(2);
+    };
     let mut sm = SourceMap::new();
     let fid = sm.add(file.display().to_string(), src.clone());
     let m = match parse_module(fid, &src) {
@@ -703,7 +791,10 @@ fn cmd_explain(file: PathBuf) -> ExitCode {
         callee: Box::new(Expr::Var("introspect".into(), aether_ast::Span::DUMMY)),
         args: vec![aether_ast::Arg {
             name: None,
-            value: Expr::Lit(aether_ast::Lit::Str("current".into()), aether_ast::Span::DUMMY),
+            value: Expr::Lit(
+                aether_ast::Lit::Str("current".into()),
+                aether_ast::Span::DUMMY,
+            ),
             span: aether_ast::Span::DUMMY,
         }],
         span: aether_ast::Span::DUMMY,
@@ -721,7 +812,9 @@ fn cmd_explain(file: PathBuf) -> ExitCode {
 }
 
 fn cmd_ast(file: PathBuf, emit_json: bool, pretty: bool) -> ExitCode {
-    let Some(src) = read(&file) else { return ExitCode::from(2); };
+    let Some(src) = read(&file) else {
+        return ExitCode::from(2);
+    };
     let mut sm = SourceMap::new();
     let fid = sm.add(file.display().to_string(), src.clone());
     match parse_module(fid, &src) {
@@ -763,7 +856,12 @@ fn cmd_compile(file: PathBuf, output: Option<PathBuf>, no_imports: bool) -> Exit
         return ExitCode::from(1);
     }
 
-    println!("compiled {} → {} ({} bytes)", file.display(), out_path.display(), bytes.len());
+    println!(
+        "compiled {} → {} ({} bytes)",
+        file.display(),
+        out_path.display(),
+        bytes.len()
+    );
     ExitCode::SUCCESS
 }
 
@@ -848,10 +946,16 @@ mod tests {
         // This ensures the flag is registered and global.
         use clap::Parser as ClapParser;
         let result = super::Cli::try_parse_from(["aether", "--network", "run", "file.ae"]);
-        assert!(result.is_ok(), "CLI should accept --network before subcommand");
+        assert!(
+            result.is_ok(),
+            "CLI should accept --network before subcommand"
+        );
 
         let result2 = super::Cli::try_parse_from(["aether", "run", "--network", "file.ae"]);
-        assert!(result2.is_ok(), "CLI should accept --network after subcommand (global flag)");
+        assert!(
+            result2.is_ok(),
+            "CLI should accept --network after subcommand (global flag)"
+        );
     }
 
     #[test]

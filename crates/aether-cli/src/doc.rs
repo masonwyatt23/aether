@@ -13,9 +13,9 @@
 
 use std::path::PathBuf;
 
+use aether_ast::Expr;
 use aether_ast::SourceMap;
 use aether_eval::{ModuleSurface, Runtime};
-use aether_ast::Expr;
 use aether_parser::parse_module;
 use aether_types::{check_module, Severity};
 
@@ -26,12 +26,14 @@ pub fn run_doc(file: PathBuf, output: Option<PathBuf>) -> anyhow::Result<()> {
     let mut sm = SourceMap::new();
     let fid = sm.add(file.display().to_string(), src.clone());
 
-    let m = parse_module(fid, &src)
-        .map_err(|e| anyhow::anyhow!("parse error: {e}"))?;
+    let m = parse_module(fid, &src).map_err(|e| anyhow::anyhow!("parse error: {e}"))?;
 
     // Type-check; bail on errors but only warn about warnings.
     let (_, diags) = check_module(&m);
-    let errors: Vec<_> = diags.iter().filter(|d| d.severity == Severity::Error).collect();
+    let errors: Vec<_> = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .collect();
     if !errors.is_empty() {
         for e in &errors {
             eprintln!("error: {}", e.msg);
@@ -61,14 +63,20 @@ fn build_surface(m: aether_ast::Module) -> anyhow::Result<ModuleSurface> {
         callee: Box::new(Expr::Var("introspect".into(), aether_ast::Span::DUMMY)),
         args: vec![aether_ast::Arg {
             name: None,
-            value: Expr::Lit(aether_ast::Lit::Str("current".into()), aether_ast::Span::DUMMY),
+            value: Expr::Lit(
+                aether_ast::Lit::Str("current".into()),
+                aether_ast::Span::DUMMY,
+            ),
             span: aether_ast::Span::DUMMY,
         }],
         span: aether_ast::Span::DUMMY,
     };
     match rt.eval_root(&call) {
         Ok(aether_eval::Value::ModuleSurface(s, _)) => Ok(s),
-        Ok(v) => Err(anyhow::anyhow!("unexpected introspect result: {}", v.display())),
+        Ok(v) => Err(anyhow::anyhow!(
+            "unexpected introspect result: {}",
+            v.display()
+        )),
         Err(e) => Err(anyhow::anyhow!("eval error: {e}")),
     }
 }
@@ -126,15 +134,13 @@ mod tests {
         let surface = ModuleSurface {
             name: "greet".to_string(),
             doc: Some("A greeting module.".to_string()),
-            exports: vec![
-                ExportEntry {
-                    name: "hello".to_string(),
-                    kind: "fn",
-                    signature: "(name: Str) -> Str".to_string(),
-                    effects: vec![],
-                    doc: Some("Returns a greeting.".to_string()),
-                },
-            ],
+            exports: vec![ExportEntry {
+                name: "hello".to_string(),
+                kind: "fn",
+                signature: "(name: Str) -> Str".to_string(),
+                effects: vec![],
+                doc: Some("Returns a greeting.".to_string()),
+            }],
         };
         let md = render_markdown(&surface);
         assert!(md.contains("# greet"), "title missing");

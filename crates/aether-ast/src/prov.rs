@@ -71,7 +71,10 @@ mod parking_lot_lite {
 
     impl<T> Mutex<T> {
         pub const fn new(t: T) -> Self {
-            Self { locked: AtomicBool::new(false), data: UnsafeCell::new(t) }
+            Self {
+                locked: AtomicBool::new(false),
+                data: UnsafeCell::new(t),
+            }
         }
         pub fn lock(&self) -> Guard<'_, T> {
             while self
@@ -114,7 +117,9 @@ mod parking_lot_lite {
 
 impl ProvArena {
     pub fn new() -> Arc<Self> {
-        Arc::new(Self { nodes: parking_lot_lite::Mutex::new(Vec::new()) })
+        Arc::new(Self {
+            nodes: parking_lot_lite::Mutex::new(Vec::new()),
+        })
     }
 
     pub fn alloc(&self, node: ProvNode) -> usize {
@@ -140,13 +145,19 @@ impl ProvArena {
 
 impl Default for ProvArena {
     fn default() -> Self {
-        Self { nodes: parking_lot_lite::Mutex::new(Vec::new()) }
+        Self {
+            nodes: parking_lot_lite::Mutex::new(Vec::new()),
+        }
     }
 }
 
 impl ProvChain {
     pub fn singleton(arena: Arc<ProvArena>, op: ProvOp, span: Span) -> Self {
-        let head = arena.alloc(ProvNode { op, span, parents: vec![] });
+        let head = arena.alloc(ProvNode {
+            op,
+            span,
+            parents: vec![],
+        });
         Self { arena, head }
     }
 

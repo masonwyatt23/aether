@@ -43,10 +43,6 @@ pub fn http_get(args: &[Value]) -> EResult<Value> {
         .map_err(|e| EvalError::User(format!("http_get: failed to read response body: {e}")))?;
 
     let arena = ProvArena::new();
-    let prov = ProvChain::singleton(
-        arena,
-        ProvOp::Tool("http_get".into()),
-        Span::DUMMY,
-    );
+    let prov = ProvChain::singleton(arena, ProvOp::Tool("http_get".into()), Span::DUMMY);
     Ok(Value::Str(body, prov))
 }

@@ -103,14 +103,13 @@ impl Engine {
         }
         // Unknown colon command.
         if trimmed.starts_with(':') {
-            return ReplOutput::Error(format!(
-                "unknown command `{trimmed}`; type :h for help"
-            ));
+            return ReplOutput::Error(format!("unknown command `{trimmed}`; type :h for help"));
         }
 
         // --- try as expression first ---
         let fid = self.next_fid();
-        self.sm.add(format!("<repl:{}>", fid.0), trimmed.to_string());
+        self.sm
+            .add(format!("<repl:{}>", fid.0), trimmed.to_string());
         if let Ok(expr) = parse_expr(fid, trimmed) {
             // Build a temporary module that merges session decls with the expression.
             let mut rt = Runtime::new(self.module.clone());
@@ -131,7 +130,9 @@ impl Engine {
                 let names: Vec<String> = m.decls.iter().map(|d| d.name().to_string()).collect();
                 for d in m.decls {
                     // Overwrite any existing decl with the same name.
-                    self.module.decls.retain(|existing| existing.name() != d.name());
+                    self.module
+                        .decls
+                        .retain(|existing| existing.name() != d.name());
                     self.module.decls.push(d);
                 }
                 ReplOutput::Defined(format!("defined: {}", names.join(", ")))
@@ -143,23 +144,33 @@ impl Engine {
 
     fn cmd_type(&mut self, src: &str) -> ReplOutput {
         let fid = self.next_fid();
-        self.sm.add(format!("<repl:type:{}>", fid.0), src.to_string());
+        self.sm
+            .add(format!("<repl:type:{}>", fid.0), src.to_string());
         // Wrap the expression in a synthetic fn to type-check it.
         let wrapped = format!("fn __repl_t__() -> _ effects {{}} {{ {src} }}");
         let fid2 = self.next_fid();
-        self.sm.add(format!("<repl:type2:{}>", fid2.0), wrapped.clone());
+        self.sm
+            .add(format!("<repl:type2:{}>", fid2.0), wrapped.clone());
         // Merge with session module.
         let mut merged_src = session_preamble(&self.module);
         merged_src.push_str(&wrapped);
         let fid3 = self.next_fid();
-        self.sm.add(format!("<repl:typecheck:{}>", fid3.0), merged_src.clone());
+        self.sm
+            .add(format!("<repl:typecheck:{}>", fid3.0), merged_src.clone());
         match parse_module(fid3, &merged_src) {
             Ok(m) => {
                 let (_ctx, diags) = check_module(&m);
-                let errors: Vec<_> = diags.iter().filter(|d| d.severity == Severity::Error).collect();
+                let errors: Vec<_> = diags
+                    .iter()
+                    .filter(|d| d.severity == Severity::Error)
+                    .collect();
                 if !errors.is_empty() {
                     return ReplOutput::Error(
-                        errors.iter().map(|d| d.msg.clone()).collect::<Vec<_>>().join("; "),
+                        errors
+                            .iter()
+                            .map(|d| d.msg.clone())
+                            .collect::<Vec<_>>()
+                            .join("; "),
                     );
                 }
                 // Find __repl_t__ in the parsed module and report its declared return type.
@@ -175,7 +186,8 @@ impl Engine {
 
     fn cmd_debug(&mut self, src: &str) -> ReplOutput {
         let fid = self.next_fid();
-        self.sm.add(format!("<repl:debug:{}>", fid.0), src.to_string());
+        self.sm
+            .add(format!("<repl:debug:{}>", fid.0), src.to_string());
         match parse_expr(fid, src) {
             Ok(expr) => ReplOutput::Debug(format!("{expr:#?}")),
             Err(e) => ReplOutput::Error(format!("parse error: {e}")),
@@ -184,7 +196,8 @@ impl Engine {
 
     fn cmd_prov(&mut self, src: &str) -> ReplOutput {
         let fid = self.next_fid();
-        self.sm.add(format!("<repl:prov:{}>", fid.0), src.to_string());
+        self.sm
+            .add(format!("<repl:prov:{}>", fid.0), src.to_string());
         match parse_expr(fid, src) {
             Ok(expr) => {
                 let mut rt = Runtime::new(self.module.clone());

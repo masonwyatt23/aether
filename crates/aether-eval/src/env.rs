@@ -14,7 +14,9 @@ struct Frame {
 
 impl Env {
     pub fn root() -> Self {
-        Self { frames: vec![Frame::default()] }
+        Self {
+            frames: vec![Frame::default()],
+        }
     }
 
     pub fn child(&self) -> Self {

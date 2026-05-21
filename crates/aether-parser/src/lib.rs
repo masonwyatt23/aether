@@ -15,7 +15,10 @@ pub enum ParseError {
 
 impl ParseError {
     fn at(span: Span, msg: impl Into<String>) -> Self {
-        ParseError::Bad { span, msg: msg.into() }
+        ParseError::Bad {
+            span,
+            msg: msg.into(),
+        }
     }
     pub fn span(&self) -> Option<Span> {
         match self {
@@ -53,7 +56,13 @@ struct Parser<'a> {
 
 impl<'a> Parser<'a> {
     fn new(file: FileId, source: &'a str, toks: Vec<Token>) -> Self {
-        Self { file, source, toks, pos: 0, doc_buf: Vec::new() }
+        Self {
+            file,
+            source,
+            toks,
+            pos: 0,
+            doc_buf: Vec::new(),
+        }
     }
 
     // --- token utilities -------------------------------------------------
@@ -90,7 +99,8 @@ impl<'a> Parser<'a> {
     }
 
     fn eat(&mut self, want: &Tok) -> bool {
-        if matches!(self.peek(), Some(t) if std::mem::discriminant(t) == std::mem::discriminant(want)) {
+        if matches!(self.peek(), Some(t) if std::mem::discriminant(t) == std::mem::discriminant(want))
+        {
             self.bump();
             true
         } else {
@@ -127,7 +137,10 @@ impl<'a> Parser<'a> {
                 self.bump();
                 Ok(("result".to_string(), span))
             }
-            other => Err(ParseError::at(here, format!("expected identifier {ctx}, got {other:?}"))),
+            other => Err(ParseError::at(
+                here,
+                format!("expected identifier {ctx}, got {other:?}"),
+            )),
         }
     }
 
@@ -152,7 +165,9 @@ impl<'a> Parser<'a> {
         let mut decls = Vec::new();
         while self.peek().is_some() {
             // Allow doc lines to attach to a decl.
-            let doc = self.collect_docs().or_else(|| mod_doc.clone().filter(|_| decls.is_empty()));
+            let doc = self
+                .collect_docs()
+                .or_else(|| mod_doc.clone().filter(|_| decls.is_empty()));
             let decl = self.parse_decl(doc)?;
             decls.push(decl);
         }
@@ -196,12 +211,12 @@ impl<'a> Parser<'a> {
                 // Compact fn decl: `name(params):ret!{eff} = expr`
                 self.parse_compact_fn_decl(doc, no_prov).map(Decl::Fn)
             }
-            other => {
-                Err(ParseError::at(
-                    self.peek_span(),
-                    format!("expected declaration (fn/let/type/import/tool or compact form), got {other:?}"),
-                ))
-            }
+            other => Err(ParseError::at(
+                self.peek_span(),
+                format!(
+                    "expected declaration (fn/let/type/import/tool or compact form), got {other:?}"
+                ),
+            )),
         }
     }
 
@@ -211,7 +226,9 @@ impl<'a> Parser<'a> {
         let (name, _ns) = self.expect_ident("function name")?;
         let generics = self.parse_generics_opt()?;
         let params = self.parse_params()?;
-        let ret = if self.eat(&Tok::Arrow) { self.parse_type()? } else {
+        let ret = if self.eat(&Tok::Arrow) {
+            self.parse_type()?
+        } else {
             Type::Con(TyCon::Unit, self.peek_span())
         };
         let mut spec = SpecBlock::default();
@@ -288,7 +305,11 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_spec_block_into(&mut self, spec: &mut SpecBlock, effects: &mut EffectRow) -> PResult<()> {
+    fn parse_spec_block_into(
+        &mut self,
+        spec: &mut SpecBlock,
+        effects: &mut EffectRow,
+    ) -> PResult<()> {
         self.expect(&Tok::LBrace, "'{' to open spec block")?;
         while !matches!(self.peek(), Some(Tok::RBrace) | None) {
             match self.peek() {
@@ -323,11 +344,21 @@ impl<'a> Parser<'a> {
         let start = self.peek_span();
         self.expect(&Tok::Let, "'let'")?;
         let (name, _) = self.expect_ident("let name")?;
-        let ty = if self.eat(&Tok::Colon) { Some(self.parse_type()?) } else { None };
+        let ty = if self.eat(&Tok::Colon) {
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
         self.expect(&Tok::Eq, "'=' in let")?;
         let value = self.parse_expr_top()?;
         let end = self.last_span();
-        Ok(LetDecl { name, ty, value, doc, span: start.join(end) })
+        Ok(LetDecl {
+            name,
+            ty,
+            value,
+            doc,
+            span: start.join(end),
+        })
     }
 
     fn parse_type_alias(&mut self) -> PResult<TypeAliasDecl> {
@@ -345,7 +376,12 @@ impl<'a> Parser<'a> {
             self.parse_type()?
         };
         let end = self.last_span();
-        Ok(TypeAliasDecl { name, generics, ty, span: start.join(end) })
+        Ok(TypeAliasDecl {
+            name,
+            generics,
+            ty,
+            span: start.join(end),
+        })
     }
 
     /// Returns true when the current token stream looks like an ADT variant list.
@@ -389,7 +425,11 @@ impl<'a> Parser<'a> {
             }
         }
         let end = self.last_span();
-        Ok(Type::Adt { name: adt_name.to_string(), ctors, span: start.join(end) })
+        Ok(Type::Adt {
+            name: adt_name.to_string(),
+            ctors,
+            span: start.join(end),
+        })
     }
 
     fn parse_import(&mut self) -> PResult<ImportDecl> {
@@ -422,7 +462,12 @@ impl<'a> Parser<'a> {
             None
         };
         let end = self.last_span();
-        Ok(ImportDecl { path, names, alias, span: start.join(end) })
+        Ok(ImportDecl {
+            path,
+            names,
+            alias,
+            span: start.join(end),
+        })
     }
 
     fn parse_tool_decl(&mut self, doc: Option<String>) -> PResult<ToolDecl> {
@@ -437,7 +482,14 @@ impl<'a> Parser<'a> {
             effects = self.parse_effect_set()?;
         }
         let end = self.last_span();
-        Ok(ToolDecl { name, params, ret, effects, doc, span: start.join(end) })
+        Ok(ToolDecl {
+            name,
+            params,
+            ret,
+            effects,
+            doc,
+            span: start.join(end),
+        })
     }
 
     // --- params, generics, effects --------------------------------------
@@ -466,9 +518,18 @@ impl<'a> Parser<'a> {
             let (name, _) = self.expect_ident("parameter name")?;
             self.expect(&Tok::Colon, "':' before parameter type")?;
             let ty = self.parse_type()?;
-            let default = if self.eat(&Tok::Eq) { Some(self.parse_expr_top()?) } else { None };
+            let default = if self.eat(&Tok::Eq) {
+                Some(self.parse_expr_top()?)
+            } else {
+                None
+            };
             let end = self.last_span();
-            params.push(Param { name, ty, default, span: start.join(end) });
+            params.push(Param {
+                name,
+                ty,
+                default,
+                span: start.join(end),
+            });
             if !self.eat(&Tok::Comma) {
                 break;
             }
@@ -513,7 +574,11 @@ impl<'a> Parser<'a> {
                 let p = self.parse_expr_top()?;
                 self.expect(&Tok::RParen, "')' after confidence arg")?;
                 let sp = ty.span().join(self.last_span());
-                ty = Type::Confidence { base: Box::new(ty), p: Box::new(p), span: sp };
+                ty = Type::Confidence {
+                    base: Box::new(ty),
+                    p: Box::new(p),
+                    span: sp,
+                };
             } else if self.peek() == Some(&Tok::Where) {
                 // Verbose refinement: `Int where n > 0` (binder is implicit `_` or single-letter base?).
                 // We require an explicit binder for clarity: `Int{n: n > 0}` is preferred; here we
@@ -542,7 +607,11 @@ impl<'a> Parser<'a> {
                 let rspan = bstart.join(self.last_span());
                 ty = Type::Refined {
                     base: Box::new(ty.clone()),
-                    refinement: Refinement { binder, pred: Box::new(pred), span: rspan },
+                    refinement: Refinement {
+                        binder,
+                        pred: Box::new(pred),
+                        span: rspan,
+                    },
                     span: ty.span().join(self.last_span()),
                 };
             } else {
@@ -564,7 +633,12 @@ impl<'a> Parser<'a> {
                 Type::Tuple(parts, _) => parts,
                 t => vec![t],
             };
-            ty = Type::Fun { params, ret: Box::new(ret), effects, span: sp };
+            ty = Type::Fun {
+                params,
+                ret: Box::new(ret),
+                effects,
+                span: sp,
+            };
         }
         Ok(ty)
     }
@@ -587,11 +661,19 @@ impl<'a> Parser<'a> {
                             }
                         }
                         self.expect(&Tok::Gt, "'>' to close generic arguments")?;
-                        Ok(Type::Generic { name, args, span: sp.join(self.last_span()) })
+                        Ok(Type::Generic {
+                            name,
+                            args,
+                            span: sp.join(self.last_span()),
+                        })
                     } else {
                         Ok(Type::Con(con, sp))
                     }
-                } else if name.chars().next().is_some_and(|c| c.is_ascii_lowercase() && name.len() == 1) {
+                } else if name
+                    .chars()
+                    .next()
+                    .is_some_and(|c| c.is_ascii_lowercase() && name.len() == 1)
+                {
                     // Single lowercase letter: type variable.
                     Ok(Type::Var(name, sp))
                 } else {
@@ -605,9 +687,17 @@ impl<'a> Parser<'a> {
                             }
                         }
                         self.expect(&Tok::Gt, "'>' to close generic arguments")?;
-                        Ok(Type::Generic { name, args, span: sp.join(self.last_span()) })
+                        Ok(Type::Generic {
+                            name,
+                            args,
+                            span: sp.join(self.last_span()),
+                        })
                     } else {
-                        Ok(Type::Generic { name, args: vec![], span: sp })
+                        Ok(Type::Generic {
+                            name,
+                            args: vec![],
+                            span: sp,
+                        })
                     }
                 }
             }
@@ -653,7 +743,10 @@ impl<'a> Parser<'a> {
                 self.expect(&Tok::RBrace, "'}' to close record type")?;
                 Ok(Type::Record(fields, start.join(self.last_span())))
             }
-            other => Err(ParseError::at(start, format!("expected a type, got {other:?}"))),
+            other => Err(ParseError::at(
+                start,
+                format!("expected a type, got {other:?}"),
+            )),
         }
     }
 
@@ -735,14 +828,22 @@ impl<'a> Parser<'a> {
                         };
                         let value = self.parse_expr_top()?;
                         let aspan = astart.join(self.last_span());
-                        args.push(Arg { name, value, span: aspan });
+                        args.push(Arg {
+                            name,
+                            value,
+                            span: aspan,
+                        });
                         if !self.eat(&Tok::Comma) {
                             break;
                         }
                     }
                     self.expect(&Tok::RParen, "')' to close call")?;
                     let sp = e.span().join(self.last_span());
-                    e = Expr::Call { callee: Box::new(e), args, span: sp };
+                    e = Expr::Call {
+                        callee: Box::new(e),
+                        args,
+                        span: sp,
+                    };
                 }
                 Some(Tok::Dot) => {
                     self.bump();
@@ -763,25 +864,56 @@ impl<'a> Parser<'a> {
                     // `x |> f(a, b)` becomes `f(x, a, b)`. If RHS isn't a call, wrap it.
                     let sp = e.span().join(rhs.span());
                     match rhs {
-                        Expr::Call { callee, mut args, span: _ } => {
-                            args.insert(0, Arg { name: None, value: e, span: sp });
-                            e = Expr::Call { callee, args, span: sp };
+                        Expr::Call {
+                            callee,
+                            mut args,
+                            span: _,
+                        } => {
+                            args.insert(
+                                0,
+                                Arg {
+                                    name: None,
+                                    value: e,
+                                    span: sp,
+                                },
+                            );
+                            e = Expr::Call {
+                                callee,
+                                args,
+                                span: sp,
+                            };
                         }
                         other => {
                             e = Expr::Call {
                                 callee: Box::new(other),
-                                args: vec![Arg { name: None, value: e, span: sp }],
+                                args: vec![Arg {
+                                    name: None,
+                                    value: e,
+                                    span: sp,
+                                }],
                                 span: sp,
                             };
                         }
                     }
                 }
-                Some(Tok::Colon) if matches!(self.peek_at(1), Some(Tok::Ident(_)) | Some(Tok::LParen) | Some(Tok::LBracket) | Some(Tok::LBrace)) => {
+                Some(Tok::Colon)
+                    if matches!(
+                        self.peek_at(1),
+                        Some(Tok::Ident(_))
+                            | Some(Tok::LParen)
+                            | Some(Tok::LBracket)
+                            | Some(Tok::LBrace)
+                    ) =>
+                {
                     // type ascription: `expr : Type`
                     self.bump();
                     let ty = self.parse_type()?;
                     let sp = e.span().join(self.last_span());
-                    e = Expr::Annot { expr: Box::new(e), ty, span: sp };
+                    e = Expr::Annot {
+                        expr: Box::new(e),
+                        ty,
+                        span: sp,
+                    };
                 }
                 _ => break,
             }
@@ -840,7 +972,9 @@ impl<'a> Parser<'a> {
             Some(Tok::LBrace) => {
                 // Record literal `{ x: 1, y: 2 }` OR block `{ stmts; tail }`.
                 // Lookahead disambiguates: `LBrace IDENT COLON` → record; else block.
-                if matches!(self.peek_at(1), Some(Tok::Ident(_))) && matches!(self.peek_at(2), Some(Tok::Colon)) {
+                if matches!(self.peek_at(1), Some(Tok::Ident(_)))
+                    && matches!(self.peek_at(2), Some(Tok::Colon))
+                {
                     self.parse_record_literal()
                 } else {
                     self.parse_block_expr()
@@ -850,7 +984,10 @@ impl<'a> Parser<'a> {
             Some(Tok::Let) => self.parse_let_expr(),
             Some(Tok::Match) => self.parse_match_expr(),
             Some(Tok::Fn) => self.parse_lambda(),
-            other => Err(ParseError::at(start, format!("expected expression, got {other:?}"))),
+            other => Err(ParseError::at(
+                start,
+                format!("expected expression, got {other:?}"),
+            )),
         }
     }
 
@@ -862,7 +999,8 @@ impl<'a> Parser<'a> {
         let mut args = Vec::new();
         while !matches!(self.peek(), Some(Tok::RParen) | None) {
             let astart = self.peek_span();
-            let name = if let (Some(Tok::Ident(_)), Some(Tok::Eq)) = (self.peek(), self.peek_at(1)) {
+            let name = if let (Some(Tok::Ident(_)), Some(Tok::Eq)) = (self.peek(), self.peek_at(1))
+            {
                 let (n, _) = self.expect_ident("keyword arg name")?;
                 self.bump();
                 Some(n)
@@ -870,13 +1008,21 @@ impl<'a> Parser<'a> {
                 None
             };
             let value = self.parse_expr_top()?;
-            args.push(Arg { name, value, span: astart.join(self.last_span()) });
+            args.push(Arg {
+                name,
+                value,
+                span: astart.join(self.last_span()),
+            });
             if !self.eat(&Tok::Comma) {
                 break;
             }
         }
         self.expect(&Tok::RParen, "')' after builtin args")?;
-        Ok(Expr::Call { callee: Box::new(callee), args, span: start.join(self.last_span()) })
+        Ok(Expr::Call {
+            callee: Box::new(callee),
+            args,
+            span: start.join(self.last_span()),
+        })
     }
 
     fn parse_confident_call(&mut self, start: Span) -> PResult<Expr> {
@@ -887,7 +1033,11 @@ impl<'a> Parser<'a> {
         let p = self.parse_expr_top()?;
         self.expect(&Tok::RParen, "')' after confident args")?;
         let sp = start.join(self.last_span());
-        Ok(Expr::Confident { value: Box::new(v), p: Box::new(p), span: sp })
+        Ok(Expr::Confident {
+            value: Box::new(v),
+            p: Box::new(p),
+            span: sp,
+        })
     }
 
     fn parse_paren_or_tuple(&mut self) -> PResult<Expr> {
@@ -955,12 +1105,21 @@ impl<'a> Parser<'a> {
                     let lstart = self.peek_span();
                     self.bump();
                     let pat = self.parse_pattern()?;
-                    let ty = if self.eat(&Tok::Colon) { Some(self.parse_type()?) } else { None };
+                    let ty = if self.eat(&Tok::Colon) {
+                        Some(self.parse_type()?)
+                    } else {
+                        None
+                    };
                     self.expect(&Tok::Eq, "'=' in let binding")?;
                     let value = self.parse_expr_top()?;
                     let _ = self.eat(&Tok::Semi);
                     let sp = lstart.join(self.last_span());
-                    stmts.push(Stmt::Let { pat, ty, value, span: sp });
+                    stmts.push(Stmt::Let {
+                        pat,
+                        ty,
+                        value,
+                        span: sp,
+                    });
                 }
                 _ => {
                     let e = self.parse_expr_top()?;
@@ -977,7 +1136,11 @@ impl<'a> Parser<'a> {
             }
         }
         self.expect(&Tok::RBrace, "'}' to close block")?;
-        Ok(Expr::Block { stmts, tail, span: start.join(self.last_span()) })
+        Ok(Expr::Block {
+            stmts,
+            tail,
+            span: start.join(self.last_span()),
+        })
     }
 
     /// Parse an arm body (then-arm, else-arm, or match-arm body).
@@ -1011,10 +1174,10 @@ impl<'a> Parser<'a> {
             if self.peek().is_none() {
                 break;
             }
-            if terminators.iter().any(|t| {
-                std::mem::discriminant(self.peek().unwrap())
-                    == std::mem::discriminant(t)
-            }) {
+            if terminators
+                .iter()
+                .any(|t| std::mem::discriminant(self.peek().unwrap()) == std::mem::discriminant(t))
+            {
                 break;
             }
 
@@ -1022,7 +1185,11 @@ impl<'a> Parser<'a> {
                 let lstart = self.peek_span();
                 self.bump(); // consume `let`
                 let pat = self.parse_pattern()?;
-                let ty = if self.eat(&Tok::Colon) { Some(self.parse_type()?) } else { None };
+                let ty = if self.eat(&Tok::Colon) {
+                    Some(self.parse_type()?)
+                } else {
+                    None
+                };
                 self.expect(&Tok::Eq, "'=' in let binding")?;
                 let value = self.parse_expr_top()?;
 
@@ -1050,7 +1217,12 @@ impl<'a> Parser<'a> {
                 // Ordinary let statement.
                 let _ = self.eat(&Tok::Semi);
                 let sp = lstart.join(self.last_span());
-                stmts.push(Stmt::Let { pat, ty, value, span: sp });
+                stmts.push(Stmt::Let {
+                    pat,
+                    ty,
+                    value,
+                    span: sp,
+                });
 
                 // After a let-stmt: if the next token is `let` again, loop.
                 // If it's a terminator / EOF, break (no tail expr → Unit tail).
@@ -1060,8 +1232,7 @@ impl<'a> Parser<'a> {
                 }
                 if self.peek().is_none()
                     || terminators.iter().any(|t| {
-                        std::mem::discriminant(self.peek().unwrap())
-                            == std::mem::discriminant(t)
+                        std::mem::discriminant(self.peek().unwrap()) == std::mem::discriminant(t)
                     })
                 {
                     break;
@@ -1117,7 +1288,11 @@ impl<'a> Parser<'a> {
         let start = self.peek_span();
         self.expect(&Tok::Let, "'let'")?;
         let pat = self.parse_pattern()?;
-        let ty = if self.eat(&Tok::Colon) { Some(self.parse_type()?) } else { None };
+        let ty = if self.eat(&Tok::Colon) {
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
         self.expect(&Tok::Eq, "'=' in let-in")?;
         let value = self.parse_expr_top()?;
         self.expect(&Tok::In, "'in' in let-in")?;
@@ -1159,7 +1334,7 @@ impl<'a> Parser<'a> {
             if c == '$' {
                 if matches!(chars.peek(), Some(&'{')) {
                     let _ = chars.next(); // consume '{'
-                    // Flush literal accumulator.
+                                          // Flush literal accumulator.
                     if !current.is_empty() {
                         parts.push(StrPart::Lit(std::mem::take(&mut current)));
                     }
@@ -1168,18 +1343,24 @@ impl<'a> Parser<'a> {
                     let mut inner = String::new();
                     for ic in chars.by_ref() {
                         match ic {
-                            '{' => { depth += 1; inner.push(ic); }
+                            '{' => {
+                                depth += 1;
+                                inner.push(ic);
+                            }
                             '}' => {
                                 depth -= 1;
-                                if depth == 0 { break; }
+                                if depth == 0 {
+                                    break;
+                                }
                                 inner.push(ic);
                             }
                             other => inner.push(other),
                         }
                     }
                     // Re-parse inner as a full expression.
-                    let inner_expr = parse_expr(self.file, &inner)
-                        .map_err(|e| ParseError::at(span, format!("in string interpolation: {e}")))?;
+                    let inner_expr = parse_expr(self.file, &inner).map_err(|e| {
+                        ParseError::at(span, format!("in string interpolation: {e}"))
+                    })?;
                     parts.push(StrPart::Expr(inner_expr));
                     continue;
                 }
@@ -1213,7 +1394,13 @@ impl<'a> Parser<'a> {
         let end = self.last_span();
         let sanitized: String = raw_name
             .chars()
-            .map(|c| if c.is_ascii_alphanumeric() || c == '_' { c } else { '_' })
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
         let fn_name = format!("{prefix}{sanitized}");
         Ok(FnDecl {
@@ -1254,7 +1441,12 @@ impl<'a> Parser<'a> {
             // match-arm body ends at `,` (next arm) or `}` (end of match).
             let body = self.parse_arm_body(&[Tok::Comma, Tok::RBrace])?;
             let aspan = astart.join(self.last_span());
-            arms.push(MatchArm { pat, guard, body, span: aspan });
+            arms.push(MatchArm {
+                pat,
+                guard,
+                body,
+                span: aspan,
+            });
             if !self.eat(&Tok::Comma) {
                 break;
             }
@@ -1271,7 +1463,11 @@ impl<'a> Parser<'a> {
         let start = self.peek_span();
         self.expect(&Tok::Fn, "'fn' for lambda")?;
         let params = self.parse_params()?;
-        let ret = if self.eat(&Tok::Arrow) { Some(self.parse_type()?) } else { None };
+        let ret = if self.eat(&Tok::Arrow) {
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
         let body = if matches!(self.peek(), Some(Tok::LBrace)) {
             self.parse_block_expr()?
         } else {
@@ -1279,7 +1475,12 @@ impl<'a> Parser<'a> {
             self.parse_expr_top()?
         };
         let sp = start.join(self.last_span());
-        Ok(Expr::Lambda { params, ret, body: Box::new(body), span: sp })
+        Ok(Expr::Lambda {
+            params,
+            ret,
+            body: Box::new(body),
+            span: sp,
+        })
     }
 
     // --- patterns --------------------------------------------------------
@@ -1294,7 +1495,9 @@ impl<'a> Parser<'a> {
             Some(Tok::Ident(s)) => {
                 self.bump();
                 // Constructor `Some(p)`?
-                if s.chars().next().is_some_and(|c| c.is_ascii_uppercase()) && self.eat(&Tok::LParen) {
+                if s.chars().next().is_some_and(|c| c.is_ascii_uppercase())
+                    && self.eat(&Tok::LParen)
+                {
                     let mut args = Vec::new();
                     while !matches!(self.peek(), Some(Tok::RParen) | None) {
                         args.push(self.parse_pattern()?);
@@ -1303,7 +1506,11 @@ impl<'a> Parser<'a> {
                         }
                     }
                     self.expect(&Tok::RParen, "')' after constructor pattern args")?;
-                    Ok(Pattern::Ctor { name: s, args, span: start.join(self.last_span()) })
+                    Ok(Pattern::Ctor {
+                        name: s,
+                        args,
+                        span: start.join(self.last_span()),
+                    })
                 } else {
                     Ok(Pattern::Var(s, start))
                 }
@@ -1341,7 +1548,10 @@ impl<'a> Parser<'a> {
                     Ok(first)
                 }
             }
-            other => Err(ParseError::at(start, format!("expected pattern, got {other:?}"))),
+            other => Err(ParseError::at(
+                start,
+                format!("expected pattern, got {other:?}"),
+            )),
         }
     }
 }
@@ -1422,7 +1632,9 @@ mod tests {
         let m = pm("pos(n:I{n: n>0}):I!{} = n");
         if let Decl::Fn(f) = &m.decls[0] {
             match &f.params[0].ty {
-                Type::Refined { base, refinement, .. } => {
+                Type::Refined {
+                    base, refinement, ..
+                } => {
                     assert!(matches!(**base, Type::Con(TyCon::Int, _)));
                     assert_eq!(refinement.binder, "n");
                 }
@@ -1600,7 +1812,11 @@ mod tests {
         let e = pe("if true then let x = 1 x else 2");
         match e {
             Expr::If { then_branch, .. } => match *then_branch {
-                Expr::Block { ref stmts, ref tail, .. } => {
+                Expr::Block {
+                    ref stmts,
+                    ref tail,
+                    ..
+                } => {
                     assert_eq!(stmts.len(), 1, "expected 1 let stmt");
                     assert!(matches!(stmts[0], Stmt::Let { .. }));
                     assert!(tail.is_some());
@@ -1618,7 +1834,11 @@ mod tests {
         let e = pe("if false then 1 else let x = 2 x");
         match e {
             Expr::If { else_branch, .. } => match *else_branch {
-                Expr::Block { ref stmts, ref tail, .. } => {
+                Expr::Block {
+                    ref stmts,
+                    ref tail,
+                    ..
+                } => {
                     assert_eq!(stmts.len(), 1);
                     assert!(matches!(stmts[0], Stmt::Let { .. }));
                     assert!(tail.is_some());
@@ -1642,7 +1862,9 @@ mod tests {
                         assert_eq!(stmts.len(), 1);
                         assert!(matches!(stmts[0], Stmt::Let { .. }));
                         assert!(tail.is_some());
-                        assert!(matches!(**tail.as_ref().unwrap(), Expr::Var(ref n, _) if n == "z"));
+                        assert!(
+                            matches!(**tail.as_ref().unwrap(), Expr::Var(ref n, _) if n == "z")
+                        );
                     }
                     other => panic!("expected Block arm body, got {other:?}"),
                 }
@@ -1667,12 +1889,19 @@ mod tests {
         let e = pe("if true then let a = 1 let b = 2 a + b else 0");
         match e {
             Expr::If { then_branch, .. } => match *then_branch {
-                Expr::Block { ref stmts, ref tail, .. } => {
+                Expr::Block {
+                    ref stmts,
+                    ref tail,
+                    ..
+                } => {
                     assert_eq!(stmts.len(), 2, "expected 2 let stmts, got {}", stmts.len());
                     assert!(matches!(stmts[0], Stmt::Let { .. }));
                     assert!(matches!(stmts[1], Stmt::Let { .. }));
                     assert!(tail.is_some());
-                    assert!(matches!(**tail.as_ref().unwrap(), Expr::Bin(BinOp::Add, _, _, _)));
+                    assert!(matches!(
+                        **tail.as_ref().unwrap(),
+                        Expr::Bin(BinOp::Add, _, _, _)
+                    ));
                 }
                 other => panic!("expected Block then-branch, got {other:?}"),
             },

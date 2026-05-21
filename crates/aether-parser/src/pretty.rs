@@ -198,7 +198,12 @@ pub fn type_(t: &Type, form: Form) -> String {
             Form::Compact => c.compact_name().to_string(),
             Form::Verbose => c.verbose_name().to_string(),
         },
-        Type::Fun { params: ps, ret, effects: eff, .. } => {
+        Type::Fun {
+            params: ps,
+            ret,
+            effects: eff,
+            ..
+        } => {
             let mut s = String::new();
             if ps.len() == 1 {
                 s.push_str(&type_(&ps[0], form));
@@ -220,7 +225,9 @@ pub fn type_(t: &Type, form: Form) -> String {
             }
             s
         }
-        Type::Refined { base, refinement, .. } => {
+        Type::Refined {
+            base, refinement, ..
+        } => {
             let mut s = type_(base, form);
             s.push('{');
             s.push_str(&refinement.binder);
@@ -290,28 +297,26 @@ pub fn type_(t: &Type, form: Form) -> String {
             }
             s
         }
-        Type::Adt { ctors, .. } => {
-            ctors
-                .iter()
-                .map(|(cname, fields)| {
-                    if fields.is_empty() {
-                        cname.clone()
-                    } else {
-                        let mut s = cname.clone();
-                        s.push('(');
-                        for (i, f) in fields.iter().enumerate() {
-                            if i > 0 {
-                                s.push(',');
-                            }
-                            s.push_str(&type_(f, form));
+        Type::Adt { ctors, .. } => ctors
+            .iter()
+            .map(|(cname, fields)| {
+                if fields.is_empty() {
+                    cname.clone()
+                } else {
+                    let mut s = cname.clone();
+                    s.push('(');
+                    for (i, f) in fields.iter().enumerate() {
+                        if i > 0 {
+                            s.push(',');
                         }
-                        s.push(')');
-                        s
+                        s.push_str(&type_(f, form));
                     }
-                })
-                .collect::<Vec<_>>()
-                .join("|")
-        }
+                    s.push(')');
+                    s
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("|"),
     }
 }
 
@@ -332,7 +337,11 @@ fn expr_prec(e: &Expr, form: Form, parent_bp: u8) -> String {
             let inner = format!(
                 "{}{}{}",
                 expr_prec(l, form, lbp),
-                if form == Form::Verbose { format!(" {} ", op.as_str()) } else { op.as_str().to_string() },
+                if form == Form::Verbose {
+                    format!(" {} ", op.as_str())
+                } else {
+                    op.as_str().to_string()
+                },
                 expr_prec(r, form, rbp + 1)
             );
             if my_bp < parent_bp {
@@ -361,14 +370,18 @@ fn expr_prec(e: &Expr, form: Form, parent_bp: u8) -> String {
             s.push(')');
             s
         }
-        Expr::Lambda { params: ps, body, .. } => {
+        Expr::Lambda {
+            params: ps, body, ..
+        } => {
             let mut s = String::from("fn(");
             s.push_str(&params(ps, form));
             s.push_str(") => ");
             s.push_str(&expr(body, form));
             s
         }
-        Expr::Let { pat, value, body, .. } => {
+        Expr::Let {
+            pat, value, body, ..
+        } => {
             format!(
                 "let {} = {} in {}",
                 pattern(pat),
@@ -376,7 +389,12 @@ fn expr_prec(e: &Expr, form: Form, parent_bp: u8) -> String {
                 expr(body, form)
             )
         }
-        Expr::If { cond, then_branch, else_branch, .. } => {
+        Expr::If {
+            cond,
+            then_branch,
+            else_branch,
+            ..
+        } => {
             format!(
                 "if {} then {} else {}",
                 expr(cond, form),
@@ -446,7 +464,9 @@ fn expr_prec(e: &Expr, form: Form, parent_bp: u8) -> String {
         Expr::Field(e, n, _) => format!("{}.{}", expr_prec(e, form, u8::MAX), n),
         Expr::Index(e, i, _) => format!("{}[{}]", expr_prec(e, form, u8::MAX), expr(i, form)),
         Expr::Match { .. } => "<match>".to_string(),
-        Expr::Confident { value, p, .. } => format!("confident({},{})", expr(value, form), expr(p, form)),
+        Expr::Confident { value, p, .. } => {
+            format!("confident({},{})", expr(value, form), expr(p, form))
+        }
         Expr::Assume(p, _) => format!("assume({})", expr(p, form)),
         Expr::Annot { expr: e, ty, .. } => format!("({}: {})", expr(e, form), type_(ty, form)),
         Expr::StrInterp { parts, .. } => {
@@ -457,9 +477,9 @@ fn expr_prec(e: &Expr, form: Form, parent_bp: u8) -> String {
                         for c in t.chars() {
                             match c {
                                 '\\' => s.push_str("\\\\"),
-                                '"'  => s.push_str("\\\""),
+                                '"' => s.push_str("\\\""),
                                 '\n' => s.push_str("\\n"),
-                                c    => s.push(c),
+                                c => s.push(c),
                             }
                         }
                     }
@@ -485,7 +505,11 @@ fn pattern(p: &Pattern) -> String {
             format!("({inner})")
         }
         Pattern::Record(fs, _) => {
-            let inner = fs.iter().map(|(n, p)| format!("{n}:{}", pattern(p))).collect::<Vec<_>>().join(",");
+            let inner = fs
+                .iter()
+                .map(|(n, p)| format!("{n}:{}", pattern(p)))
+                .collect::<Vec<_>>()
+                .join(",");
             format!("{{{inner}}}")
         }
         Pattern::Ctor { name, args, .. } => {
@@ -504,7 +528,11 @@ fn lit(l: &Lit) -> String {
         Lit::Int(n) => n.to_string(),
         Lit::Float(f) => {
             let s = f.to_string();
-            if s.contains('.') { s } else { format!("{s}.0") }
+            if s.contains('.') {
+                s
+            } else {
+                format!("{s}.0")
+            }
         }
         Lit::Bool(b) => b.to_string(),
         Lit::Str(s) => format!("{s:?}"),

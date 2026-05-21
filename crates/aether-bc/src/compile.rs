@@ -2,14 +2,14 @@
 
 use std::collections::{HashMap, HashSet};
 
-use aether_ast::{BinOp, Decl, Expr, FnDecl, Lit, Module, Stmt, UnOp};
 use aether_ast::decl::Param;
 use aether_ast::pat::Pattern;
 use aether_ast::ty::Type;
+use aether_ast::{BinOp, Decl, Expr, FnDecl, Lit, Module, Stmt, UnOp};
 
+use crate::error::CompileError;
 use crate::op::{BuiltinId, Op};
 use crate::vm::{BytecodeFn, Constant, Program};
-use crate::error::CompileError;
 
 // ─── public entry point ───────────────────────────────────────────────────────
 
@@ -59,7 +59,14 @@ pub fn compile_module(m: &Module) -> Result<Program, CompileError> {
     let mut closure_fns: Vec<BytecodeFn> = Vec::new();
 
     for decl in &fn_decls {
-        let bf = compile_fn(decl, &fn_index, &ctor_map, &mut constants, n_top, &mut closure_fns)?;
+        let bf = compile_fn(
+            decl,
+            &fn_index,
+            &ctor_map,
+            &mut constants,
+            n_top,
+            &mut closure_fns,
+        )?;
         fns.push(bf);
     }
     fns.extend(closure_fns);
@@ -71,7 +78,11 @@ pub fn compile_module(m: &Module) -> Result<Program, CompileError> {
         .map(|i| i as u32)
         .unwrap_or(0);
 
-    Ok(Program { fns, constants, entry })
+    Ok(Program {
+        fns,
+        constants,
+        entry,
+    })
 }
 
 // ─── per-function compilation ─────────────────────────────────────────────────
@@ -170,7 +181,11 @@ impl<'a> FnCtx<'a> {
 
     /// Intern a string constant, return its index.
     fn intern_str(&mut self, s: &str) -> u32 {
-        if let Some(i) = self.constants.iter().position(|c| matches!(c, Constant::Str(t) if t == s)) {
+        if let Some(i) = self
+            .constants
+            .iter()
+            .position(|c| matches!(c, Constant::Str(t) if t == s))
+        {
             return i as u32;
         }
         let idx = self.constants.len() as u32;
@@ -219,12 +234,19 @@ fn free_vars_expr(e: &Expr, bound: &HashSet<String>, out: &mut Vec<String>) {
             free_vars_expr(r, bound, out);
         }
         Expr::Un(_, x, _) => free_vars_expr(x, bound, out),
-        Expr::If { cond, then_branch, else_branch, .. } => {
+        Expr::If {
+            cond,
+            then_branch,
+            else_branch,
+            ..
+        } => {
             free_vars_expr(cond, bound, out);
             free_vars_expr(then_branch, bound, out);
             free_vars_expr(else_branch, bound, out);
         }
-        Expr::Let { pat, value, body, .. } => {
+        Expr::Let {
+            pat, value, body, ..
+        } => {
             free_vars_expr(value, bound, out);
             let mut inner = bound.clone();
             collect_pat_bindings(pat, &mut inner);
@@ -247,27 +269,39 @@ fn free_vars_expr(e: &Expr, bound: &HashSet<String>, out: &mut Vec<String>) {
         }
         Expr::Call { callee, args, .. } => {
             free_vars_expr(callee, bound, out);
-            for a in args { free_vars_expr(&a.value, bound, out); }
+            for a in args {
+                free_vars_expr(&a.value, bound, out);
+            }
         }
         Expr::Lambda { params, body, .. } => {
             let mut inner = bound.clone();
-            for p in params { inner.insert(p.name.clone()); }
+            for p in params {
+                inner.insert(p.name.clone());
+            }
             free_vars_expr(body, &inner, out);
         }
-        Expr::Match { scrutinee, arms, .. } => {
+        Expr::Match {
+            scrutinee, arms, ..
+        } => {
             free_vars_expr(scrutinee, bound, out);
             for arm in arms {
                 let mut inner = bound.clone();
                 collect_pat_bindings(&arm.pat, &mut inner);
-                if let Some(g) = &arm.guard { free_vars_expr(g, &inner, out); }
+                if let Some(g) = &arm.guard {
+                    free_vars_expr(g, &inner, out);
+                }
                 free_vars_expr(&arm.body, &inner, out);
             }
         }
         Expr::Record(fields, _) => {
-            for (_, v) in fields { free_vars_expr(v, bound, out); }
+            for (_, v) in fields {
+                free_vars_expr(v, bound, out);
+            }
         }
         Expr::Tuple(elts, _) | Expr::List(elts, _) => {
-            for e in elts { free_vars_expr(e, bound, out); }
+            for e in elts {
+                free_vars_expr(e, bound, out);
+            }
         }
         Expr::Field(e, _, _) => free_vars_expr(e, bound, out),
         Expr::Index(e, i, _) => {
@@ -291,13 +325,19 @@ fn free_vars_expr(e: &Expr, bound: &HashSet<String>, out: &mut Vec<String>) {
 
 fn collect_pat_bindings(pat: &Pattern, out: &mut HashSet<String>) {
     match pat {
-        Pattern::Var(name, _) => { out.insert(name.clone()); }
+        Pattern::Var(name, _) => {
+            out.insert(name.clone());
+        }
         Pattern::Wild(_) | Pattern::Lit(_, _) => {}
         Pattern::Tuple(pats, _) | Pattern::Ctor { args: pats, .. } => {
-            for p in pats { collect_pat_bindings(p, out); }
+            for p in pats {
+                collect_pat_bindings(p, out);
+            }
         }
         Pattern::Record(fields, _) => {
-            for (_, p) in fields { collect_pat_bindings(p, out); }
+            for (_, p) in fields {
+                collect_pat_bindings(p, out);
+            }
         }
     }
 }
@@ -306,7 +346,10 @@ fn collect_pat_bindings(pat: &Pattern, out: &mut HashSet<String>) {
 
 fn compile_expr(e: &Expr, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
     match e {
-        Expr::Lit(lit, _) => { compile_lit(lit, ctx); Ok(()) }
+        Expr::Lit(lit, _) => {
+            compile_lit(lit, ctx);
+            Ok(())
+        }
 
         Expr::Var(name, _) => {
             if let Some(idx) = ctx.lookup_local(name) {
@@ -316,7 +359,10 @@ fn compile_expr(e: &Expr, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
             // Could be a top-level function — handled as first-class fn value via
             // MakeClosure with zero captures (allows passing fns as values).
             if let Some(&fn_idx) = ctx.fn_index.get(name.as_str()) {
-                ctx.emit(Op::MakeClosure { fn_idx, captured: vec![] });
+                ctx.emit(Op::MakeClosure {
+                    fn_idx,
+                    captured: vec![],
+                });
                 return Ok(());
             }
             Err(CompileError::UnboundVar(name.clone()))
@@ -338,7 +384,12 @@ fn compile_expr(e: &Expr, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
             Ok(())
         }
 
-        Expr::If { cond, then_branch, else_branch, .. } => {
+        Expr::If {
+            cond,
+            then_branch,
+            else_branch,
+            ..
+        } => {
             compile_expr(cond, ctx)?;
             let jump_false = ctx.ip();
             ctx.emit(Op::JumpIfFalse(0));
@@ -360,7 +411,12 @@ fn compile_expr(e: &Expr, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
             Ok(())
         }
 
-        Expr::Let { pat: Pattern::Var(name, _), value, body, .. } => {
+        Expr::Let {
+            pat: Pattern::Var(name, _),
+            value,
+            body,
+            ..
+        } => {
             compile_expr(value, ctx)?;
             let idx = ctx.declare_local(name.clone());
             ctx.emit(Op::StoreLocal(idx));
@@ -368,7 +424,9 @@ fn compile_expr(e: &Expr, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
             Ok(())
         }
 
-        Expr::Let { pat, value, body, .. } => {
+        Expr::Let {
+            pat, value, body, ..
+        } => {
             compile_expr(value, ctx)?;
             // Bind the pattern's variables from the value on the stack.
             compile_pat_bind(pat, ctx)?;
@@ -396,27 +454,41 @@ fn compile_expr(e: &Expr, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
             if let Expr::Var(name, _) = callee.as_ref() {
                 // 1) Built-in?
                 if let Some(bid) = BuiltinId::from_name(name) {
-                    for a in args { compile_expr(&a.value, ctx)?; }
-                    ctx.emit(Op::CallBuiltin { id: bid as u16, argc });
+                    for a in args {
+                        compile_expr(&a.value, ctx)?;
+                    }
+                    ctx.emit(Op::CallBuiltin {
+                        id: bid as u16,
+                        argc,
+                    });
                     return Ok(());
                 }
                 // 2) ADT constructor?
                 if let Some(&ctor_argc) = ctx.ctor_map.get(name.as_str()) {
-                    for a in args { compile_expr(&a.value, ctx)?; }
+                    for a in args {
+                        compile_expr(&a.value, ctx)?;
+                    }
                     let name_idx = ctx.intern_str(name);
-                    ctx.emit(Op::Ctor { name_idx, argc: ctor_argc });
+                    ctx.emit(Op::Ctor {
+                        name_idx,
+                        argc: ctor_argc,
+                    });
                     return Ok(());
                 }
                 // 3) User-defined function?
                 if let Some(&fn_idx) = ctx.fn_index.get(name.as_str()) {
-                    for a in args { compile_expr(&a.value, ctx)?; }
+                    for a in args {
+                        compile_expr(&a.value, ctx)?;
+                    }
                     ctx.emit(Op::Call { fn_idx, argc });
                     return Ok(());
                 }
                 // 4) Local variable holding a closure?
                 if let Some(local_idx) = ctx.lookup_local(name) {
                     ctx.emit(Op::LoadLocal(local_idx));
-                    for a in args { compile_expr(&a.value, ctx)?; }
+                    for a in args {
+                        compile_expr(&a.value, ctx)?;
+                    }
                     ctx.emit(Op::CallClosure { argc });
                     return Ok(());
                 }
@@ -425,7 +497,9 @@ fn compile_expr(e: &Expr, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
                 //    assert_eq, http_get, etc.).  This avoids a compile-time
                 //    UndefinedFn error at the cost of a runtime error if no
                 //    dispatcher is registered.
-                for a in args { compile_expr(&a.value, ctx)?; }
+                for a in args {
+                    compile_expr(&a.value, ctx)?;
+                }
                 let name_idx = ctx.intern_str(name);
                 ctx.emit(Op::CallBuiltinDyn { name_idx, argc });
                 return Ok(());
@@ -433,22 +507,25 @@ fn compile_expr(e: &Expr, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
 
             // Expression callee — compile it (could be a closure value), then call.
             compile_expr(callee, ctx)?;
-            for a in args { compile_expr(&a.value, ctx)?; }
+            for a in args {
+                compile_expr(&a.value, ctx)?;
+            }
             ctx.emit(Op::CallClosure { argc });
             Ok(())
         }
 
-        Expr::Lambda { params, body, .. } => {
-            compile_lambda(params, body, ctx)
-        }
+        Expr::Lambda { params, body, .. } => compile_lambda(params, body, ctx),
 
-        Expr::Match { scrutinee, arms, .. } => {
+        Expr::Match {
+            scrutinee, arms, ..
+        } => {
             compile_expr(scrutinee, ctx)?;
             compile_match(arms, ctx)
         }
 
         Expr::Record(fields, _) => {
-            let field_names: Vec<u32> = fields.iter()
+            let field_names: Vec<u32> = fields
+                .iter()
                 .map(|(name, _)| ctx.intern_str(name))
                 .collect();
             for (_, v) in fields {
@@ -459,13 +536,17 @@ fn compile_expr(e: &Expr, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
         }
 
         Expr::Tuple(elts, _) => {
-            for e in elts { compile_expr(e, ctx)?; }
+            for e in elts {
+                compile_expr(e, ctx)?;
+            }
             ctx.emit(Op::MakeTuple(elts.len() as u16));
             Ok(())
         }
 
         Expr::List(elts, _) => {
-            for e in elts { compile_expr(e, ctx)?; }
+            for e in elts {
+                compile_expr(e, ctx)?;
+            }
             ctx.emit(Op::MakeList(elts.len() as u16));
             Ok(())
         }
@@ -504,15 +585,16 @@ fn compile_expr(e: &Expr, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
             Ok(())
         }
 
-        Expr::StrInterp { parts, .. } => {
-            compile_str_interp(parts, ctx)
-        }
+        Expr::StrInterp { parts, .. } => compile_str_interp(parts, ctx),
     }
 }
 
 // ─── string interpolation ─────────────────────────────────────────────────────
 
-fn compile_str_interp(parts: &[aether_ast::StrPart], ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
+fn compile_str_interp(
+    parts: &[aether_ast::StrPart],
+    ctx: &mut FnCtx<'_>,
+) -> Result<(), CompileError> {
     if parts.is_empty() {
         // Empty interpolation → empty string.
         let idx = ctx.intern_str("");
@@ -545,19 +627,21 @@ fn compile_str_interp(parts: &[aether_ast::StrPart], ctx: &mut FnCtx<'_>) -> Res
 
 // ─── lambda / closure compilation ────────────────────────────────────────────
 
-fn compile_lambda(
-    params: &[Param],
-    body: &Expr,
-    ctx: &mut FnCtx<'_>,
-) -> Result<(), CompileError> {
+fn compile_lambda(params: &[Param], body: &Expr, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
     // Determine free variables in the lambda body that are in the enclosing scope.
     let mut bound: HashSet<String> = HashSet::new();
-    for p in params { bound.insert(p.name.clone()); }
+    for p in params {
+        bound.insert(p.name.clone());
+    }
     // Also consider all known top-level fn names as "globally bound" (not captured).
-    for name in ctx.fn_index.keys() { bound.insert(name.clone()); }
-    for name in ctx.ctor_map.keys() { bound.insert(name.clone()); }
+    for name in ctx.fn_index.keys() {
+        bound.insert(name.clone());
+    }
+    for name in ctx.ctor_map.keys() {
+        bound.insert(name.clone());
+    }
     // Built-ins are globally bound too.
-    for name in &["print","println","str","int","len","abs","max","min"] {
+    for name in &["print", "println", "str", "int", "len", "abs", "max", "min"] {
         bound.insert(name.to_string());
     }
 
@@ -565,8 +649,12 @@ fn compile_lambda(
     free_vars_expr(body, &bound, &mut free);
 
     // Find local slot indices for each free variable in the enclosing frame.
-    let captured_slots: Vec<u16> = free.iter()
-        .map(|name| ctx.lookup_local(name).ok_or_else(|| CompileError::UnboundVar(name.clone())))
+    let captured_slots: Vec<u16> = free
+        .iter()
+        .map(|name| {
+            ctx.lookup_local(name)
+                .ok_or_else(|| CompileError::UnboundVar(name.clone()))
+        })
         .collect::<Result<_, _>>()?;
 
     // Allocate closure function index before compiling (in case of recursion).
@@ -584,9 +672,13 @@ fn compile_lambda(
         ctx.closure_fns,
     );
     // Declare params.
-    for p in params { inner_ctx.declare_local(p.name.clone()); }
+    for p in params {
+        inner_ctx.declare_local(p.name.clone());
+    }
     // Declare captured names at their capture slots.
-    for name in &free { inner_ctx.declare_local(name.clone()); }
+    for name in &free {
+        inner_ctx.declare_local(name.clone());
+    }
 
     compile_expr(body, &mut inner_ctx)?;
     inner_ctx.emit(Op::Ret);
@@ -730,12 +822,20 @@ fn compile_pattern_test(
             Ok(Some(ph))
         }
 
-        Pattern::Ctor { name, args: sub_pats, .. } => {
+        Pattern::Ctor {
+            name,
+            args: sub_pats,
+            ..
+        } => {
             let name_idx = ctx.intern_str(name);
             let expect_arity = sub_pats.len() as u8;
 
             // MatchCtor peeks at TOS, pushes a Bool result (does not pop scrutinee).
-            ctx.emit(Op::MatchCtor { name_idx, expect_arity, jump_if_miss: 0 });
+            ctx.emit(Op::MatchCtor {
+                name_idx,
+                expect_arity,
+                jump_if_miss: 0,
+            });
 
             // JumpIfFalse on the bool result — patched later to skip to next arm.
             let jif_ph = ctx.ip();
@@ -812,9 +912,15 @@ fn compile_ctor_sub_pattern(
         Pattern::Lit(_lit, _) => {
             // We'd need to test the field value; for now just skip.
             // Full nested literal matching in ctors would need more jump infra.
-            return Err(CompileError::Unsupported("literal pattern inside ctor pattern".into()));
+            return Err(CompileError::Unsupported(
+                "literal pattern inside ctor pattern".into(),
+            ));
         }
-        _ => return Err(CompileError::Unsupported("nested pattern inside ctor pattern".into())),
+        _ => {
+            return Err(CompileError::Unsupported(
+                "nested pattern inside ctor pattern".into(),
+            ))
+        }
     }
     Ok(())
 }
@@ -857,7 +963,11 @@ fn compile_pat_bind(pat: &Pattern, ctx: &mut FnCtx<'_>) -> Result<(), CompileErr
 
 fn compile_stmt(stmt: &Stmt, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
     match stmt {
-        Stmt::Let { pat: Pattern::Var(name, _), value, .. } => {
+        Stmt::Let {
+            pat: Pattern::Var(name, _),
+            value,
+            ..
+        } => {
             compile_expr(value, ctx)?;
             let idx = ctx.declare_local(name.clone());
             ctx.emit(Op::StoreLocal(idx));
@@ -878,33 +988,35 @@ fn compile_stmt(stmt: &Stmt, ctx: &mut FnCtx<'_>) -> Result<(), CompileError> {
 
 fn compile_lit(lit: &Lit, ctx: &mut FnCtx<'_>) {
     match lit {
-        Lit::Int(n)   => ctx.emit(Op::PushInt(*n)),
-        Lit::Bool(b)  => ctx.emit(Op::PushBool(*b)),
-        Lit::Str(s)   => {
+        Lit::Int(n) => ctx.emit(Op::PushInt(*n)),
+        Lit::Bool(b) => ctx.emit(Op::PushBool(*b)),
+        Lit::Str(s) => {
             let idx = ctx.intern_str(s);
             ctx.emit(Op::PushStr(idx));
         }
-        Lit::Unit     => ctx.emit(Op::PushUnit),
+        Lit::Unit => ctx.emit(Op::PushUnit),
         Lit::Float(f) => ctx.emit(Op::PushFloat(*f)),
     }
 }
 
 fn compile_binop(op: BinOp, ctx: &mut FnCtx<'_>) {
     match op {
-        BinOp::Add     => ctx.emit(Op::Add),
-        BinOp::Sub     => ctx.emit(Op::Sub),
-        BinOp::Mul     => ctx.emit(Op::Mul),
-        BinOp::Div     => ctx.emit(Op::Div),
-        BinOp::Mod     => ctx.emit(Op::Mod),
-        BinOp::Eq      => ctx.emit(Op::Eq),
-        BinOp::Neq     => ctx.emit(Op::Neq),
-        BinOp::Lt      => ctx.emit(Op::Lt),
-        BinOp::Le      => ctx.emit(Op::Le),
-        BinOp::Gt      => ctx.emit(Op::Gt),
-        BinOp::Ge      => ctx.emit(Op::Ge),
-        BinOp::And     => ctx.emit(Op::And),
-        BinOp::Or      => ctx.emit(Op::Or),
-        BinOp::Concat  => ctx.emit(Op::Concat),
-        BinOp::Implies => { ctx.emit(Op::Implies); }
+        BinOp::Add => ctx.emit(Op::Add),
+        BinOp::Sub => ctx.emit(Op::Sub),
+        BinOp::Mul => ctx.emit(Op::Mul),
+        BinOp::Div => ctx.emit(Op::Div),
+        BinOp::Mod => ctx.emit(Op::Mod),
+        BinOp::Eq => ctx.emit(Op::Eq),
+        BinOp::Neq => ctx.emit(Op::Neq),
+        BinOp::Lt => ctx.emit(Op::Lt),
+        BinOp::Le => ctx.emit(Op::Le),
+        BinOp::Gt => ctx.emit(Op::Gt),
+        BinOp::Ge => ctx.emit(Op::Ge),
+        BinOp::And => ctx.emit(Op::And),
+        BinOp::Or => ctx.emit(Op::Or),
+        BinOp::Concat => ctx.emit(Op::Concat),
+        BinOp::Implies => {
+            ctx.emit(Op::Implies);
+        }
     }
 }

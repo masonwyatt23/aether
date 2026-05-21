@@ -37,8 +37,7 @@ pub fn llm_complete(args: &[Value]) -> EResult<Value> {
     let api_key = std::env::var("ANTHROPIC_API_KEY")
         .map_err(|_| EvalError::User("ANTHROPIC_API_KEY unset".into()))?;
 
-    let model = std::env::var("AETHER_LLM_MODEL")
-        .unwrap_or_else(|_| DEFAULT_MODEL.to_string());
+    let model = std::env::var("AETHER_LLM_MODEL").unwrap_or_else(|_| DEFAULT_MODEL.to_string());
 
     let body = serde_json::json!({
         "model": model,
@@ -78,10 +77,6 @@ pub fn llm_complete(args: &[Value]) -> EResult<Value> {
         .ok_or_else(|| EvalError::User("llm_complete: empty content array in response".into()))?;
 
     let arena = ProvArena::new();
-    let prov = ProvChain::singleton(
-        arena,
-        ProvOp::Tool("llm_complete".into()),
-        Span::DUMMY,
-    );
+    let prov = ProvChain::singleton(arena, ProvOp::Tool("llm_complete".into()), Span::DUMMY);
     Ok(Value::Str(text, prov))
 }

@@ -118,7 +118,12 @@ pub fn aether_check(source: &str) -> JsValue {
     }
 
     let ok = errors.is_empty();
-    let result = CheckResult { ok, errors, warnings, notes };
+    let result = CheckResult {
+        ok,
+        errors,
+        warnings,
+        notes,
+    };
     serde_wasm_bindgen::to_value(&result).unwrap_or(JsValue::NULL)
 }
 
@@ -131,14 +136,22 @@ pub fn aether_run(source: &str) -> JsValue {
     let (sm, m) = match parse_source(source) {
         Ok(pair) => pair,
         Err(msg) => {
-            let result = RunResult { ok: false, stdout: String::new(), error: Some(msg), value: None };
+            let result = RunResult {
+                ok: false,
+                stdout: String::new(),
+                error: Some(msg),
+                value: None,
+            };
             return serde_wasm_bindgen::to_value(&result).unwrap_or(JsValue::NULL);
         }
     };
 
     // Type-check: reject on errors (warnings are fine).
     let (_, diags) = check_module(&m);
-    let errors: Vec<_> = diags.iter().filter(|d| d.severity == Severity::Error).collect();
+    let errors: Vec<_> = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .collect();
     if !errors.is_empty() {
         let msgs: Vec<String> = errors
             .iter()
@@ -199,7 +212,11 @@ pub fn aether_format(source: &str, verbose: bool) -> String {
         Ok(pair) => pair,
         Err(msg) => return format!("error: {}", msg),
     };
-    let form = if verbose { Form::Verbose } else { Form::Compact };
+    let form = if verbose {
+        Form::Verbose
+    } else {
+        Form::Compact
+    };
     pp_module(&m, form)
 }
 
@@ -292,7 +309,12 @@ pub fn check_source(source: &str) -> CheckResult {
         }
     }
     let ok = errors.is_empty();
-    CheckResult { ok, errors, warnings, notes }
+    CheckResult {
+        ok,
+        errors,
+        warnings,
+        notes,
+    }
 }
 
 /// Non-wasm-bindgen version of run: returns a plain Rust struct.
@@ -300,11 +322,19 @@ pub fn run_source(source: &str) -> RunResult {
     let (sm, m) = match parse_source(source) {
         Ok(pair) => pair,
         Err(msg) => {
-            return RunResult { ok: false, stdout: String::new(), error: Some(msg), value: None };
+            return RunResult {
+                ok: false,
+                stdout: String::new(),
+                error: Some(msg),
+                value: None,
+            };
         }
     };
     let (_, diags) = check_module(&m);
-    let errors: Vec<_> = diags.iter().filter(|d| d.severity == Severity::Error).collect();
+    let errors: Vec<_> = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .collect();
     if !errors.is_empty() {
         let msgs: Vec<String> = errors
             .iter()
@@ -325,9 +355,23 @@ pub fn run_source(source: &str) -> RunResult {
     install_wasm_tool_stubs(&mut rt);
     match rt.run_main() {
         Ok(v) => {
-            let value_str = if matches!(v, Value::Unit(_)) { None } else { Some(v.display().to_string()) };
-            RunResult { ok: true, stdout: rt.stdout.clone(), error: None, value: value_str }
+            let value_str = if matches!(v, Value::Unit(_)) {
+                None
+            } else {
+                Some(v.display().to_string())
+            };
+            RunResult {
+                ok: true,
+                stdout: rt.stdout.clone(),
+                error: None,
+                value: value_str,
+            }
         }
-        Err(e) => RunResult { ok: false, stdout: rt.stdout.clone(), error: Some(e.to_string()), value: None },
+        Err(e) => RunResult {
+            ok: false,
+            stdout: rt.stdout.clone(),
+            error: Some(e.to_string()),
+            value: None,
+        },
     }
 }

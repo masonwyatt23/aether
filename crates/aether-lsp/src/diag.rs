@@ -2,9 +2,7 @@
 
 use aether_ast::{SourceMap, Span};
 use aether_types::{Diagnostic as AetherDiag, Severity};
-use tower_lsp::lsp_types::{
-    Diagnostic as LspDiag, DiagnosticSeverity, Position, Range,
-};
+use tower_lsp::lsp_types::{Diagnostic as LspDiag, DiagnosticSeverity, Position, Range};
 
 /// Convert a byte offset (0-based) in `src` to an LSP `Position` (0-based line/char).
 pub fn offset_to_position(src: &str, offset: usize) -> Position {
@@ -43,10 +41,7 @@ pub fn severity_to_lsp(sev: Severity) -> DiagnosticSeverity {
 /// Convert a slice of Aether diagnostics to LSP diagnostics.
 ///
 /// `map` is used to resolve the source text for each span's file.
-pub fn convert_diagnostics(
-    diags: &[AetherDiag],
-    map: &SourceMap,
-) -> Vec<LspDiag> {
+pub fn convert_diagnostics(diags: &[AetherDiag], map: &SourceMap) -> Vec<LspDiag> {
     diags
         .iter()
         .map(|d| {
@@ -54,8 +49,14 @@ pub fn convert_diagnostics(
             let range = if d.span.is_dummy() {
                 // Dummy span → point to beginning of file
                 Range {
-                    start: Position { line: 0, character: 0 },
-                    end: Position { line: 0, character: 0 },
+                    start: Position {
+                        line: 0,
+                        character: 0,
+                    },
+                    end: Position {
+                        line: 0,
+                        character: 0,
+                    },
                 }
             } else {
                 span_to_range(src, d.span)
@@ -99,7 +100,11 @@ mod tests {
     fn span_on_first_line_produces_correct_range() {
         // "hello world" — span covers "world" (bytes 6..11)
         let src = "hello world";
-        let span = Span { file: FileId(0), start: 6, end: 11 };
+        let span = Span {
+            file: FileId(0),
+            start: 6,
+            end: 11,
+        };
         let range = span_to_range(src, span);
         assert_eq!(range.start.line, 0);
         assert_eq!(range.start.character, 6);
@@ -111,7 +116,11 @@ mod tests {
     fn span_on_second_line_produces_correct_range() {
         // "abc\ndef" — span covers "def" (bytes 4..7)
         let src = "abc\ndef";
-        let span = Span { file: FileId(0), start: 4, end: 7 };
+        let span = Span {
+            file: FileId(0),
+            start: 4,
+            end: 7,
+        };
         let range = span_to_range(src, span);
         assert_eq!(range.start.line, 1);
         assert_eq!(range.start.character, 0);
@@ -125,7 +134,11 @@ mod tests {
         let src = "fn foo() -> Int effects {} { \"oops\" }";
         let file = map.add("test.ae", src);
         // Simulate an error at span 0..2 (covers "fn")
-        let span = Span { file, start: 0, end: 2 };
+        let span = Span {
+            file,
+            start: 0,
+            end: 2,
+        };
         let aether_diag = AetherDiag {
             severity: Severity::Error,
             span,

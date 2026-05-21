@@ -26,45 +26,76 @@ fn main() -> Unit effects {} { () }
 #[test]
 fn snap_first_run_captures() {
     let (_dir, path) = write_temp_ae(SNAP_SRC);
-    let out = aether().arg("snap").arg(&path).output().expect("invoke aether snap");
+    let out = aether()
+        .arg("snap")
+        .arg(&path)
+        .output()
+        .expect("invoke aether snap");
     let stdout = String::from_utf8_lossy(&out.stdout);
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
         out.status.success(),
         "first snap run should succeed (capture):\nstdout:\n{stdout}\nstderr:\n{stderr}"
     );
-    assert!(stdout.contains("captured"), "expected 'captured' in output:\n{stdout}");
+    assert!(
+        stdout.contains("captured"),
+        "expected 'captured' in output:\n{stdout}"
+    );
 
     // Golden file should exist now.
     let golden = path.with_extension("snap");
     assert!(golden.exists(), ".snap file should have been created");
     let golden_content = std::fs::read_to_string(&golden).expect("read .snap");
-    assert!(golden_content.contains("[math]"), "section [math] missing from golden:\n{golden_content}");
-    assert!(golden_content.contains("add = \"3\""), "add entry missing:\n{golden_content}");
-    assert!(golden_content.contains("mul = \"12\""), "mul entry missing:\n{golden_content}");
+    assert!(
+        golden_content.contains("[math]"),
+        "section [math] missing from golden:\n{golden_content}"
+    );
+    assert!(
+        golden_content.contains("add = \"3\""),
+        "add entry missing:\n{golden_content}"
+    );
+    assert!(
+        golden_content.contains("mul = \"12\""),
+        "mul entry missing:\n{golden_content}"
+    );
 }
 
 #[test]
 fn snap_second_run_verifies_pass() {
     let (_dir, path) = write_temp_ae(SNAP_SRC);
     // First run — capture.
-    let _ = aether().arg("snap").arg(&path).output().expect("first snap");
+    let _ = aether()
+        .arg("snap")
+        .arg(&path)
+        .output()
+        .expect("first snap");
     // Second run — verify.
-    let out = aether().arg("snap").arg(&path).output().expect("second snap");
+    let out = aether()
+        .arg("snap")
+        .arg(&path)
+        .output()
+        .expect("second snap");
     let stdout = String::from_utf8_lossy(&out.stdout);
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
         out.status.success(),
         "second snap run (verify) should pass:\nstdout:\n{stdout}\nstderr:\n{stderr}"
     );
-    assert!(stdout.contains("ok") || stdout.contains("passed"), "expected pass output:\n{stdout}");
+    assert!(
+        stdout.contains("ok") || stdout.contains("passed"),
+        "expected pass output:\n{stdout}"
+    );
 }
 
 #[test]
 fn snap_mismatch_fails() {
     let (_dir, path) = write_temp_ae(SNAP_SRC);
     // First run — capture golden with add="3", mul="12".
-    let _ = aether().arg("snap").arg(&path).output().expect("first snap");
+    let _ = aether()
+        .arg("snap")
+        .arg(&path)
+        .output()
+        .expect("first snap");
 
     // Write a different source that produces different values.
     let broken_src = r#"
@@ -77,20 +108,31 @@ fn main() -> Unit effects {} { () }
 "#;
     std::fs::write(&path, broken_src).expect("overwrite .ae");
 
-    let out = aether().arg("snap").arg(&path).output().expect("mismatch snap");
+    let out = aether()
+        .arg("snap")
+        .arg(&path)
+        .output()
+        .expect("mismatch snap");
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
         !out.status.success(),
         "mismatch should exit non-zero:\nstdout:\n{stdout}"
     );
-    assert!(stdout.contains("mismatch") || stdout.contains("✗"), "expected mismatch in output:\n{stdout}");
+    assert!(
+        stdout.contains("mismatch") || stdout.contains("✗"),
+        "expected mismatch in output:\n{stdout}"
+    );
 }
 
 #[test]
 fn snap_update_overwrites_golden() {
     let (_dir, path) = write_temp_ae(SNAP_SRC);
     // Capture initial.
-    let _ = aether().arg("snap").arg(&path).output().expect("first snap");
+    let _ = aether()
+        .arg("snap")
+        .arg(&path)
+        .output()
+        .expect("first snap");
 
     // Now change source values and use --update.
     let new_src = r#"
@@ -102,14 +144,25 @@ snap "math" {
 fn main() -> Unit effects {} { () }
 "#;
     std::fs::write(&path, new_src).expect("overwrite .ae");
-    let out = aether().arg("snap").arg(&path).arg("--update").output().expect("update snap");
+    let out = aether()
+        .arg("snap")
+        .arg(&path)
+        .arg("--update")
+        .output()
+        .expect("update snap");
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "update should succeed:\n{stdout}");
 
     // Verify new golden has updated values.
     let golden = std::fs::read_to_string(path.with_extension("snap")).expect("read .snap");
-    assert!(golden.contains("add = \"30\""), "updated add missing:\n{golden}");
-    assert!(golden.contains("mul = \"30\""), "updated mul missing:\n{golden}");
+    assert!(
+        golden.contains("add = \"30\""),
+        "updated add missing:\n{golden}"
+    );
+    assert!(
+        golden.contains("mul = \"30\""),
+        "updated mul missing:\n{golden}"
+    );
 }
 
 #[test]

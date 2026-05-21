@@ -35,12 +35,14 @@ fn ast_json_pretty_parses_and_contains_main() {
     let stdout = String::from_utf8_lossy(&out.stdout);
 
     // Must be valid JSON
-    let v: serde_json::Value =
-        serde_json::from_str(&stdout).expect("stdout must be valid JSON");
+    let v: serde_json::Value = serde_json::from_str(&stdout).expect("stdout must be valid JSON");
 
     // Top-level envelope fields
     assert_eq!(v["version"], "0.1", "envelope version must be \"0.1\"");
-    assert!(v["module"].is_object(), "envelope must have a 'module' object");
+    assert!(
+        v["module"].is_object(),
+        "envelope must have a 'module' object"
+    );
 
     // The hello example declares fn main — name must appear in the JSON
     assert!(

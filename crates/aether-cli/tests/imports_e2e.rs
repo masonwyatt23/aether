@@ -42,7 +42,11 @@ fn main() -> Unit effects {IO} {
     .unwrap();
 
     // check
-    let out = aether().arg("check").arg(&src).output().expect("aether check");
+    let out = aether()
+        .arg("check")
+        .arg(&src)
+        .output()
+        .expect("aether check");
     assert!(
         out.status.success(),
         "check failed:\nstdout:\n{}\nstderr:\n{}",
@@ -59,9 +63,18 @@ fn main() -> Unit effects {IO} {
         String::from_utf8_lossy(&out.stderr)
     );
     let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(stdout.contains("50"), "expected '50' in output, got: {stdout}");
-    assert!(stdout.contains("0"),  "expected '0'  in output, got: {stdout}");
-    assert!(stdout.contains("100"), "expected '100' in output, got: {stdout}");
+    assert!(
+        stdout.contains("50"),
+        "expected '50' in output, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("0"),
+        "expected '0'  in output, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("100"),
+        "expected '100' in output, got: {stdout}"
+    );
 }
 
 // ── cycle_detected ────────────────────────────────────────────────────────────
@@ -93,7 +106,11 @@ fn helper() -> Int effects {} { 1 }
     )
     .unwrap();
 
-    let out = aether().arg("run").arg(&a).output().expect("aether run cycle");
+    let out = aether()
+        .arg("run")
+        .arg(&a)
+        .output()
+        .expect("aether run cycle");
     assert!(
         !out.status.success(),
         "expected cycle error but exit was success"
@@ -128,7 +145,9 @@ fn main() -> Unit effects {} { }
     );
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
-        stderr.contains("unknown module") || stderr.contains("NotFound") || stderr.contains("nonexistent"),
+        stderr.contains("unknown module")
+            || stderr.contains("NotFound")
+            || stderr.contains("nonexistent"),
         "expected module-not-found message in stderr, got: {stderr}"
     );
 }
@@ -141,7 +160,11 @@ fn example_08_imports_check_and_run() {
     let path = examples_dir().join("08_imports.ae");
     assert!(path.exists(), "examples/08_imports.ae does not exist");
 
-    let check = aether().arg("check").arg(&path).output().expect("aether check");
+    let check = aether()
+        .arg("check")
+        .arg(&path)
+        .output()
+        .expect("aether check");
     assert!(
         check.status.success(),
         "08_imports.ae failed check:\nstdout:\n{}\nstderr:\n{}",
@@ -157,8 +180,8 @@ fn example_08_imports_check_and_run() {
         String::from_utf8_lossy(&run.stderr)
     );
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(stdout.contains("50"),  "expected clamp(50,0,100)=50");
-    assert!(stdout.contains("0"),   "expected clamp(-5,0,100)=0");
+    assert!(stdout.contains("50"), "expected clamp(50,0,100)=50");
+    assert!(stdout.contains("0"), "expected clamp(-5,0,100)=0");
     assert!(stdout.contains("100"), "expected clamp(200,0,100)=100");
 }
 
@@ -196,7 +219,11 @@ fn main() -> Unit effects {IO} {
     )
     .unwrap();
 
-    let out = aether().arg("run").arg(&entry).output().expect("aether run transitive");
+    let out = aether()
+        .arg("run")
+        .arg(&entry)
+        .output()
+        .expect("aether run transitive");
     assert!(
         out.status.success(),
         "transitive import failed:\nstdout:\n{}\nstderr:\n{}",
@@ -204,6 +231,6 @@ fn main() -> Unit effects {IO} {
         String::from_utf8_lossy(&out.stderr)
     );
     let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(stdout.contains("5"),  "expected clamp result 5");
+    assert!(stdout.contains("5"), "expected clamp result 5");
     assert!(stdout.contains("14"), "expected double(7)=14");
 }

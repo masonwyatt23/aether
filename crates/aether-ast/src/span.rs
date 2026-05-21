@@ -15,11 +15,19 @@ pub struct Span {
 }
 
 impl Span {
-    pub const DUMMY: Span = Span { file: FileId(u32::MAX), start: 0, end: 0 };
+    pub const DUMMY: Span = Span {
+        file: FileId(u32::MAX),
+        start: 0,
+        end: 0,
+    };
 
     #[must_use]
     pub fn new(file: FileId, range: Range<usize>) -> Self {
-        Span { file, start: range.start as u32, end: range.end as u32 }
+        Span {
+            file,
+            start: range.start as u32,
+            end: range.end as u32,
+        }
     }
 
     #[must_use]
@@ -64,7 +72,10 @@ impl SourceMap {
 
     pub fn add(&mut self, name: impl Into<String>, source: impl Into<String>) -> FileId {
         let id = FileId(u32::try_from(self.files.len()).expect("too many source files"));
-        self.files.push(SourceFile { name: name.into(), source: source.into() });
+        self.files.push(SourceFile {
+            name: name.into(),
+            source: source.into(),
+        });
         id
     }
 

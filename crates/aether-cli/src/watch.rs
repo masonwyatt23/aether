@@ -95,8 +95,14 @@ fn run_check(path: &PathBuf, run: bool, bc: bool) {
     };
 
     let (_, diags) = check_module(&m);
-    let errors: Vec<_> = diags.iter().filter(|d| d.severity == Severity::Error).collect();
-    let warnings: Vec<_> = diags.iter().filter(|d| d.severity == Severity::Warning).collect();
+    let errors: Vec<_> = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .collect();
+    let warnings: Vec<_> = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Warning)
+        .collect();
 
     if errors.is_empty() {
         if warnings.is_empty() {

@@ -16,11 +16,11 @@
 
 #![allow(clippy::module_inception)]
 
-pub mod op;
-pub mod compile;
-pub mod vm;
 pub mod builtins;
+pub mod compile;
 pub mod error;
+pub mod op;
+pub mod vm;
 
 pub use compile::compile_module;
 pub use error::{CompileError, VmError};
@@ -137,8 +137,8 @@ mod tests {
         assert!((f - 6.0).abs() < 1e-10, "expected 6.0, got {f}");
 
         // Float display matches tree-walker: f.to_string()
-        assert_eq!(Value::Float(1.0_f64).display(),  "1");
-        assert_eq!(Value::Float(0.5_f64).display(),  "0.5");
+        assert_eq!(Value::Float(1.0_f64).display(), "1");
+        assert_eq!(Value::Float(0.5_f64).display(), "0.5");
         assert_eq!(Value::Float(-3.14_f64).display(), "-3.14");
     }
 
@@ -417,7 +417,12 @@ fn area(s: Shape) -> Int effects {} {
 fn main() -> Int effects {} { area(Circle(5)) }
 "#;
         let v = compile_run(src);
-        assert_eq!(v.as_int(), Some(25), "Circle(5) area should be 25, got {:?}", v);
+        assert_eq!(
+            v.as_int(),
+            Some(25),
+            "Circle(5) area should be 25, got {:?}",
+            v
+        );
     }
 
     // ── tuples ────────────────────────────────────────────────────────────────
@@ -442,7 +447,12 @@ fn main() -> Int effects {} {
 }
 "#;
         let v = compile_run(src);
-        assert_eq!(v.as_int(), Some(30), "tuple fst+snd should be 30, got {:?}", v);
+        assert_eq!(
+            v.as_int(),
+            Some(30),
+            "tuple fst+snd should be 30, got {:?}",
+            v
+        );
     }
 
     // ── example files ────────────────────────────────────────────────────────
@@ -473,7 +483,11 @@ fn main() -> Unit effects {IO} {
         let mut vm = Vm::new(&prog);
         vm.capture_only = true;
         vm.run().expect("runtime error");
-        assert!(vm.stdout.contains("42"), "stdout should contain 42: {}", vm.stdout);
+        assert!(
+            vm.stdout.contains("42"),
+            "stdout should contain 42: {}",
+            vm.stdout
+        );
         assert!(vm.stdout.contains("positive"), "stdout: {}", vm.stdout);
         assert!(vm.stdout.contains("zero"), "stdout: {}", vm.stdout);
         assert!(vm.stdout.contains("negative"), "stdout: {}", vm.stdout);
@@ -503,9 +517,21 @@ fn main() -> Unit effects {IO} {
         let mut vm = Vm::new(&prog);
         vm.capture_only = true;
         vm.run().expect("runtime error");
-        assert!(vm.stdout.contains("25"), "Circle(5) area=25, stdout: {}", vm.stdout);
-        assert!(vm.stdout.contains("16"), "Square(4) area=16, stdout: {}", vm.stdout);
-        assert!(vm.stdout.contains("12"), "Triangle(6,4) area=12, stdout: {}", vm.stdout);
+        assert!(
+            vm.stdout.contains("25"),
+            "Circle(5) area=25, stdout: {}",
+            vm.stdout
+        );
+        assert!(
+            vm.stdout.contains("16"),
+            "Square(4) area=16, stdout: {}",
+            vm.stdout
+        );
+        assert!(
+            vm.stdout.contains("12"),
+            "Triangle(6,4) area=12, stdout: {}",
+            vm.stdout
+        );
     }
 
     // ── records ───────────────────────────────────────────────────────────────

@@ -29,14 +29,18 @@ pub fn run_docgen(project_dir: PathBuf, out_dir: PathBuf, title: Option<String>)
         return ExitCode::from(1);
     }
 
-    let title = title.unwrap_or_else(|| project_dir.file_name().map_or_else(
-        || "Aether docs".to_string(),
-        |s| s.to_string_lossy().into_owned(),
-    ));
+    let title = title.unwrap_or_else(|| {
+        project_dir.file_name().map_or_else(
+            || "Aether docs".to_string(),
+            |s| s.to_string_lossy().into_owned(),
+        )
+    });
     let mut sm = SourceMap::new();
     let mut modules: Vec<(PathBuf, Module)> = Vec::new();
     for path in &files {
-        let Ok(src) = fs::read_to_string(path) else { continue; };
+        let Ok(src) = fs::read_to_string(path) else {
+            continue;
+        };
         let fid = sm.add(path.display().to_string(), src.clone());
         match parse_module(fid, &src) {
             Ok(m) => modules.push((path.clone(), m)),
@@ -59,13 +63,17 @@ pub fn run_docgen(project_dir: PathBuf, out_dir: PathBuf, title: Option<String>)
 }
 
 fn collect_ae(root: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(entries) = fs::read_dir(root) else { return; };
+    let Ok(entries) = fs::read_dir(root) else {
+        return;
+    };
     for ent in entries.flatten() {
         let path = ent.path();
         // Skip dist/, target/, node_modules/.
         if path.is_dir() {
             let name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
-            if matches!(name, "dist" | "target" | "node_modules" | ".aether") || name.starts_with('.') {
+            if matches!(name, "dist" | "target" | "node_modules" | ".aether")
+                || name.starts_with('.')
+            {
                 continue;
             }
             collect_ae(&path, out);
@@ -103,7 +111,9 @@ fn render_site(title: &str, modules: &[(PathBuf, Module)], project_dir: &Path) -
         if !m.decls.is_empty() {
             html.push_str("<ul class=\"sub\">");
             for d in &m.decls {
-                if matches!(d, Decl::Import(_)) { continue; }
+                if matches!(d, Decl::Import(_)) {
+                    continue;
+                }
                 let id = sub_anchor(&anchor, d.name());
                 html.push_str(&format!("<li><a href=\"#{id}\">{}</a></li>", h(d.name())));
             }
@@ -126,7 +136,9 @@ fn render_site(title: &str, modules: &[(PathBuf, Module)], project_dir: &Path) -
             html.push_str(&format!("<p class=\"mod-doc\">{}</p>", h(doc)));
         }
         for d in &m.decls {
-            if matches!(d, Decl::Import(_)) { continue; }
+            if matches!(d, Decl::Import(_)) {
+                continue;
+            }
             html.push_str(&render_decl(d, &anchor));
         }
         html.push_str("</section>\n");
@@ -142,30 +154,54 @@ fn render_decl(d: &Decl, mod_anchor: &str) -> String {
     match d {
         Decl::Fn(f) => {
             let (kw, eff) = ("fn", format_effects(&f.effects));
-            let params = f.params.iter()
+            let params = f
+                .params
+                .iter()
                 .map(|p| format!("{}: {}", h(&p.name), h(&type_(&p.ty, Form::Verbose))))
-                .collect::<Vec<_>>().join(", ");
+                .collect::<Vec<_>>()
+                .join(", ");
             let ret = type_(&f.ret, Form::Verbose);
-            let sig = format!("{kw} <strong>{name}</strong>({params}) -&gt; {ret}{eff}",
-                              name = h(&f.name), params = params, ret = h(&ret), eff = eff);
-            out.push_str(&format!("<article id=\"{id}\" class=\"decl fn\"><h3>{}</h3>", h(&f.name)));
+            let sig = format!(
+                "{kw} <strong>{name}</strong>({params}) -&gt; {ret}{eff}",
+                name = h(&f.name),
+                params = params,
+                ret = h(&ret),
+                eff = eff
+            );
+            out.push_str(&format!(
+                "<article id=\"{id}\" class=\"decl fn\"><h3>{}</h3>",
+                h(&f.name)
+            ));
             out.push_str(&format!("<pre class=\"sig\"><code>{sig}</code></pre>"));
             if let Some(doc) = &f.doc {
                 out.push_str(&format!("<p class=\"doc\">{}</p>", h(doc)));
             }
             if !f.spec.ensures.is_empty() {
                 out.push_str("<p class=\"spec\"><b>ensures</b>: ");
-                let parts: Vec<String> = f.spec.ensures.iter().map(|e| h(&aether_parser::pretty::expr(e, Form::Verbose))).collect();
+                let parts: Vec<String> = f
+                    .spec
+                    .ensures
+                    .iter()
+                    .map(|e| h(&aether_parser::pretty::expr(e, Form::Verbose)))
+                    .collect();
                 out.push_str(&parts.join(" &amp;&amp; "));
                 out.push_str("</p>");
             }
             out.push_str("</article>");
         }
         Decl::Let(l) => {
-            let ty = l.ty.as_ref().map_or_else(|| "<inferred>".to_string(), |t| type_(t, Form::Verbose));
-            out.push_str(&format!("<article id=\"{id}\" class=\"decl let\"><h3>{}</h3>", h(&l.name)));
-            out.push_str(&format!("<pre class=\"sig\"><code>let <strong>{name}</strong>: {ty}</code></pre>",
-                                  name = h(&l.name), ty = h(&ty)));
+            let ty =
+                l.ty.as_ref()
+                    .map_or_else(|| "<inferred>".to_string(), |t| type_(t, Form::Verbose));
+            out.push_str(&format!(
+                "<article id=\"{id}\" class=\"decl let\"><h3>{}</h3>",
+                h(&l.name)
+            ));
+            out.push_str(&format!(
+                "<pre class=\"sig\"><code>let <strong>{name}</strong>: {ty}</code></pre>",
+                name = h(&l.name),
+                ty = h(&ty)
+            ));
             if let Some(doc) = &l.doc {
                 out.push_str(&format!("<p class=\"doc\">{}</p>", h(doc)));
             }
@@ -173,18 +209,30 @@ fn render_decl(d: &Decl, mod_anchor: &str) -> String {
         }
         Decl::TypeAlias(t) => {
             let body = type_(&t.ty, Form::Verbose);
-            out.push_str(&format!("<article id=\"{id}\" class=\"decl type\"><h3>{}</h3>", h(&t.name)));
-            out.push_str(&format!("<pre class=\"sig\"><code>type <strong>{name}</strong> = {body}</code></pre>",
-                                  name = h(&t.name), body = h(&body)));
+            out.push_str(&format!(
+                "<article id=\"{id}\" class=\"decl type\"><h3>{}</h3>",
+                h(&t.name)
+            ));
+            out.push_str(&format!(
+                "<pre class=\"sig\"><code>type <strong>{name}</strong> = {body}</code></pre>",
+                name = h(&t.name),
+                body = h(&body)
+            ));
             out.push_str("</article>");
         }
         Decl::Tool(t) => {
             let eff = format_effects(&t.effects);
-            let params = t.params.iter()
+            let params = t
+                .params
+                .iter()
                 .map(|p| format!("{}: {}", h(&p.name), h(&type_(&p.ty, Form::Verbose))))
-                .collect::<Vec<_>>().join(", ");
+                .collect::<Vec<_>>()
+                .join(", ");
             let ret = type_(&t.ret, Form::Verbose);
-            out.push_str(&format!("<article id=\"{id}\" class=\"decl tool\"><h3>{}</h3>", h(&t.name)));
+            out.push_str(&format!(
+                "<article id=\"{id}\" class=\"decl tool\"><h3>{}</h3>",
+                h(&t.name)
+            ));
             out.push_str(&format!("<pre class=\"sig\"><code>tool <strong>{name}</strong>({params}) -&gt; {ret}{eff}</code></pre>",
                                   name = h(&t.name), params = params, ret = h(&ret), eff = eff));
             if let Some(doc) = &t.doc {
@@ -198,21 +246,28 @@ fn render_decl(d: &Decl, mod_anchor: &str) -> String {
 }
 
 fn format_effects(e: &aether_ast::EffectRow) -> String {
-    if e.is_pure() { return String::new(); }
+    if e.is_pure() {
+        return String::new();
+    }
     let names: Vec<String> = e.effects.iter().map(|x| h(x.as_str())).collect();
     format!(" <span class=\"effects\">!{{{}}}</span>", names.join(", "))
 }
 
 fn relative_path(path: &Path, root: &Path) -> PathBuf {
-    path.strip_prefix(root).map(PathBuf::from).unwrap_or_else(|_| path.to_path_buf())
+    path.strip_prefix(root)
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| path.to_path_buf())
 }
 
 fn anchor_for(rel: &Path) -> String {
     let s = rel.display().to_string();
     let mut out = String::with_capacity(s.len());
     for c in s.chars() {
-        if c.is_ascii_alphanumeric() { out.push(c); }
-        else { out.push('-'); }
+        if c.is_ascii_alphanumeric() {
+            out.push(c);
+        } else {
+            out.push('-');
+        }
     }
     out
 }
@@ -222,7 +277,10 @@ fn sub_anchor(mod_anchor: &str, name: &str) -> String {
 }
 
 fn display_module_name(rel: &Path) -> String {
-    rel.file_stem().and_then(|s| s.to_str()).unwrap_or("module").to_string()
+    rel.file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("module")
+        .to_string()
 }
 
 /// HTML-escape.
@@ -242,7 +300,7 @@ fn h(s: &str) -> String {
 }
 
 fn render_css() -> &'static str {
-r#"
+    r#"
 :root { --bg: #0f1115; --fg: #d4d4d8; --accent: #7c3aed; --muted: #71717a; --card: #181a21; --sig: #fafafa; }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--fg); margin: 0; font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
@@ -302,5 +360,7 @@ mod tests {
         assert!(html.contains("fn <strong>one</strong>"));
     }
 
-    fn _unused_fid_warning_silencer() -> FileId { FileId(0) }
+    fn _unused_fid_warning_silencer() -> FileId {
+        FileId(0)
+    }
 }

@@ -48,10 +48,7 @@ pub fn run_init(path: Option<PathBuf>, template: Template) -> anyhow::Result<()>
         .to_string();
 
     // .gitignore — all templates
-    create_file(
-        &root.join(".gitignore"),
-        "*.aebc\n.aether/\n",
-    )?;
+    create_file(&root.join(".gitignore"), "*.aebc\n.aether/\n")?;
 
     match template {
         Template::Bin => scaffold_bin(&root, &name)?,
@@ -59,7 +56,11 @@ pub fn run_init(path: Option<PathBuf>, template: Template) -> anyhow::Result<()>
         Template::Agent => scaffold_agent(&root, &name)?,
     }
 
-    println!("Initialized Aether {} project at `{}`", template.label(), root.display());
+    println!(
+        "Initialized Aether {} project at `{}`",
+        template.label(),
+        root.display()
+    );
     Ok(())
 }
 
@@ -217,10 +218,7 @@ test "mem_get and mem_set round-trip" {
 
 fn create_file(path: &Path, content: &str) -> anyhow::Result<()> {
     if path.exists() {
-        anyhow::bail!(
-            "`{}` already exists; not overwriting",
-            path.display()
-        );
+        anyhow::bail!("`{}` already exists; not overwriting", path.display());
     }
     std::fs::write(path, content)
         .with_context(|| format!("could not write `{}`", path.display()))?;
@@ -295,7 +293,10 @@ mod tests {
         let toml = fs::read_to_string(dir.join("Aether.toml")).unwrap();
         assert!(toml.contains("[project]"));
         assert!(!toml.contains("[lib]"), "bin toml should not have [lib]");
-        assert!(!toml.contains("[agent]"), "bin toml should not have [agent]");
+        assert!(
+            !toml.contains("[agent]"),
+            "bin toml should not have [agent]"
+        );
 
         let gi = fs::read_to_string(dir.join(".gitignore")).unwrap();
         assert!(gi.contains("*.aebc"));
@@ -307,7 +308,10 @@ mod tests {
         let dir = tmpdir("tpl_lib");
         run_init(Some(dir.clone()), Template::Lib).unwrap();
         assert!(dir.join("lib.ae").exists(), "lib: lib.ae missing");
-        assert!(!dir.join("main.ae").exists(), "lib: main.ae should not exist");
+        assert!(
+            !dir.join("main.ae").exists(),
+            "lib: main.ae should not exist"
+        );
 
         let toml = fs::read_to_string(dir.join("Aether.toml")).unwrap();
         assert!(toml.contains("[project]"));
@@ -323,17 +327,29 @@ mod tests {
         let dir = tmpdir("tpl_agent");
         run_init(Some(dir.clone()), Template::Agent).unwrap();
         assert!(dir.join("main.ae").exists(), "agent: main.ae missing");
-        assert!(!dir.join("lib.ae").exists(), "agent: lib.ae should not exist");
+        assert!(
+            !dir.join("lib.ae").exists(),
+            "agent: lib.ae should not exist"
+        );
 
         let toml = fs::read_to_string(dir.join("Aether.toml")).unwrap();
         assert!(toml.contains("[project]"));
-        assert!(toml.contains("[agent]"), "agent toml missing [agent] section");
+        assert!(
+            toml.contains("[agent]"),
+            "agent toml missing [agent] section"
+        );
         assert!(toml.contains("entry = \"main.ae\""));
 
         let main_ae = fs::read_to_string(dir.join("main.ae")).unwrap();
         assert!(main_ae.contains("mem_get"), "agent main.ae missing mem_get");
         assert!(main_ae.contains("mem_set"), "agent main.ae missing mem_set");
-        assert!(main_ae.contains("tool "), "agent main.ae missing tool declaration");
-        assert!(main_ae.contains("test "), "agent main.ae missing test block");
+        assert!(
+            main_ae.contains("tool "),
+            "agent main.ae missing tool declaration"
+        );
+        assert!(
+            main_ae.contains("test "),
+            "agent main.ae missing test block"
+        );
     }
 }

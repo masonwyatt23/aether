@@ -52,7 +52,10 @@ pub struct AetherLsp {
 
 impl AetherLsp {
     pub fn new(client: Client) -> Self {
-        AetherLsp { client, docs: Arc::new(RwLock::new(HashMap::new())) }
+        AetherLsp {
+            client,
+            docs: Arc::new(RwLock::new(HashMap::new())),
+        }
     }
 
     /// Parse + type-check `src` and push diagnostics to the client.
@@ -91,12 +94,7 @@ impl AetherLsp {
     }
 
     /// Resolve a hover / goto request at a given LSP position in `uri`.
-    fn resolve_at(
-        &self,
-        uri: &Url,
-        src: &str,
-        position: Position,
-    ) -> Option<symbols::SymbolInfo> {
+    fn resolve_at(&self, uri: &Url, src: &str, position: Position) -> Option<symbols::SymbolInfo> {
         let mut map = SourceMap::new();
         let file_id = map.add(uri.as_str(), src);
         let module = parse_module(file_id, src).ok()?;
@@ -196,7 +194,13 @@ impl LanguageServer for AetherLsp {
         let version = params.text_document.version;
         {
             let mut docs = self.docs.write().await;
-            docs.insert(uri.clone(), DocState { text: text.clone(), version });
+            docs.insert(
+                uri.clone(),
+                DocState {
+                    text: text.clone(),
+                    version,
+                },
+            );
         }
         self.check_and_publish(uri, Some(version), &text).await;
     }
@@ -209,7 +213,13 @@ impl LanguageServer for AetherLsp {
             let text = change.text;
             {
                 let mut docs = self.docs.write().await;
-                docs.insert(uri.clone(), DocState { text: text.clone(), version });
+                docs.insert(
+                    uri.clone(),
+                    DocState {
+                        text: text.clone(),
+                        version,
+                    },
+                );
             }
             self.check_and_publish(uri, Some(version), &text).await;
         }
@@ -289,10 +299,7 @@ impl LanguageServer for AetherLsp {
 
     // --- Completion ---
 
-    async fn completion(
-        &self,
-        params: CompletionParams,
-    ) -> LspResult<Option<CompletionResponse>> {
+    async fn completion(&self, params: CompletionParams) -> LspResult<Option<CompletionResponse>> {
         let uri = &params.text_document_position.text_document.uri;
         let src = {
             let docs = self.docs.read().await;
@@ -316,7 +323,9 @@ pub async fn run() {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
     let (service, socket) = tower_lsp::LspService::new(AetherLsp::new);
-    tower_lsp::Server::new(stdin, stdout, socket).serve(service).await;
+    tower_lsp::Server::new(stdin, stdout, socket)
+        .serve(service)
+        .await;
 }
 
 // ---------------------------------------------------------------------------
@@ -339,7 +348,11 @@ mod tests {
                 diags
             }
             Err(e) => {
-                let span = e.span().unwrap_or(Span { file, start: 0, end: src.len() as u32 });
+                let span = e.span().unwrap_or(Span {
+                    file,
+                    start: 0,
+                    end: src.len() as u32,
+                });
                 vec![AetherDiag {
                     severity: Severity::Error,
                     span,
@@ -352,8 +365,7 @@ mod tests {
     #[test]
     fn effect_error_produces_diagnostic() {
         // net_fetch declares Net effect but fn only allows empty effects — should error
-        let src =
-            "fn fetch(url: Str) -> Str effects {} { http_get(url) }";
+        let src = "fn fetch(url: Str) -> Str effects {} { http_get(url) }";
         let diags = check_snippet(src);
         assert!(
             diags.iter().any(|d| d.severity == Severity::Error),
@@ -365,7 +377,10 @@ mod tests {
     fn well_typed_fn_has_no_errors() {
         let src = "fn add(x: Int, y: Int) -> Int effects {} { x + y }";
         let diags = check_snippet(src);
-        let errors: Vec<_> = diags.iter().filter(|d| d.severity == Severity::Error).collect();
+        let errors: Vec<_> = diags
+            .iter()
+            .filter(|d| d.severity == Severity::Error)
+            .collect();
         assert!(errors.is_empty(), "unexpected errors: {errors:?}");
     }
 
@@ -376,7 +391,11 @@ mod tests {
         let file = map.add("foo.ae", src);
         let aether_diag = AetherDiag {
             severity: Severity::Error,
-            span: Span { file, start: 3, end: 6 },
+            span: Span {
+                file,
+                start: 3,
+                end: 6,
+            },
             msg: "type mismatch: expected Int, got Bool".to_string(),
         };
         let lsp_diags = diag::convert_diagnostics(&[aether_diag], &map);

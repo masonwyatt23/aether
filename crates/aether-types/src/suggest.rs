@@ -101,6 +101,9 @@ mod tests {
     fn tied_near_matches_return_none() {
         // "fo" is distance 1 from both "foo" and "for", so tied.
         let result = closest_match("fo", &cands(&["foo", "for"]), 2);
-        assert_eq!(result, None, "tied candidates should not produce a suggestion");
+        assert_eq!(
+            result, None,
+            "tied candidates should not produce a suggestion"
+        );
     }
 }

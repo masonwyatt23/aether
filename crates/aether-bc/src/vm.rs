@@ -49,37 +49,62 @@ pub enum Value {
     Tuple(Vec<Value>),
     Record(Vec<(String, Value)>),
     /// A tagged ADT value, e.g. `Circle(5.0)` → `Ctor { name: "Circle", args: [Float(5.0)] }`.
-    Ctor { name: String, args: Vec<Value> },
+    Ctor {
+        name: String,
+        args: Vec<Value>,
+    },
     /// A closure capturing locals by value from its definition site.
-    Closure { fn_idx: u32, captured: Vec<Value> },
+    Closure {
+        fn_idx: u32,
+        captured: Vec<Value>,
+    },
     /// A confidence-annotated value: `confident(v, p)` produces this.
     /// Display mirrors `aether_eval::Value::Confident`: `"{v} ~confidence({p})"`.
-    Confident { inner: Box<Value>, p: f64 },
+    Confident {
+        inner: Box<Value>,
+        p: f64,
+    },
 }
 
 impl Value {
     pub fn as_int(&self) -> Option<i64> {
-        if let Value::Int(n) = self { Some(*n) } else { None }
+        if let Value::Int(n) = self {
+            Some(*n)
+        } else {
+            None
+        }
     }
     pub fn as_bool(&self) -> Option<bool> {
-        if let Value::Bool(b) = self { Some(*b) } else { None }
+        if let Value::Bool(b) = self {
+            Some(*b)
+        } else {
+            None
+        }
     }
     pub fn as_str(&self) -> Option<&str> {
-        if let Value::Str(s) = self { Some(s.as_str()) } else { None }
+        if let Value::Str(s) = self {
+            Some(s.as_str())
+        } else {
+            None
+        }
     }
     pub fn as_float(&self) -> Option<f64> {
-        if let Value::Float(f) = self { Some(*f) } else { None }
+        if let Value::Float(f) = self {
+            Some(*f)
+        } else {
+            None
+        }
     }
 
     /// Human-readable display (mirrors `aether_eval::Value::display`).
     pub fn display(&self) -> String {
         match self {
-            Value::Int(n)    => n.to_string(),
-            Value::Bool(b)   => b.to_string(),
-            Value::Str(s)    => s.clone(),
-            Value::Float(f)  => f.to_string(),
-            Value::Unit      => "()".to_string(),
-            Value::List(vs)  => {
+            Value::Int(n) => n.to_string(),
+            Value::Bool(b) => b.to_string(),
+            Value::Str(s) => s.clone(),
+            Value::Float(f) => f.to_string(),
+            Value::Unit => "()".to_string(),
+            Value::List(vs) => {
                 let inner: Vec<String> = vs.iter().map(Value::display).collect();
                 format!("[{}]", inner.join(", "))
             }
@@ -88,7 +113,8 @@ impl Value {
                 format!("({})", inner.join(", "))
             }
             Value::Record(fs) => {
-                let inner: Vec<String> = fs.iter()
+                let inner: Vec<String> = fs
+                    .iter()
                     .map(|(k, v)| format!("{}: {}", k, v.display()))
                     .collect();
                 format!("{{{}}}", inner.join(", "))
@@ -126,7 +152,9 @@ pub struct NoopDispatcher;
 
 impl BuiltinDispatcher for NoopDispatcher {
     fn call(&mut self, name: &str, _args: &[Value]) -> Result<Value, String> {
-        Err(format!("no dispatcher registered; cannot call builtin `{name}`"))
+        Err(format!(
+            "no dispatcher registered; cannot call builtin `{name}`"
+        ))
     }
 }
 
@@ -185,7 +213,10 @@ impl<'p> Vm<'p> {
         }
 
         // Pop arguments from the stack (they were pushed left-to-right).
-        let arg_start = self.stack.len().checked_sub(argc)
+        let arg_start = self
+            .stack
+            .len()
+            .checked_sub(argc)
             .ok_or(VmError::StackUnderflow)?;
         let args: Vec<Value> = self.stack.drain(arg_start..).collect();
 
@@ -197,7 +228,12 @@ impl<'p> Vm<'p> {
     }
 
     /// Execute a closure, injecting captured values into the locals array.
-    fn call_closure(&mut self, fn_idx: u32, captured: Vec<Value>, argc: usize) -> Result<Value, VmError> {
+    fn call_closure(
+        &mut self,
+        fn_idx: u32,
+        captured: Vec<Value>,
+        argc: usize,
+    ) -> Result<Value, VmError> {
         let bf = &self.program.fns[fn_idx as usize];
         if argc != bf.arity as usize {
             return Err(VmError::ArityMismatch {
@@ -208,7 +244,10 @@ impl<'p> Vm<'p> {
         }
 
         // Pop arguments (last pushed = last param).
-        let arg_start = self.stack.len().checked_sub(argc)
+        let arg_start = self
+            .stack
+            .len()
+            .checked_sub(argc)
             .ok_or(VmError::StackUnderflow)?;
         let args: Vec<Value> = self.stack.drain(arg_start..).collect();
 
@@ -226,61 +265,102 @@ impl<'p> Vm<'p> {
         loop {
             let op = code.get(ip).ok_or(VmError::IpOutOfBounds)?;
             match op {
-                Op::PushInt(n)   => self.stack.push(Value::Int(*n)),
-                Op::PushBool(b)  => self.stack.push(Value::Bool(*b)),
+                Op::PushInt(n) => self.stack.push(Value::Int(*n)),
+                Op::PushBool(b) => self.stack.push(Value::Bool(*b)),
                 Op::PushFloat(f) => self.stack.push(Value::Float(*f)),
-                Op::PushStr(i)   => {
+                Op::PushStr(i) => {
                     let s = match self.program.constants.get(*i as usize) {
                         Some(crate::vm::Constant::Str(s)) => s.clone(),
                         None => return Err(VmError::BadConstantIndex(*i)),
                     };
                     self.stack.push(Value::Str(s));
                 }
-                Op::PushUnit    => self.stack.push(Value::Unit),
+                Op::PushUnit => self.stack.push(Value::Unit),
 
                 Op::LoadLocal(idx) => {
-                    let v = locals.get(*idx as usize)
+                    let v = locals
+                        .get(*idx as usize)
                         .cloned()
                         .ok_or(VmError::BadLocalIndex(*idx))?;
                     self.stack.push(v);
                 }
                 Op::StoreLocal(idx) => {
                     let v = self.pop()?;
-                    let slot = locals.get_mut(*idx as usize)
+                    let slot = locals
+                        .get_mut(*idx as usize)
                         .ok_or(VmError::BadLocalIndex(*idx))?;
                     *slot = v;
                 }
 
-                Op::Add  => { let (a, b) = self.pop2()?; self.stack.push(add(a, b)?); }
-                Op::Sub  => { let (a, b) = self.pop2()?; self.stack.push(sub(a, b)?); }
-                Op::Mul  => { let (a, b) = self.pop2()?; self.stack.push(mul(a, b)?); }
-                Op::Div  => { let (a, b) = self.pop2()?; self.stack.push(div(a, b)?); }
-                Op::Mod  => { let (a, b) = self.pop2()?; self.stack.push(rem(a, b)?); }
+                Op::Add => {
+                    let (a, b) = self.pop2()?;
+                    self.stack.push(add(a, b)?);
+                }
+                Op::Sub => {
+                    let (a, b) = self.pop2()?;
+                    self.stack.push(sub(a, b)?);
+                }
+                Op::Mul => {
+                    let (a, b) = self.pop2()?;
+                    self.stack.push(mul(a, b)?);
+                }
+                Op::Div => {
+                    let (a, b) = self.pop2()?;
+                    self.stack.push(div(a, b)?);
+                }
+                Op::Mod => {
+                    let (a, b) = self.pop2()?;
+                    self.stack.push(rem(a, b)?);
+                }
 
-                Op::Eq   => { let (a, b) = self.pop2()?; self.stack.push(Value::Bool(val_eq(&a, &b))); }
-                Op::Neq  => { let (a, b) = self.pop2()?; self.stack.push(Value::Bool(!val_eq(&a, &b))); }
-                Op::Lt   => { let (a, b) = self.pop2()?; self.stack.push(Value::Bool(cmp_lt(&a, &b)?)); }
-                Op::Le   => { let (a, b) = self.pop2()?; self.stack.push(Value::Bool(cmp_le(&a, &b)?)); }
-                Op::Gt   => { let (a, b) = self.pop2()?; self.stack.push(Value::Bool(cmp_gt(&a, &b)?)); }
-                Op::Ge   => { let (a, b) = self.pop2()?; self.stack.push(Value::Bool(cmp_ge(&a, &b)?)); }
+                Op::Eq => {
+                    let (a, b) = self.pop2()?;
+                    self.stack.push(Value::Bool(val_eq(&a, &b)));
+                }
+                Op::Neq => {
+                    let (a, b) = self.pop2()?;
+                    self.stack.push(Value::Bool(!val_eq(&a, &b)));
+                }
+                Op::Lt => {
+                    let (a, b) = self.pop2()?;
+                    self.stack.push(Value::Bool(cmp_lt(&a, &b)?));
+                }
+                Op::Le => {
+                    let (a, b) = self.pop2()?;
+                    self.stack.push(Value::Bool(cmp_le(&a, &b)?));
+                }
+                Op::Gt => {
+                    let (a, b) = self.pop2()?;
+                    self.stack.push(Value::Bool(cmp_gt(&a, &b)?));
+                }
+                Op::Ge => {
+                    let (a, b) = self.pop2()?;
+                    self.stack.push(Value::Bool(cmp_ge(&a, &b)?));
+                }
 
-                Op::And  => { let (a, b) = self.pop2_bool()?; self.stack.push(Value::Bool(a && b)); }
-                Op::Or   => { let (a, b) = self.pop2_bool()?; self.stack.push(Value::Bool(a || b)); }
+                Op::And => {
+                    let (a, b) = self.pop2_bool()?;
+                    self.stack.push(Value::Bool(a && b));
+                }
+                Op::Or => {
+                    let (a, b) = self.pop2_bool()?;
+                    self.stack.push(Value::Bool(a || b));
+                }
                 Op::Implies => {
                     let (a, b) = self.pop2_bool()?;
                     self.stack.push(Value::Bool(!a || b));
                 }
-                Op::Not  => {
+                Op::Not => {
                     let v = self.pop()?;
                     match v {
                         Value::Bool(b) => self.stack.push(Value::Bool(!b)),
                         _ => return Err(VmError::TypeError("Not: expected Bool".into())),
                     }
                 }
-                Op::Neg  => {
+                Op::Neg => {
                     let v = self.pop()?;
                     match v {
-                        Value::Int(n)   => self.stack.push(Value::Int(-n)),
+                        Value::Int(n) => self.stack.push(Value::Int(-n)),
                         Value::Float(f) => self.stack.push(Value::Float(-f)),
                         _ => return Err(VmError::TypeError("Neg: expected Int or Float".into())),
                     }
@@ -288,12 +368,16 @@ impl<'p> Vm<'p> {
                 Op::Concat => {
                     let (a, b) = self.pop2()?;
                     match (a, b) {
-                        (Value::Str(s1), Value::Str(s2)) => self.stack.push(Value::Str(format!("{s1}{s2}"))),
+                        (Value::Str(s1), Value::Str(s2)) => {
+                            self.stack.push(Value::Str(format!("{s1}{s2}")))
+                        }
                         (Value::List(mut l1), Value::List(l2)) => {
                             l1.extend(l2);
                             self.stack.push(Value::List(l1));
                         }
-                        _ => return Err(VmError::TypeError("Concat: expected Str/List pair".into())),
+                        _ => {
+                            return Err(VmError::TypeError("Concat: expected Str/List pair".into()))
+                        }
                     }
                 }
 
@@ -320,7 +404,10 @@ impl<'p> Vm<'p> {
                     }
                 }
 
-                Op::Call { fn_idx: fi, argc: ac } => {
+                Op::Call {
+                    fn_idx: fi,
+                    argc: ac,
+                } => {
                     let result = self.call_fn(*fi as usize, *ac as usize)?;
                     self.stack.push(result);
                 }
@@ -333,11 +420,13 @@ impl<'p> Vm<'p> {
                 Op::CallBuiltinDyn { name_idx, argc: ac } => {
                     let name = self.get_constant_str(*name_idx)?;
                     let argc = *ac as usize;
-                    let start = self.stack.len().checked_sub(argc)
+                    let start = self
+                        .stack
+                        .len()
+                        .checked_sub(argc)
                         .ok_or(VmError::StackUnderflow)?;
                     let args: Vec<Value> = self.stack.drain(start..).collect();
-                    let result = self.dispatcher.call(&name, &args)
-                        .map_err(VmError::User)?;
+                    let result = self.dispatcher.call(&name, &args).map_err(VmError::User)?;
                     self.stack.push(result);
                 }
 
@@ -345,7 +434,9 @@ impl<'p> Vm<'p> {
                     let argc = *ac as usize;
                     // Stack: [... | closure | arg0 | ... | argN-1]
                     // closure is at stack[len - argc - 1]
-                    let closure_idx = self.stack.len()
+                    let closure_idx = self
+                        .stack
+                        .len()
                         .checked_sub(argc + 1)
                         .ok_or(VmError::StackUnderflow)?;
                     let closure = self.stack.remove(closure_idx);
@@ -354,9 +445,12 @@ impl<'p> Vm<'p> {
                             let result = self.call_closure(fn_idx, captured, argc)?;
                             self.stack.push(result);
                         }
-                        other => return Err(VmError::TypeError(
-                            format!("CallClosure: expected Closure, got {:?}", other.display())
-                        )),
+                        other => {
+                            return Err(VmError::TypeError(format!(
+                                "CallClosure: expected Closure, got {:?}",
+                                other.display()
+                            )))
+                        }
                     }
                 }
 
@@ -370,21 +464,27 @@ impl<'p> Vm<'p> {
                 }
 
                 Op::Dup => {
-                    let v = self.stack.last()
-                        .cloned()
-                        .ok_or(VmError::StackUnderflow)?;
+                    let v = self.stack.last().cloned().ok_or(VmError::StackUnderflow)?;
                     self.stack.push(v);
                 }
 
-                Op::MakeClosure { fn_idx, captured: cap_slots } => {
-                    let captured: Vec<Value> = cap_slots.iter()
+                Op::MakeClosure {
+                    fn_idx,
+                    captured: cap_slots,
+                } => {
+                    let captured: Vec<Value> = cap_slots
+                        .iter()
                         .map(|&slot| {
-                            locals.get(slot as usize)
+                            locals
+                                .get(slot as usize)
                                 .cloned()
                                 .ok_or(VmError::BadLocalIndex(slot))
                         })
                         .collect::<Result<_, _>>()?;
-                    self.stack.push(Value::Closure { fn_idx: *fn_idx, captured });
+                    self.stack.push(Value::Closure {
+                        fn_idx: *fn_idx,
+                        captured,
+                    });
                 }
 
                 Op::Ctor { name_idx, argc: ac } => {
@@ -398,14 +498,17 @@ impl<'p> Vm<'p> {
                     self.stack.push(Value::Ctor { name, args });
                 }
 
-                Op::MatchCtor { name_idx, expect_arity, jump_if_miss: _ } => {
+                Op::MatchCtor {
+                    name_idx,
+                    expect_arity,
+                    jump_if_miss: _,
+                } => {
                     // MatchCtor peeks at TOS (does not pop), tests name+arity,
                     // and pushes a Bool result.  The jump is handled externally
                     // by a JumpIfFalse that follows.  This op does NOT jump itself —
                     // the `jump_if_miss` field is reserved for future optimisation.
                     let expected_name = self.get_constant_str(*name_idx)?;
-                    let top = self.stack.last()
-                        .ok_or(VmError::StackUnderflow)?;
+                    let top = self.stack.last().ok_or(VmError::StackUnderflow)?;
                     let matches = match top {
                         Value::Ctor { name, args } => {
                             name == &expected_name && args.len() == *expect_arity as usize
@@ -416,15 +519,15 @@ impl<'p> Vm<'p> {
                 }
 
                 Op::CtorField(field_idx) => {
-                    let top = self.stack.last()
-                        .ok_or(VmError::StackUnderflow)?;
+                    let top = self.stack.last().ok_or(VmError::StackUnderflow)?;
                     match top {
                         Value::Ctor { args, .. } => {
-                            let v = args.get(*field_idx as usize)
-                                .cloned()
-                                .ok_or_else(|| VmError::TypeError(
-                                    format!("CtorField: index {} out of bounds", field_idx)
-                                ))?;
+                            let v = args.get(*field_idx as usize).cloned().ok_or_else(|| {
+                                VmError::TypeError(format!(
+                                    "CtorField: index {} out of bounds",
+                                    field_idx
+                                ))
+                            })?;
                             self.stack.push(v);
                         }
                         _ => return Err(VmError::TypeError("CtorField: expected Ctor".into())),
@@ -445,11 +548,9 @@ impl<'p> Vm<'p> {
                     let tup = self.pop()?;
                     match tup {
                         Value::Tuple(vs) => {
-                            let v = vs.get(*idx as usize)
-                                .cloned()
-                                .ok_or_else(|| VmError::TypeError(
-                                    format!("TupleGet: index {} out of bounds", idx)
-                                ))?;
+                            let v = vs.get(*idx as usize).cloned().ok_or_else(|| {
+                                VmError::TypeError(format!("TupleGet: index {} out of bounds", idx))
+                            })?;
                             self.stack.push(v);
                         }
                         _ => return Err(VmError::TypeError("TupleGet: expected Tuple".into())),
@@ -476,17 +577,23 @@ impl<'p> Vm<'p> {
                     let rec = self.pop()?;
                     match rec {
                         Value::Record(fields) => {
-                            let v = fields.into_iter()
+                            let v = fields
+                                .into_iter()
                                 .find(|(k, _)| k == &field_name)
                                 .map(|(_, v)| v)
-                                .ok_or_else(|| VmError::TypeError(
-                                    format!("FieldGet: field `{field_name}` not found")
-                                ))?;
+                                .ok_or_else(|| {
+                                    VmError::TypeError(format!(
+                                        "FieldGet: field `{field_name}` not found"
+                                    ))
+                                })?;
                             self.stack.push(v);
                         }
-                        _ => return Err(VmError::TypeError(
-                            format!("FieldGet: expected Record, got {}", rec.display())
-                        )),
+                        _ => {
+                            return Err(VmError::TypeError(format!(
+                                "FieldGet: expected Record, got {}",
+                                rec.display()
+                            )))
+                        }
                     }
                 }
 
@@ -506,39 +613,47 @@ impl<'p> Vm<'p> {
                     let p = match p_val {
                         Value::Float(f) => f,
                         Value::Int(n) => n as f64,
-                        _ => return Err(VmError::TypeError(
-                            "MakeConfident: p must be Float or Int".into()
-                        )),
+                        _ => {
+                            return Err(VmError::TypeError(
+                                "MakeConfident: p must be Float or Int".into(),
+                            ))
+                        }
                     };
                     let inner = self.pop()?;
-                    self.stack.push(Value::Confident { inner: Box::new(inner), p });
+                    self.stack.push(Value::Confident {
+                        inner: Box::new(inner),
+                        p,
+                    });
                 }
 
                 Op::Index => {
                     let idx = self.pop()?;
                     let container = self.pop()?;
-                    let i = idx.as_int()
+                    let i = idx
+                        .as_int()
                         .ok_or_else(|| VmError::TypeError("Index: index must be Int".into()))?;
                     match container {
                         Value::List(vs) => {
-                            let v = vs.get(i as usize)
-                                .cloned()
-                                .ok_or_else(|| VmError::TypeError(
-                                    format!("Index: index {i} out of bounds (len {})", vs.len())
-                                ))?;
+                            let v = vs.get(i as usize).cloned().ok_or_else(|| {
+                                VmError::TypeError(format!(
+                                    "Index: index {i} out of bounds (len {})",
+                                    vs.len()
+                                ))
+                            })?;
                             self.stack.push(v);
                         }
                         Value::Tuple(vs) => {
-                            let v = vs.get(i as usize)
-                                .cloned()
-                                .ok_or_else(|| VmError::TypeError(
-                                    format!("Index: index {i} out of bounds (len {})", vs.len())
-                                ))?;
+                            let v = vs.get(i as usize).cloned().ok_or_else(|| {
+                                VmError::TypeError(format!(
+                                    "Index: index {i} out of bounds (len {})",
+                                    vs.len()
+                                ))
+                            })?;
                             self.stack.push(v);
                         }
-                        _ => return Err(VmError::TypeError(
-                            "Index: expected List or Tuple".into()
-                        )),
+                        _ => {
+                            return Err(VmError::TypeError("Index: expected List or Tuple".into()))
+                        }
                     }
                 }
             }
@@ -554,7 +669,10 @@ impl<'p> Vm<'p> {
     }
 
     fn call_builtin(&mut self, id: u16, argc: usize) -> Result<Value, VmError> {
-        let start = self.stack.len().checked_sub(argc)
+        let start = self
+            .stack
+            .len()
+            .checked_sub(argc)
             .ok_or(VmError::StackUnderflow)?;
         let args: Vec<Value> = self.stack.drain(start..).collect();
 
@@ -589,8 +707,12 @@ impl<'p> Vm<'p> {
     #[inline]
     fn pop2_bool(&mut self) -> Result<(bool, bool), VmError> {
         let (a, b) = self.pop2()?;
-        let av = a.as_bool().ok_or_else(|| VmError::TypeError("expected Bool (lhs)".into()))?;
-        let bv = b.as_bool().ok_or_else(|| VmError::TypeError("expected Bool (rhs)".into()))?;
+        let av = a
+            .as_bool()
+            .ok_or_else(|| VmError::TypeError("expected Bool (lhs)".into()))?;
+        let bv = b
+            .as_bool()
+            .ok_or_else(|| VmError::TypeError("expected Bool (rhs)".into()))?;
         Ok((av, bv))
     }
 }
@@ -599,29 +721,29 @@ impl<'p> Vm<'p> {
 
 fn add(a: Value, b: Value) -> Result<Value, VmError> {
     match (a, b) {
-        (Value::Int(x), Value::Int(y))     => Ok(Value::Int(x + y)),
+        (Value::Int(x), Value::Int(y)) => Ok(Value::Int(x + y)),
         (Value::Float(x), Value::Float(y)) => Ok(Value::Float(x + y)),
         _ => Err(VmError::TypeError("Add: expected Int or Float".into())),
     }
 }
 fn sub(a: Value, b: Value) -> Result<Value, VmError> {
     match (a, b) {
-        (Value::Int(x), Value::Int(y))     => Ok(Value::Int(x - y)),
+        (Value::Int(x), Value::Int(y)) => Ok(Value::Int(x - y)),
         (Value::Float(x), Value::Float(y)) => Ok(Value::Float(x - y)),
         _ => Err(VmError::TypeError("Sub: expected Int or Float".into())),
     }
 }
 fn mul(a: Value, b: Value) -> Result<Value, VmError> {
     match (a, b) {
-        (Value::Int(x), Value::Int(y))     => Ok(Value::Int(x * y)),
+        (Value::Int(x), Value::Int(y)) => Ok(Value::Int(x * y)),
         (Value::Float(x), Value::Float(y)) => Ok(Value::Float(x * y)),
         _ => Err(VmError::TypeError("Mul: expected Int or Float".into())),
     }
 }
 fn div(a: Value, b: Value) -> Result<Value, VmError> {
     match (a, b) {
-        (Value::Int(_), Value::Int(0))     => Err(VmError::DivByZero),
-        (Value::Int(x), Value::Int(y))     => Ok(Value::Int(x / y)),
+        (Value::Int(_), Value::Int(0)) => Err(VmError::DivByZero),
+        (Value::Int(x), Value::Int(y)) => Ok(Value::Int(x / y)),
         (Value::Float(x), Value::Float(y)) => Ok(Value::Float(x / y)),
         _ => Err(VmError::TypeError("Div: expected Int or Float".into())),
     }
@@ -644,28 +766,28 @@ fn val_eq(a: &Value, b: &Value) -> bool {
 
 fn cmp_lt(a: &Value, b: &Value) -> Result<bool, VmError> {
     match (a, b) {
-        (Value::Int(x), Value::Int(y))     => Ok(x < y),
+        (Value::Int(x), Value::Int(y)) => Ok(x < y),
         (Value::Float(x), Value::Float(y)) => Ok(x < y),
         _ => Err(VmError::TypeError("Lt: expected Int or Float".into())),
     }
 }
 fn cmp_le(a: &Value, b: &Value) -> Result<bool, VmError> {
     match (a, b) {
-        (Value::Int(x), Value::Int(y))     => Ok(x <= y),
+        (Value::Int(x), Value::Int(y)) => Ok(x <= y),
         (Value::Float(x), Value::Float(y)) => Ok(x <= y),
         _ => Err(VmError::TypeError("Le: expected Int or Float".into())),
     }
 }
 fn cmp_gt(a: &Value, b: &Value) -> Result<bool, VmError> {
     match (a, b) {
-        (Value::Int(x), Value::Int(y))     => Ok(x > y),
+        (Value::Int(x), Value::Int(y)) => Ok(x > y),
         (Value::Float(x), Value::Float(y)) => Ok(x > y),
         _ => Err(VmError::TypeError("Gt: expected Int or Float".into())),
     }
 }
 fn cmp_ge(a: &Value, b: &Value) -> Result<bool, VmError> {
     match (a, b) {
-        (Value::Int(x), Value::Int(y))     => Ok(x >= y),
+        (Value::Int(x), Value::Int(y)) => Ok(x >= y),
         (Value::Float(x), Value::Float(y)) => Ok(x >= y),
         _ => Err(VmError::TypeError("Ge: expected Int or Float".into())),
     }

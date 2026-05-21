@@ -11,7 +11,11 @@ use aether_wasm::{check_source, run_source};
 fn check_clean_program_has_no_errors() {
     let src = r#"fn main() -> Unit effects {IO} { print("hello from wasm") }"#;
     let result = check_source(src);
-    assert!(result.ok, "expected no errors, got: {:?}", result.errors.iter().map(|e| &e.message).collect::<Vec<_>>());
+    assert!(
+        result.ok,
+        "expected no errors, got: {:?}",
+        result.errors.iter().map(|e| &e.message).collect::<Vec<_>>()
+    );
     assert!(result.errors.is_empty());
 }
 
@@ -29,7 +33,11 @@ fn run_hello_world_captures_stdout() {
     let src = r#"fn main() -> Unit effects {IO} { print("hello, playground") }"#;
     let result = run_source(src);
     assert!(result.ok, "run failed: {:?}", result.error);
-    assert!(result.stdout.contains("hello, playground"), "stdout was: {:?}", result.stdout);
+    assert!(
+        result.stdout.contains("hello, playground"),
+        "stdout was: {:?}",
+        result.stdout
+    );
 }
 
 #[test]
@@ -48,7 +56,11 @@ fn main() -> Unit effects {IO} {
 "#;
     let result = run_source(src);
     assert!(result.ok, "run failed: {:?}", result.error);
-    assert!(result.stdout.contains('3'), "expected '3' in stdout, got: {:?}", result.stdout);
+    assert!(
+        result.stdout.contains('3'),
+        "expected '3' in stdout, got: {:?}",
+        result.stdout
+    );
 }
 
 #[test]
@@ -76,15 +88,31 @@ fn check_diagnostics_have_line_col() {
     assert!(!result.ok);
     // At minimum one diagnostic should have line >= 1, col >= 1.
     let has_location = result.errors.iter().any(|d| d.line >= 1 && d.col >= 1);
-    assert!(has_location, "expected diagnostics with line/col: {:?}", result.errors.iter().map(|e| (e.line, e.col)).collect::<Vec<_>>());
+    assert!(
+        has_location,
+        "expected diagnostics with line/col: {:?}",
+        result
+            .errors
+            .iter()
+            .map(|e| (e.line, e.col))
+            .collect::<Vec<_>>()
+    );
 }
 
 #[test]
 fn format_compact_roundtrips() {
     let src = r#"fn add(x: Int, y: Int) -> Int effects {} { x + y }"#;
     let formatted = aether_wasm::aether_format(src, false);
-    assert!(!formatted.starts_with("error:"), "format failed: {}", formatted);
+    assert!(
+        !formatted.starts_with("error:"),
+        "format failed: {}",
+        formatted
+    );
     // Re-check the formatted source — it should still parse cleanly.
     let re_checked = check_source(&formatted);
-    assert!(re_checked.ok, "re-check of formatted source failed: {:?}", re_checked.errors);
+    assert!(
+        re_checked.ok,
+        "re-check of formatted source failed: {:?}",
+        re_checked.errors
+    );
 }

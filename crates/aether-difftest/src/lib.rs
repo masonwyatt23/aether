@@ -19,8 +19,8 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
-use aether_ast::{FileId, SourceMap};
 use aether_ast::decl::Decl;
+use aether_ast::{FileId, SourceMap};
 use aether_parser::parse_module;
 
 // ── public types ──────────────────────────────────────────────────────────────
@@ -124,11 +124,16 @@ fn resolve_imports(
                 let import_decls = if let Some(std_src) = stdlib_source(&qname) {
                     load_stdlib_module(&qname, std_src, sm)?
                 } else if let Some(root) = root {
-                    let rel: std::path::PathBuf =
-                        imp.path.iter().collect::<std::path::PathBuf>().with_extension("ae");
+                    let rel: std::path::PathBuf = imp
+                        .path
+                        .iter()
+                        .collect::<std::path::PathBuf>()
+                        .with_extension("ae");
                     let abs = root.join(&rel);
                     if !abs.exists() {
-                        return Err(format!("unknown module `{qname}` (not in stdlib and no file found)"));
+                        return Err(format!(
+                            "unknown module `{qname}` (not in stdlib and no file found)"
+                        ));
                     }
                     // Guard against cycles.
                     let key = abs.display().to_string();
@@ -166,19 +171,23 @@ fn resolve_imports(
 /// Convert a BC value to an eval value (for trampoline dispatch).
 /// Uses a synthetic zero-span provenance chain.
 fn bc_to_eval(v: &aether_bc::Value) -> aether_eval::Value {
-    use aether_ast::{ProvArena, ProvChain, ProvOp, Span, FileId};
+    use aether_ast::{FileId, ProvArena, ProvChain, ProvOp, Span};
     // `ProvArena::new()` already returns `Arc<ProvArena>`; don't double-wrap.
     let arena = ProvArena::new();
-    let span = Span { file: FileId(0), start: 0, end: 0 };
+    let span = Span {
+        file: FileId(0),
+        start: 0,
+        end: 0,
+    };
     let prov = ProvChain::singleton(arena, ProvOp::Synthetic("bc-trampoline".into()), span);
 
     match v {
-        aether_bc::Value::Int(n)    => aether_eval::Value::Int(*n, prov),
-        aether_bc::Value::Bool(b)   => aether_eval::Value::Bool(*b, prov),
-        aether_bc::Value::Str(s)    => aether_eval::Value::Str(s.clone(), prov),
-        aether_bc::Value::Float(f)  => aether_eval::Value::Float(*f, prov),
-        aether_bc::Value::Unit      => aether_eval::Value::Unit(prov),
-        aether_bc::Value::List(vs)  => {
+        aether_bc::Value::Int(n) => aether_eval::Value::Int(*n, prov),
+        aether_bc::Value::Bool(b) => aether_eval::Value::Bool(*b, prov),
+        aether_bc::Value::Str(s) => aether_eval::Value::Str(s.clone(), prov),
+        aether_bc::Value::Float(f) => aether_eval::Value::Float(*f, prov),
+        aether_bc::Value::Unit => aether_eval::Value::Unit(prov),
+        aether_bc::Value::List(vs) => {
             aether_eval::Value::List(vs.iter().map(bc_to_eval).collect(), prov)
         }
         aether_bc::Value::Tuple(vs) => {
@@ -208,12 +217,12 @@ fn bc_to_eval(v: &aether_bc::Value) -> aether_eval::Value {
 /// Convert an eval value back to a BC value (for trampoline return).
 fn eval_to_bc(v: &aether_eval::Value) -> aether_bc::Value {
     match v {
-        aether_eval::Value::Int(n, _)    => aether_bc::Value::Int(*n),
-        aether_eval::Value::Bool(b, _)   => aether_bc::Value::Bool(*b),
-        aether_eval::Value::Str(s, _)    => aether_bc::Value::Str(s.clone()),
-        aether_eval::Value::Float(f, _)  => aether_bc::Value::Float(*f),
-        aether_eval::Value::Unit(_)      => aether_bc::Value::Unit,
-        aether_eval::Value::List(vs, _)  => {
+        aether_eval::Value::Int(n, _) => aether_bc::Value::Int(*n),
+        aether_eval::Value::Bool(b, _) => aether_bc::Value::Bool(*b),
+        aether_eval::Value::Str(s, _) => aether_bc::Value::Str(s.clone()),
+        aether_eval::Value::Float(f, _) => aether_bc::Value::Float(*f),
+        aether_eval::Value::Unit(_) => aether_bc::Value::Unit,
+        aether_eval::Value::List(vs, _) => {
             aether_bc::Value::List(vs.iter().map(eval_to_bc).collect())
         }
         aether_eval::Value::Tuple(vs, _) => {
@@ -272,15 +281,19 @@ impl EvalTrampoline {
     fn new(module: aether_ast::Module, stdout_drain: Arc<Mutex<String>>) -> Self {
         let mut rt = aether_eval::Runtime::new(module);
         rt.capture_only = true;
-        Self { rt, stdout_drain, opaque_store: Default::default(), opaque_next_id: 1 }
+        Self {
+            rt,
+            stdout_drain,
+            opaque_store: Default::default(),
+            opaque_next_id: 1,
+        }
     }
 
     /// Convert an eval value to a BC value, storing opaque values in `opaque_store`.
     fn eval_to_bc_local(&mut self, v: &aether_eval::Value) -> aether_bc::Value {
         match v {
             // Eval-only types: store in the opaque table, return a Ctor sentinel.
-            aether_eval::Value::ProvHandle(..)
-            | aether_eval::Value::ModuleSurface(..) => {
+            aether_eval::Value::ProvHandle(..) | aether_eval::Value::ModuleSurface(..) => {
                 let id = self.opaque_next_id;
                 self.opaque_next_id += 1;
                 self.opaque_store.insert(id, v.clone());
@@ -315,11 +328,16 @@ impl EvalTrampoline {
 
 impl aether_bc::BuiltinDispatcher for EvalTrampoline {
     fn call(&mut self, name: &str, args: &[aether_bc::Value]) -> Result<aether_bc::Value, String> {
-        use aether_ast::{Span, FileId};
-        let span = Span { file: FileId(0), start: 0, end: 0 };
+        use aether_ast::{FileId, Span};
+        let span = Span {
+            file: FileId(0),
+            start: 0,
+            end: 0,
+        };
 
         // Convert BC args → eval args, recovering any opaque sentinels.
-        let eval_args: Vec<aether_eval::Value> = args.iter().map(|v| self.bc_to_eval_local(v)).collect();
+        let eval_args: Vec<aether_eval::Value> =
+            args.iter().map(|v| self.bc_to_eval_local(v)).collect();
 
         // Dispatch through the eval builtin layer.
         let result = match aether_eval::builtins::dispatch(&mut self.rt, name, &eval_args, span) {
@@ -355,23 +373,28 @@ fn run_tree_walker(module: aether_ast::Module) -> RunOutcome {
             stdout: rt.stdout.clone(),
             value: val.display(),
         },
-        Err(e) => RunOutcome::Failed { error: e.to_string() },
+        Err(e) => RunOutcome::Failed {
+            error: e.to_string(),
+        },
     }
 }
 
 fn run_bytecode(module: &aether_ast::Module) -> RunOutcome {
     match aether_bc::compile_module(module) {
-        Err(aether_bc::CompileError::Unsupported(reason)) => {
-            RunOutcome::Skipped { reason }
-        }
-        Err(e) => RunOutcome::Failed { error: e.to_string() },
+        Err(aether_bc::CompileError::Unsupported(reason)) => RunOutcome::Skipped { reason },
+        Err(e) => RunOutcome::Failed {
+            error: e.to_string(),
+        },
         Ok(program) => {
             // Shared buffer that the trampoline drains its stdout into after each
             // dispatched call.  We read it after `vm.run()` completes.
             let stdout_drain: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
             // Wire in the eval trampoline dispatcher so CallBuiltinDyn ops can
             // call back into the tree-walker's builtin layer.
-            let dispatcher = Box::new(EvalTrampoline::new(module.clone(), Arc::clone(&stdout_drain)));
+            let dispatcher = Box::new(EvalTrampoline::new(
+                module.clone(),
+                Arc::clone(&stdout_drain),
+            ));
             let mut vm = aether_bc::Vm::with_dispatcher(&program, dispatcher);
             vm.capture_only = true;
             match vm.run() {
@@ -385,7 +408,9 @@ fn run_bytecode(module: &aether_ast::Module) -> RunOutcome {
                         value: val.display(),
                     }
                 }
-                Err(e) => RunOutcome::Failed { error: e.to_string() },
+                Err(e) => RunOutcome::Failed {
+                    error: e.to_string(),
+                },
             }
         }
     }
@@ -413,7 +438,9 @@ const NONDETERMINISTIC_BUILTINS: &[&str] = &[
 pub fn nondeterministic_reason(source: &str) -> Option<String> {
     for name in NONDETERMINISTIC_BUILTINS {
         if source.contains(name) {
-            return Some(format!("source references nondeterministic builtin `{name}`"));
+            return Some(format!(
+                "source references nondeterministic builtin `{name}`"
+            ));
         }
     }
     None
@@ -448,7 +475,16 @@ pub fn bc_incompatible_reason(source: &str) -> Option<String> {
 
 fn compute_agreement(tree: &RunOutcome, bc: &RunOutcome, source: &str) -> Agreement {
     match (tree, bc) {
-        (RunOutcome::Ok { stdout: ts, value: tv }, RunOutcome::Ok { stdout: bs, value: bv }) => {
+        (
+            RunOutcome::Ok {
+                stdout: ts,
+                value: tv,
+            },
+            RunOutcome::Ok {
+                stdout: bs,
+                value: bv,
+            },
+        ) => {
             if ts == bs && tv == bv {
                 Agreement::Match
             } else if let Some(reason) = nondeterministic_reason(source) {
@@ -465,26 +501,24 @@ fn compute_agreement(tree: &RunOutcome, bc: &RunOutcome, source: &str) -> Agreem
                 }
             }
         }
-        (RunOutcome::Ok { .. }, RunOutcome::Skipped { reason }) => {
-            Agreement::BcSkipped { reason: reason.clone() }
-        }
+        (RunOutcome::Ok { .. }, RunOutcome::Skipped { reason }) => Agreement::BcSkipped {
+            reason: reason.clone(),
+        },
         (RunOutcome::Failed { error: te }, RunOutcome::Failed { error: be }) => {
             Agreement::BothFailed {
                 tree_error: te.clone(),
                 bc_error: be.clone(),
             }
         }
-        (RunOutcome::Failed { error }, _) => {
-            Agreement::TreeFailed { error: error.clone() }
-        }
+        (RunOutcome::Failed { error }, _) => Agreement::TreeFailed {
+            error: error.clone(),
+        },
         // Tree succeeded, BC failed at runtime — BC coverage gap (e.g. Float
         // arithmetic, missing dispatch), not a semantic disagreement between
         // two successful outputs.
-        (RunOutcome::Ok { .. }, RunOutcome::Failed { error }) => {
-            Agreement::BcSkipped {
-                reason: format!("BC runtime error (coverage gap): {error}"),
-            }
-        }
+        (RunOutcome::Ok { .. }, RunOutcome::Failed { error }) => Agreement::BcSkipped {
+            reason: format!("BC runtime error (coverage gap): {error}"),
+        },
         _ => unreachable!("unhandled agreement pattern"),
     }
 }
@@ -526,7 +560,11 @@ pub fn diff_run(source: &str) -> DiffResult {
     let bc = run_bytecode(&module);
     let agreement = compute_agreement(&tree, &bc, source);
 
-    DiffResult { tree_walker: tree, bytecode: bc, agreement }
+    DiffResult {
+        tree_walker: tree,
+        bytecode: bc,
+        agreement,
+    }
 }
 
 /// Load `path`, resolve imports relative to its parent directory, run both
@@ -567,7 +605,11 @@ pub fn diff_file(path: &Path) -> std::io::Result<DiffResult> {
     let bc = run_bytecode(&module);
     let agreement = compute_agreement(&tree, &bc, &source);
 
-    Ok(DiffResult { tree_walker: tree, bytecode: bc, agreement })
+    Ok(DiffResult {
+        tree_walker: tree,
+        bytecode: bc,
+        agreement,
+    })
 }
 
 // ── unit tests ────────────────────────────────────────────────────────────────
@@ -651,7 +693,8 @@ fn main() -> Str effects {} {
             (RunOutcome::Ok { stdout: tw_out, .. }, RunOutcome::Ok { stdout: bc_out, .. }) => {
                 assert!(!tw_out.is_empty(), "tree-walker should print `5`");
                 assert_eq!(
-                    tw_out.trim(), bc_out.trim(),
+                    tw_out.trim(),
+                    bc_out.trim(),
                     "trampoline drain must surface BC stdout for round-tripping builtins"
                 );
             }
@@ -677,7 +720,10 @@ fn main() -> Unit effects {IO} {
         );
         let result = diff_run(src);
         assert!(
-            matches!(result.agreement, Agreement::BcSkipped { .. } | Agreement::Match),
+            matches!(
+                result.agreement,
+                Agreement::BcSkipped { .. } | Agreement::Match
+            ),
             "provenance program must be BcSkipped or Match, never Differ — got {:?}",
             result.agreement,
         );
@@ -713,7 +759,9 @@ fn main() -> Unit effects {IO} {
                 let candidate = p.join("Cargo.toml");
                 if candidate.exists() {
                     let c = std::fs::read_to_string(&candidate).unwrap_or_default();
-                    if c.contains("[workspace]") { break; }
+                    if c.contains("[workspace]") {
+                        break;
+                    }
                 }
                 assert!(p.pop(), "could not find workspace root");
             }
@@ -724,7 +772,8 @@ fn main() -> Unit effects {IO} {
             assert!(
                 !matches!(result.agreement, Agreement::Differ { .. }),
                 "21_new_stdlib.ae must not be Differ — it uses nondeterministic builtins. \
-                 Got {:?}", result.agreement
+                 Got {:?}",
+                result.agreement
             );
         }
     }
