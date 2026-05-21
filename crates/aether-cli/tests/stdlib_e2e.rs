@@ -1302,7 +1302,7 @@ fn main() -> Unit effects {IO, State} {
     let lines: Vec<&str> = stdout.lines().collect();
     // has("k") before set -> false
     assert_eq!(
-        lines.get(0).copied(),
+        lines.first().copied(),
         Some("false"),
         "expected false before set, got: {stdout}"
     );
@@ -1382,7 +1382,7 @@ fn main() -> Unit effects {IO} {
     let stdout = String::from_utf8_lossy(&run.stdout);
     let lines: Vec<&str> = stdout.lines().collect();
     assert_eq!(
-        lines.get(0).copied(),
+        lines.first().copied(),
         Some("100"),
         "backoff(0) should be 100"
     );

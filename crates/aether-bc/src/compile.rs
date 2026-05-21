@@ -222,10 +222,8 @@ impl<'a> FnCtx<'a> {
 fn free_vars_expr(e: &Expr, bound: &HashSet<String>, out: &mut Vec<String>) {
     match e {
         Expr::Var(name, _) => {
-            if !bound.contains(name.as_str()) {
-                if !out.contains(name) {
-                    out.push(name.clone());
-                }
+            if !bound.contains(name.as_str()) && !out.contains(name) {
+                out.push(name.clone());
             }
         }
         Expr::Lit(_, _) | Expr::Assume(_, _) => {}

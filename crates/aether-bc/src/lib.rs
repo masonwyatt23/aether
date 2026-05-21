@@ -139,7 +139,7 @@ mod tests {
         // Float display matches tree-walker: f.to_string()
         assert_eq!(Value::Float(1.0_f64).display(), "1");
         assert_eq!(Value::Float(0.5_f64).display(), "0.5");
-        assert_eq!(Value::Float(-3.14_f64).display(), "-3.14");
+        assert_eq!(Value::Float(-2.5_f64).display(), "-2.5");
     }
 
     // ── string interpolation ─────────────────────────────────────────────────

@@ -545,7 +545,7 @@ impl<'a> Parser<'a> {
         while !matches!(self.peek(), Some(Tok::RBrace) | None) {
             let (name, _) = self.expect_ident("effect label")?;
             // Convention: lowercase single-letter / unknown → row variable
-            if name.len() == 1 && name.chars().next().unwrap().is_ascii_uppercase() == false {
+            if name.len() == 1 && !name.chars().next().unwrap().is_ascii_uppercase() {
                 tail = Some(name);
             } else {
                 effects.push(Effect::from_str(&name));
@@ -1331,39 +1331,36 @@ impl<'a> Parser<'a> {
                 current.push('\\');
                 continue;
             }
-            if c == '$' {
-                if matches!(chars.peek(), Some(&'{')) {
-                    let _ = chars.next(); // consume '{'
-                                          // Flush literal accumulator.
-                    if !current.is_empty() {
-                        parts.push(StrPart::Lit(std::mem::take(&mut current)));
-                    }
-                    // Collect everything up to the matching '}'.
-                    let mut depth = 1usize;
-                    let mut inner = String::new();
-                    for ic in chars.by_ref() {
-                        match ic {
-                            '{' => {
-                                depth += 1;
-                                inner.push(ic);
-                            }
-                            '}' => {
-                                depth -= 1;
-                                if depth == 0 {
-                                    break;
-                                }
-                                inner.push(ic);
-                            }
-                            other => inner.push(other),
-                        }
-                    }
-                    // Re-parse inner as a full expression.
-                    let inner_expr = parse_expr(self.file, &inner).map_err(|e| {
-                        ParseError::at(span, format!("in string interpolation: {e}"))
-                    })?;
-                    parts.push(StrPart::Expr(inner_expr));
-                    continue;
+            if c == '$' && matches!(chars.peek(), Some(&'{')) {
+                let _ = chars.next(); // consume '{'
+                                      // Flush literal accumulator.
+                if !current.is_empty() {
+                    parts.push(StrPart::Lit(std::mem::take(&mut current)));
                 }
+                // Collect everything up to the matching '}'.
+                let mut depth = 1usize;
+                let mut inner = String::new();
+                for ic in chars.by_ref() {
+                    match ic {
+                        '{' => {
+                            depth += 1;
+                            inner.push(ic);
+                        }
+                        '}' => {
+                            depth -= 1;
+                            if depth == 0 {
+                                break;
+                            }
+                            inner.push(ic);
+                        }
+                        other => inner.push(other),
+                    }
+                }
+                // Re-parse inner as a full expression.
+                let inner_expr = parse_expr(self.file, &inner)
+                    .map_err(|e| ParseError::at(span, format!("in string interpolation: {e}")))?;
+                parts.push(StrPart::Expr(inner_expr));
+                continue;
             }
             current.push(c);
         }

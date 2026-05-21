@@ -287,12 +287,12 @@ mod tests {
         let val = Value::Str("hello, world".into(), prov.clone());
 
         // First read: missing key returns empty string.
-        let r0 = mem_get_file(&[key.clone()]).unwrap();
+        let r0 = mem_get_file(std::slice::from_ref(&key)).unwrap();
         assert_eq!(r0.as_str(), Some(""));
 
         // Write then read.
         let _ = mem_set_file(&[key.clone(), val.clone()]).unwrap();
-        let r1 = mem_get_file(&[key.clone()]).unwrap();
+        let r1 = mem_get_file(std::slice::from_ref(&key)).unwrap();
         assert_eq!(r1.as_str(), Some("hello, world"));
 
         std::env::remove_var("AETHER_MEM_PATH");

@@ -47,6 +47,11 @@ tokio = { version = "1", features = ["full"] }
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
+# `from_str` / `from_iter` are deliberate inherent constructors on AST types
+# (TyCon::from_str, EffectRow::from_iter, …) — not trait impls. This lint is
+# in clippy's default `style` group, so `-A clippy::pedantic` alone won't
+# silence it; allow it explicitly so CI's `-D warnings` stays green.
+should_implement_trait = "allow"
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
 missing_errors_doc = "allow"

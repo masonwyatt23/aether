@@ -270,13 +270,15 @@ mod tests {
 
     #[test]
     fn integers_floats_bools() {
+        // `2.5` is deliberate test data — chosen so it doesn't approximate a
+        // math constant (which would trip clippy::approx_constant).
         assert_eq!(
-            ts("0 1 -2 3.14 true false"),
+            ts("0 1 -2 2.5 true false"),
             vec![
                 Tok::Int(0),
                 Tok::Int(1),
                 Tok::Int(-2),
-                Tok::Float(3.14),
+                Tok::Float(2.5),
                 Tok::Bool(true),
                 Tok::Bool(false),
             ]

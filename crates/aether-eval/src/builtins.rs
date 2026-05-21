@@ -145,7 +145,7 @@ pub fn dispatch(
             ))
         }
         "print" | "println" => {
-            let s = args.get(0).map(Value::display).unwrap_or_default();
+            let s = args.first().map(Value::display).unwrap_or_default();
             if !rt.capture_only {
                 if name == "println" || !s.ends_with('\n') {
                     println!("{s}");
@@ -164,7 +164,7 @@ pub fn dispatch(
             Value::Unit(prov)
         }
         "str" => {
-            let s = args.get(0).map(Value::display).unwrap_or_default();
+            let s = args.first().map(Value::display).unwrap_or_default();
             Value::Str(
                 s,
                 ProvChain::extend(
@@ -195,7 +195,7 @@ pub fn dispatch(
             )
         }
         "len" => {
-            let n = match args.get(0) {
+            let n = match args.first() {
                 Some(Value::Str(s, _)) => s.chars().count() as i64,
                 Some(Value::List(items, _)) => items.len() as i64,
                 _ => return Err(EvalError::TypeError("len(): expected Str or List".into())),
@@ -3006,7 +3006,7 @@ fn format_iso_from_ms(ms: i64) -> String {
 const BASE64_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 fn base64_encode_impl(input: &[u8]) -> String {
-    let mut out = String::with_capacity((input.len() + 2) / 3 * 4);
+    let mut out = String::with_capacity(input.len().div_ceil(3) * 4);
     for chunk in input.chunks(3) {
         let b0 = chunk[0] as u32;
         let b1 = if chunk.len() > 1 { chunk[1] as u32 } else { 0 };
@@ -3360,7 +3360,7 @@ fn yaml_get_raw(yaml: &str, key: &str) -> Option<String> {
             let rest = if rest.starts_with('"') {
                 rest
             } else {
-                rest.splitn(2, " #").next().unwrap_or(rest).trim()
+                rest.split(" #").next().unwrap_or(rest).trim()
             };
             // Unquote if wrapped in double quotes
             let val = if rest.starts_with('"') && rest.ends_with('"') && rest.len() >= 2 {
@@ -4535,8 +4535,8 @@ mod builtin_tests {
 
     #[test]
     fn random_bool_returns_bool() {
-        let b = super::random_bool_impl().unwrap();
-        assert!(b || !b); // tautology — just confirm no panic
+        // `.unwrap()` already confirms the call neither panicked nor errored.
+        let _b = super::random_bool_impl().unwrap();
     }
 
     #[test]
@@ -5051,9 +5051,14 @@ mod new_builtin_tests {
         let path_str = path.to_string_lossy().to_string();
         let p = str_val(&rt, &path_str);
         let _ = std::fs::remove_file(&path);
-        let before = dispatch(&mut rt, "fs_exists_native", &[p.clone()], Span::DUMMY)
-            .unwrap()
-            .unwrap();
+        let before = dispatch(
+            &mut rt,
+            "fs_exists_native",
+            std::slice::from_ref(&p),
+            Span::DUMMY,
+        )
+        .unwrap()
+        .unwrap();
         assert_eq!(before.as_bool(), Some(false));
         std::fs::write(&path, "x").unwrap();
         let after = dispatch(&mut rt, "fs_exists_native", &[p], Span::DUMMY)
@@ -5119,32 +5124,52 @@ mod new_builtin_tests {
         let k = str_val(&rt, &key);
         let v = str_val(&rt, "val1");
 
-        let before = dispatch(&mut rt, "cache_has_native", &[k.clone()], Span::DUMMY)
-            .unwrap()
-            .unwrap();
+        let before = dispatch(
+            &mut rt,
+            "cache_has_native",
+            std::slice::from_ref(&k),
+            Span::DUMMY,
+        )
+        .unwrap()
+        .unwrap();
         assert_eq!(before.as_bool(), Some(false));
 
         dispatch(&mut rt, "cache_set_native", &[k.clone(), v], Span::DUMMY)
             .unwrap()
             .unwrap();
 
-        let after_has = dispatch(&mut rt, "cache_has_native", &[k.clone()], Span::DUMMY)
-            .unwrap()
-            .unwrap();
+        let after_has = dispatch(
+            &mut rt,
+            "cache_has_native",
+            std::slice::from_ref(&k),
+            Span::DUMMY,
+        )
+        .unwrap()
+        .unwrap();
         assert_eq!(after_has.as_bool(), Some(true));
 
-        let got = dispatch(&mut rt, "cache_get_native", &[k.clone()], Span::DUMMY)
-            .unwrap()
-            .unwrap();
+        let got = dispatch(
+            &mut rt,
+            "cache_get_native",
+            std::slice::from_ref(&k),
+            Span::DUMMY,
+        )
+        .unwrap()
+        .unwrap();
         assert_eq!(got.as_str(), Some("val1"));
 
         dispatch(&mut rt, "cache_clear_native", &[], Span::DUMMY)
             .unwrap()
             .unwrap();
 
-        let after_clear = dispatch(&mut rt, "cache_has_native", &[k.clone()], Span::DUMMY)
-            .unwrap()
-            .unwrap();
+        let after_clear = dispatch(
+            &mut rt,
+            "cache_has_native",
+            std::slice::from_ref(&k),
+            Span::DUMMY,
+        )
+        .unwrap()
+        .unwrap();
         assert_eq!(after_clear.as_bool(), Some(false));
 
         let empty = dispatch(&mut rt, "cache_get_native", &[k], Span::DUMMY)
