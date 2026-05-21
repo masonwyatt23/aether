@@ -392,7 +392,7 @@ impl Runtime {
 
         loop {
             let mut local = env.child();
-            for (p, v) in current_fn.params.iter().zip(current_args.into_iter()) {
+            for (p, v) in current_fn.params.iter().zip(current_args) {
                 local.bind(p.name.clone(), v);
             }
 
@@ -1056,7 +1056,7 @@ impl Runtime {
             )));
         }
         let mut local = captured.child();
-        for (p, v) in params.iter().zip(args.into_iter()) {
+        for (p, v) in params.iter().zip(args) {
             local.bind(p.name.clone(), v);
         }
         let result = self.eval(&body, &mut local)?;
