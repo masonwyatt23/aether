@@ -9,6 +9,7 @@ fn ty_con(c: TyCon) -> Type {
 
 fn sig(params: Vec<(&str, Type)>, ret: Type, effects: Vec<Effect>) -> FnSig {
     FnSig {
+        generics: vec![],
         params: params
             .into_iter()
             .map(|(n, t)| (n.to_string(), t))

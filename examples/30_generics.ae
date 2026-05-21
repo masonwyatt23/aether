@@ -1,0 +1,40 @@
+## Parametric generics — type parameters declared with `<...>` and inferred
+## at each call site. Aether is type-erased at runtime, so generics cost
+## nothing to execute; they are purely a compile-time guarantee.
+
+## Identity: works for a value of any type `A`, returns the same type.
+fn id<A>(x: A) -> A effects {} { x }
+
+## Keep the left value, discard the right — the two may differ in type.
+## `B` here is a type parameter; it shadows the compact abbreviation for
+## `Bool`, so a single-letter generic name is always safe.
+fn first<A, B>(a: A, b: B) -> A effects {} { a }
+
+## Wrap a value in a one-element list: `A` flows into the `[A]` return type.
+fn singleton<A>(x: A) -> [A] effects {} { [x] }
+
+fn main() -> Unit effects {IO} {
+  let n = id(42)
+  let s = id("aether")
+  print(str(n))
+  print(s)
+
+  let kept = first(99, "discarded")
+  print(str(kept))
+
+  let xs = singleton(7)
+  print("singleton length: ${str(len(xs))}")
+}
+
+test "id preserves any value" {
+  assert_eq(id(5), 5)
+  assert_eq(id("x"), "x")
+}
+
+test "first returns the left argument" {
+  assert_eq(first(1, "two"), 1)
+}
+
+test "singleton has length one" {
+  assert_eq(len(singleton("z")), 1)
+}

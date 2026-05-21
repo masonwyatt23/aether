@@ -204,11 +204,15 @@ See [grammar.ebnf](grammar.ebnf) for the formal EBNF.
 - ✅ **Refinement quantifiers** — `forall_in(x, lo, hi, pred)` bounded universal.
 - ✅ **String interpolation**, **in-language test/bench/snapshot/lint**.
 - ✅ **Differential testing** locks the tree-walker and bytecode VM to identical behavior.
+- ✅ **First-class parametric generics** — `fn id<A>(x: A) -> A`; type
+  parameters are inferred at each call site, and a single-letter parameter
+  name shadows any builtin abbreviation (so `<B>` is a generic, not `Bool`).
 
 ## 10. Future work
 
 - Pluggable SMT backend (Z3 / CVC5) for refinements beyond linear arithmetic.
-- `evolve { … }` machinery — backward-compatible language-evolution proposals with formal witnesses (currently parse-only).
+- `evolve { … }` machinery — backward-compatible language-evolution proposals
+  with formal witnesses (currently parse-only).
 - Multi-agent runtime primitives.
-- First-class parametric generics (`fn map<A, B>(xs: [A], f: (A) -> B) -> [B]`).
+- Higher-kinded and bounded generics (constraints on type parameters).
 - Native machine-code codegen (Cranelift).

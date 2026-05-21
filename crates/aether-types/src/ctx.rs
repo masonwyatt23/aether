@@ -5,6 +5,10 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct FnSig {
+    /// Type-parameter names declared as `fn name<A, B>(...)`. Empty for a
+    /// non-generic function. At a call site these are instantiated to the
+    /// concrete argument types.
+    pub generics: Vec<String>,
     pub params: Vec<(String, Type)>,
     pub ret: Type,
     pub effects: EffectRow,

@@ -56,6 +56,7 @@ pub fn check_module(m: &Module) -> (TypeCtx, Vec<Diagnostic>) {
         match d {
             Decl::Fn(f) => {
                 let sig = FnSig {
+                    generics: f.generics.clone(),
                     params: f
                         .params
                         .iter()
@@ -71,6 +72,7 @@ pub fn check_module(m: &Module) -> (TypeCtx, Vec<Diagnostic>) {
             }
             Decl::Tool(t) => {
                 let sig = FnSig {
+                    generics: vec![],
                     params: t
                         .params
                         .iter()
@@ -108,6 +110,7 @@ pub fn check_module(m: &Module) -> (TypeCtx, Vec<Diagnostic>) {
                             span: adt_span,
                         };
                         let sig = FnSig {
+                            generics: vec![],
                             params: fields
                                 .iter()
                                 .enumerate()
@@ -763,6 +766,7 @@ fn check_call(
                 effects,
                 ..
             } => FnSig {
+                generics: vec![],
                 params: params
                     .iter()
                     .enumerate()
@@ -777,6 +781,7 @@ fn check_call(
             Type::Var(_, _) => {
                 // Unknown / inferred function — accept positional args without checking.
                 FnSig {
+                    generics: vec![],
                     params: args
                         .iter()
                         .enumerate()
@@ -819,20 +824,47 @@ fn check_call(
             ),
         ));
     }
-    for (i, arg) in args.iter().enumerate() {
+    // Type-check every argument expression once, recording its type.
+    let arg_types: Vec<Type> = args
+        .iter()
+        .map(|arg| check_expr(ctx, scope, &arg.value, observed, diags))
+        .collect();
+
+    // Instantiate the callee's type parameters. `subst` maps each declared
+    // generic (e.g. `A`) to a concrete type inferred from the arguments;
+    // unbound generics default to a wildcard `Type::Var` so a generic used
+    // only in return position stays permissive.
+    let mut subst: std::collections::HashMap<String, Type> = std::collections::HashMap::new();
+    for g in &sig.generics {
+        subst.insert(g.clone(), Type::Var(g.clone(), span));
+    }
+    if !sig.generics.is_empty() {
+        for (i, at) in arg_types.iter().enumerate() {
+            if i >= sig.params.len() {
+                break;
+            }
+            collect_subst(&sig.params[i].1, at, &sig.generics, &mut subst);
+        }
+    }
+
+    // Check each argument against the (instantiated) parameter type.
+    for (i, at) in arg_types.iter().enumerate() {
         if i >= sig.params.len() {
             break;
         }
-        let at = check_expr(ctx, scope, &arg.value, observed, diags);
-        let (_pname, pty) = &sig.params[i];
-        if !type_compatible(&at, pty) {
+        let pty = if sig.generics.is_empty() {
+            sig.params[i].1.clone()
+        } else {
+            apply_subst(&sig.params[i].1, &subst)
+        };
+        if !type_compatible(at, &pty) {
             diags.push(Diagnostic::err(
-                arg.value.span(),
+                args[i].value.span(),
                 format!(
                     "argument {}: expected {}, got {}",
                     i + 1,
-                    show_type(pty),
-                    show_type(&at)
+                    show_type(&pty),
+                    show_type(at)
                 ),
             ));
         }
@@ -841,7 +873,135 @@ fn check_call(
     for eff in &sig.effects.effects {
         observed.insert(eff.clone());
     }
-    sig.ret.clone()
+    if sig.generics.is_empty() {
+        sig.ret.clone()
+    } else {
+        apply_subst(&sig.ret, &subst)
+    }
+}
+
+/// If `ty` is a reference to one of `generics`, return its name.
+///
+/// A type parameter declared `fn name<A>(...)` parses either as a nullary
+/// `Type::Generic { name: "A", args: [] }` (uppercase / multi-char names) or
+/// as a `Type::Var` (single lowercase letter) — accept both.
+fn as_generic_param<'a>(ty: &'a Type, generics: &[String]) -> Option<&'a str> {
+    match ty {
+        Type::Generic { name, args, .. }
+            if args.is_empty() && generics.iter().any(|g| g == name) =>
+        {
+            Some(name)
+        }
+        Type::Var(name, _) if generics.iter().any(|g| g == name) => Some(name),
+        _ => None,
+    }
+}
+
+/// Match a formal parameter type against an actual argument type, recording
+/// concrete bindings for any generic type parameter encountered. A `Var`
+/// (wildcard) actual is ignored so it can't pin a generic to nothing.
+fn collect_subst(
+    formal: &Type,
+    actual: &Type,
+    generics: &[String],
+    subst: &mut std::collections::HashMap<String, Type>,
+) {
+    if let Some(g) = as_generic_param(formal, generics) {
+        let a = actual.unrefined();
+        if !matches!(a, Type::Var(_, _)) {
+            subst.insert(g.to_string(), a.clone());
+        }
+        return;
+    }
+    match (formal.unrefined(), actual.unrefined()) {
+        (Type::List(f, _), Type::List(a, _)) => collect_subst(f, a, generics, subst),
+        (Type::Option(f, _), Type::Option(a, _)) => collect_subst(f, a, generics, subst),
+        (Type::Tuple(fs, _), Type::Tuple(as_, _)) => {
+            for (f, a) in fs.iter().zip(as_) {
+                collect_subst(f, a, generics, subst);
+            }
+        }
+        (
+            Type::Fun {
+                params: fp,
+                ret: fr,
+                ..
+            },
+            Type::Fun {
+                params: ap,
+                ret: ar,
+                ..
+            },
+        ) => {
+            for (f, a) in fp.iter().zip(ap) {
+                collect_subst(f, a, generics, subst);
+            }
+            collect_subst(fr, ar, generics, subst);
+        }
+        (
+            Type::Generic {
+                name: fname,
+                args: fa,
+                ..
+            },
+            Type::Generic {
+                name: aname,
+                args: aa,
+                ..
+            },
+        ) if fname == aname && fa.len() == aa.len() => {
+            for (f, a) in fa.iter().zip(aa) {
+                collect_subst(f, a, generics, subst);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Substitute generic type parameters in `ty` according to `subst`.
+fn apply_subst(ty: &Type, subst: &std::collections::HashMap<String, Type>) -> Type {
+    match ty {
+        Type::Generic { name, args, span } => {
+            if args.is_empty() {
+                if let Some(t) = subst.get(name) {
+                    return t.clone();
+                }
+            }
+            Type::Generic {
+                name: name.clone(),
+                args: args.iter().map(|a| apply_subst(a, subst)).collect(),
+                span: *span,
+            }
+        }
+        Type::Var(name, span) => subst
+            .get(name)
+            .cloned()
+            .unwrap_or_else(|| Type::Var(name.clone(), *span)),
+        Type::List(inner, span) => Type::List(Box::new(apply_subst(inner, subst)), *span),
+        Type::Option(inner, span) => Type::Option(Box::new(apply_subst(inner, subst)), *span),
+        Type::Tuple(elts, span) => {
+            Type::Tuple(elts.iter().map(|e| apply_subst(e, subst)).collect(), *span)
+        }
+        Type::Record(fields, span) => Type::Record(
+            fields
+                .iter()
+                .map(|(n, t)| (n.clone(), apply_subst(t, subst)))
+                .collect(),
+            *span,
+        ),
+        Type::Fun {
+            params,
+            ret,
+            effects,
+            span,
+        } => Type::Fun {
+            params: params.iter().map(|p| apply_subst(p, subst)).collect(),
+            ret: Box::new(apply_subst(ret, subst)),
+            effects: effects.clone(),
+            span: *span,
+        },
+        other => other.clone(),
+    }
 }
 
 fn check_bin(op: BinOp, l: &Type, r: &Type, span: Span, diags: &mut Vec<Diagnostic>) -> Type {
@@ -1172,6 +1332,82 @@ mod tests {
         assert!(
             has_counter,
             "expected 'counterexample' in refuted postcondition message, got: {:?}",
+            diags
+        );
+    }
+
+    // ── parametric generics ───────────────────────────────────────────────────
+
+    #[test]
+    fn generic_identity_infers_concrete_return() {
+        // `id` is generic; `id(42)` must be inferred as Int so `main` (-> Int)
+        // type-checks cleanly. Before generic instantiation this was a false
+        // positive (`A` treated as a distinct concrete type).
+        let diags = check(
+            "fn id<A>(x: A) -> A effects {} { x }\n\
+             fn main() -> Int effects {} { id(42) }",
+        );
+        assert!(
+            diags.iter().all(|d| d.severity != Severity::Error),
+            "generic identity should type-check, got {:?}",
+            diags
+        );
+    }
+
+    #[test]
+    fn generic_return_mismatch_detected() {
+        // `id(42)` instantiates to Int; using it where Str is expected errors.
+        let diags = check(
+            "fn id<A>(x: A) -> A effects {} { x }\n\
+             fn main() -> Str effects {} { id(42) }",
+        );
+        assert!(
+            diags.iter().any(|d| d.severity == Severity::Error),
+            "expected a type error for id(42) used as Str, got {:?}",
+            diags
+        );
+    }
+
+    #[test]
+    fn generic_param_shadows_builtin_abbreviation() {
+        // `B` is the compact abbreviation for Bool — as a type parameter it
+        // must shadow that and behave as a generic.
+        let diags = check(
+            "fn pick<B>(x: B, y: B) -> B effects {} { x }\n\
+             fn main() -> Str effects {} { pick(\"a\", \"b\") }",
+        );
+        assert!(
+            diags.iter().all(|d| d.severity != Severity::Error),
+            "generic param `B` should shadow the Bool abbreviation, got {:?}",
+            diags
+        );
+    }
+
+    #[test]
+    fn generic_instantiation_through_list() {
+        // `wrap` returns `[A]`; `wrap(7)` must instantiate to `[Int]`.
+        let diags = check(
+            "fn wrap<A>(x: A) -> [A] effects {} { [x] }\n\
+             fn main() -> [Int] effects {} { wrap(7) }",
+        );
+        assert!(
+            diags.iter().all(|d| d.severity != Severity::Error),
+            "generic instantiation through a list type should work, got {:?}",
+            diags
+        );
+    }
+
+    #[test]
+    fn generic_arg_consistency_enforced() {
+        // Both params are `A`; passing an Int and a Str must error because the
+        // second argument can't match `A` once it's pinned to Int.
+        let diags = check(
+            "fn same<A>(x: A, y: A) -> A effects {} { x }\n\
+             fn main() -> Int effects {} { same(1, \"two\") }",
+        );
+        assert!(
+            diags.iter().any(|d| d.severity == Severity::Error),
+            "expected a consistency error for same(Int, Str), got {:?}",
             diags
         );
     }

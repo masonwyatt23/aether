@@ -52,6 +52,10 @@ struct Parser<'a> {
     pos: usize,
     /// Doc lines accumulated since the last consumed declaration.
     doc_buf: Vec<String>,
+    /// Type-parameter names in scope while parsing a generic declaration's
+    /// signature. A name listed here is a generic parameter and shadows any
+    /// builtin type abbreviation (e.g. `B` is the generic, not `Bool`).
+    active_generics: Vec<String>,
 }
 
 impl<'a> Parser<'a> {
@@ -62,6 +66,7 @@ impl<'a> Parser<'a> {
             toks,
             pos: 0,
             doc_buf: Vec::new(),
+            active_generics: Vec::new(),
         }
     }
 
@@ -225,6 +230,8 @@ impl<'a> Parser<'a> {
         self.expect(&Tok::Fn, "'fn' keyword")?;
         let (name, _ns) = self.expect_ident("function name")?;
         let generics = self.parse_generics_opt()?;
+        // Type parameters shadow builtin abbreviations inside this signature.
+        self.active_generics = generics.clone();
         let params = self.parse_params()?;
         let ret = if self.eat(&Tok::Arrow) {
             self.parse_type()?
@@ -253,6 +260,8 @@ impl<'a> Parser<'a> {
         }
         let body = self.parse_block_expr()?;
         let end = self.last_span();
+        // Type parameters go out of scope at the end of the declaration.
+        self.active_generics.clear();
         Ok(FnDecl {
             name,
             generics,
@@ -271,6 +280,7 @@ impl<'a> Parser<'a> {
         let start = self.peek_span();
         let (name, _) = self.expect_ident("function name")?;
         let generics = self.parse_generics_opt()?;
+        self.active_generics = generics.clone();
         let params = self.parse_params()?;
         self.expect(&Tok::Colon, "':' before return type in compact fn")?;
         let ret = self.parse_type()?;
@@ -291,6 +301,7 @@ impl<'a> Parser<'a> {
         self.expect(&Tok::Eq, "'=' before compact fn body")?;
         let body = self.parse_expr_top()?;
         let end = self.last_span();
+        self.active_generics.clear();
         Ok(FnDecl {
             name,
             generics,
@@ -366,6 +377,7 @@ impl<'a> Parser<'a> {
         self.expect(&Tok::Type, "'type'")?;
         let (name, _) = self.expect_ident("alias name")?;
         let generics = self.parse_generics_opt()?;
+        self.active_generics = generics.clone();
         self.expect(&Tok::Eq, "'=' in type alias")?;
         // Detect ADT syntax: `UpperName(...)` or `UpperName |` or bare `UpperName` at end.
         // Heuristic: peek at first token — if it's an uppercase ident, look one more
@@ -376,6 +388,7 @@ impl<'a> Parser<'a> {
             self.parse_type()?
         };
         let end = self.last_span();
+        self.active_generics.clear();
         Ok(TypeAliasDecl {
             name,
             generics,
@@ -650,7 +663,15 @@ impl<'a> Parser<'a> {
             Some(Tok::Ident(name)) => {
                 self.bump();
                 let sp = start;
-                if let Some(con) = TyCon::from_str(&name) {
+                if self.active_generics.contains(&name) {
+                    // A type parameter in scope — shadows any builtin
+                    // abbreviation. Represented as a nullary generic.
+                    Ok(Type::Generic {
+                        name,
+                        args: vec![],
+                        span: sp,
+                    })
+                } else if let Some(con) = TyCon::from_str(&name) {
                     // Generic application: `Map<K, V>`?
                     if self.eat(&Tok::Lt) {
                         let mut args = Vec::new();
