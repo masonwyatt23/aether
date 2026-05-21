@@ -1,0 +1,5 @@
+fn clock_tick(h: Int) -> Int
+  where result >= 1 && result < 13
+  effects {} {
+  ((h % 12) + 12) % 12 + 1
+}

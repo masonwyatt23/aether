@@ -1,0 +1,8 @@
+fn weighted_pick(a: Int{x: x >= 0 && x <= 10}, weight: Int{w: w >= 0 && w <= 10}) -> Int
+  where result >= 0 && result <= 20
+  effects {} {
+  let base = a
+  let w = weight
+  let total = base + w
+  total
+}

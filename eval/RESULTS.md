@@ -1,64 +1,67 @@
 # Benchmark Results
 
-A first run of the Aether verified-code benchmark (see [README.md](README.md))
-against current frontier models. Each model was given only `prompt.md` +
-`signature.ae` for each task and asked to return a complete Aether function;
-the result was scored by `aether check` — a task counts as solved only when
-the compiler **proved** its refinement contract.
+Runs of the Aether verified-code benchmark (see [README.md](README.md))
+against current frontier models. Each model is given only `prompt.md` +
+`signature.ae` for each task and must return a complete Aether function;
+the result is scored by `aether check` — a task counts as solved only when
+the compiler **proves** its refinement contract (zero errors, zero
+warnings), not merely when it type-checks.
 
 Run date: 2026-05-21. Harness: `eval/harness/run.py`.
 
-> **Note — the benchmark has since been expanded from 12 to 57 tasks**
-> across four difficulty tiers (easy / medium / medium-hard / hard). The
-> scores below are the **original 12-task (easy-tier) run**. The 45 harder
-> tasks have not yet been run against models — that re-run is the next step,
-> and it is where a score *spread* is expected to appear.
+## 57-task run (current)
 
-## Scores — original 12-task run
+| Model | Provider | Score | easy | medium | medium-hard | hard |
+|---|---|---:|---:|---:|---:|---:|
+| `grok-4.3` | xAI | **50 / 57 — 88%** | 12/12 | 4/4 | 14/16 | 20/25 |
+| `gpt-5.2` | OpenAI | **46 / 57 — 81%** | 11/12 | 4/4 | 11/16 | 20/25 |
 
-| Model | Provider | Verified | Score |
-|---|---|---:|---:|
-| `gpt-5.2` | OpenAI | 12 / 12 | **100%** |
-| `grok-4.3` | xAI | 12 / 12 | **100%** |
-| `claude-opus-4-7` | Anthropic | 12 / 12 | **100%** |
+**The expanded benchmark discriminates.** On the original 12 easy tasks
+both models scored a flat 100%; across 57 tasks spanning four difficulty
+tiers a real gap appears:
 
-Every model produced provably-correct solutions for all 12 easy-tier tasks.
-The generated solutions are committed under `eval/candidates/<model>/` so the
-result is fully inspectable and reproducible.
+- **Grok-4.3 (88%) outscores GPT-5.2 (81%)** by 4 tasks.
+- The gap is concentrated in the **medium-hard** tier — ADTs with
+  exhaustive pattern matching and structured multi-statement code — where
+  Grok-4.3 solved 14/16 to GPT-5.2's 11/16.
+- The **hard** tier — multi-branch case analysis, modular arithmetic, and
+  "trap" tasks where the naive implementation violates the contract — cost
+  *both* models 5 tasks each (20/25). Traps bite frontier models equally.
+- GPT-5.2 also missed one **easy** task, which a 100%-on-easy benchmark
+  would never have surfaced.
 
-## What this shows — and what it does not
+Generated solutions are committed under `eval/candidates/<model>/` so every
+result is inspectable and reproducible. Regenerate with
+`eval/harness/generate.py <dir> <provider> <model>` and re-score with
+`run.py`.
 
-**It shows** that current frontier models can pick up an unfamiliar small
-language's refinement-contract syntax from a single example signature and
-write code that a compiler *proves* correct — not merely code that passes
-tests. That is a real capability and the methodology (scoring provable
-correctness) works end to end.
+## What this shows
 
-**It does not** discriminate between these models — they all scored 100%.
-That is an honest limitation of this first benchmark, not a finding about
-the models: the 12 tasks are deliberately small integer functions
-(`min`, `clamp`, `abs`, …) whose contracts sit well inside what any capable
-model can satisfy. A benchmark that *separates* frontier models needs
-harder tasks — deeper case analysis, tighter contracts, multi-function
-programs, contracts that require the non-linear SMT path.
+The methodology works: scoring **provable correctness** rather than
+test-pass rate produces a benchmark that — once the tasks are hard enough —
+separates frontier models, and locates *where* they differ. Both models are
+excellent at simple refinement-typed code; they diverge on structured code
+and lose ground on adversarial "trap" tasks. That is a more informative
+signal than "the hidden tests passed".
 
 ## Methodology notes
 
-- **`gpt-5.2` and `grok-4.3`** are clean API evaluations: the model saw
+- **`grok-4.3` and `gpt-5.2`** are clean API evaluations: each model saw
   only the task prompt and the stubbed signature, never the reference
-  solution. Reproduce with `eval/harness/generate.py`.
-- **`claude-opus-4-7`** was produced by the Claude agent that built this
-  repository, which had full repository context (including the reference
-  solutions). It is therefore **not a clean blind evaluation** — treat that
-  column as a demonstration that the tasks are solvable in idiomatic
-  Aether, not as a head-to-head data point. A clean Claude run needs an
-  `ANTHROPIC_API_KEY` and `generate.py` with `provider=anthropic`.
+  solution.
+- An earlier 12-task run also scored `claude-opus-4-7` at 12/12, but those
+  solutions were written by the Claude agent that built this repository
+  (full repo context) — **not** a clean blind evaluation, so it is omitted
+  here. A clean Claude run needs an `ANTHROPIC_API_KEY`.
 - `gpt-5.5` was requested but is not offered by the OpenAI API; `gpt-5.2`
   (released 2025-12-11) was the newest model available at run time.
+- A few easy-tier tasks have loose contracts (a constant satisfies them) —
+  see [README.md](README.md). The medium and hard tiers are designed so
+  only a genuinely correct solution verifies.
 
 ## Next step
 
-Grow the task set toward contracts that genuinely stress a model: tasks
-where the obvious implementation violates the contract, where the contract
-needs the SMT escalation path, and where the solution spans several
-mutually-constrained functions. Only then will the score spread.
+The hard tier (20/25 for both models) is the discriminating frontier.
+Growing it — more trap tasks, contracts requiring the SMT path, multi-
+function programs — would sharpen the benchmark further. The score is no
+longer pinned at 100%, so it now has room to *measure* progress.

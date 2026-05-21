@@ -1,0 +1,11 @@
+fn safe_sub_clamp(a: Int, b: Int{v: v >= 0}, lo: Int, hi: Int{h: h >= lo}) -> Int
+  where result >= lo && result <= hi
+  effects {} {
+  if a - b < lo {
+    lo
+  } else if a - b > hi {
+    hi
+  } else {
+    a - b
+  }
+}

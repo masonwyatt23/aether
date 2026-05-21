@@ -1,0 +1,9 @@
+type Tree = Leaf(Int) | Branch(Int, Int)
+
+fn tree_sum(t: Tree) -> Int
+  effects {} {
+  match t with {
+    Leaf(v) => v,
+    Branch(l, r) => l + r
+  }
+}

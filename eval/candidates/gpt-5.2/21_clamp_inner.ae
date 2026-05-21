@@ -1,0 +1,13 @@
+fn clamp_inner(x: Int, lo: Int, hi: Int{h: h >= lo + 2}) -> Int
+  where result >= lo + 1 && result <= hi - 1
+  effects {} {
+  let lower = lo + 1;
+  let upper = hi - 1;
+  if x < lower {
+    lower
+  } else if x > upper {
+    upper
+  } else {
+    x
+  }
+}

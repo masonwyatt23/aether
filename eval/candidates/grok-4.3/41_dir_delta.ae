@@ -1,0 +1,11 @@
+type Dir = North(Int) | South(Int) | East(Int) | West(Int)
+
+fn vertical(d: Dir) -> Int
+  effects {} {
+  match d with {
+    North(n) => n,
+    South(n) => 0 - n,
+    East(n) => 0,
+    West(n) => 0
+  }
+}

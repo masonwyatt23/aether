@@ -1,0 +1,5 @@
+fn accumulate_step(start: Int, delta: Int{d: d >= 0 && d <= 10}) -> Int
+  where result >= start && result <= start + 10
+  effects {} {
+  let stepped = start + delta in stepped
+}

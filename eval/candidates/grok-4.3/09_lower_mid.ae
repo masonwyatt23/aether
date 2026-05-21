@@ -1,11 +1,5 @@
 fn lower_mid(a: Int, b: Int{x: x >= a}) -> Int
   where result >= a && result <= b
   effects {} {
-  if a >= b {
-    a
-  } else if a + 1 <= b {
-    a + 1
-  } else {
-    a
-  }
+  if a + 1 <= b { a + 1 } else { a }
 }

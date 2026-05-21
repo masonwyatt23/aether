@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
-"""Aether verified-code benchmark — solution generator (optional LLM mode).
+"""Aether verified-code benchmark -- solution generator (optional LLM mode).
 
-Sends each task's `prompt.md` + `signature.ae` to an Anthropic model and
-writes the model's solution into a candidate directory, ready for
-`run.py` to score.
+Sends each task's `prompt.md` + `signature.ae` to a model and writes the
+model's solution into a candidate directory, ready for `run.py` to score.
 
 Usage:
-    ANTHROPIC_API_KEY=sk-... python3 eval/harness/generate.py <out-dir> [model]
+    python3 eval/harness/generate.py <out-dir> <provider> [model]
 
-Without an API key it prints setup instructions and exits cleanly — the
-benchmark itself (`run.py`) needs no key, only this optional generator does.
+Providers (each reads the matching API key from the environment):
+    openai      OPENAI_API_KEY      e.g. model gpt-5.2
+    xai         XAI_API_KEY         e.g. model grok-4.3
+    anthropic   ANTHROPIC_API_KEY   e.g. model claude-opus-4-7
 
-Uses only the Python standard library (`urllib`) — no `requests` dependency.
+With no key set the script prints setup instructions and exits cleanly --
+the benchmark itself (`run.py`) needs no key, only this generator does.
+
+Uses only the Python standard library (`urllib`) -- no third-party deps.
 """
 
 import json
 import os
+import ssl
 import sys
 import urllib.error
 import urllib.request
@@ -23,90 +28,132 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TASKS_DIR = REPO_ROOT / "eval" / "tasks"
-API_URL = "https://api.anthropic.com/v1/messages"
-DEFAULT_MODEL = "claude-opus-4-7"
+
+
+def _ssl_context():
+    """A verified SSL context, preferring the `certifi` CA bundle (works
+    around Python installs without a usable system trust store)."""
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+
+SSL_CTX = _ssl_context()
 
 SYSTEM = (
     "You are writing Aether, a statically typed language whose compiler "
     "PROVES refinement postconditions (the `where` clause) at compile time. "
     "Given a task and a function signature, return ONLY the complete Aether "
-    "function — the exact signature provided, with the stub body replaced by "
+    "function -- the exact signature provided, with the stub body replaced by "
     "a correct implementation. No markdown fences, no prose, no commentary."
 )
 
+# provider -> (env var, base url, default model)
+PROVIDERS = {
+    "openai": ("OPENAI_API_KEY", "https://api.openai.com/v1", "gpt-5.2"),
+    "xai": ("XAI_API_KEY", "https://api.x.ai/v1", "grok-4.3"),
+    "anthropic": ("ANTHROPIC_API_KEY", "https://api.anthropic.com/v1", "claude-opus-4-7"),
+}
 
-def call_anthropic(api_key: str, model: str, prompt: str) -> str:
-    """POST a single-turn completion request; return the text response."""
-    body = json.dumps(
-        {
-            "model": model,
-            "max_tokens": 1024,
-            "system": SYSTEM,
-            "messages": [{"role": "user", "content": prompt}],
-        }
-    ).encode()
+
+def call_openai_compatible(base, key, model, prompt):
+    """OpenAI / xAI chat-completions request (identical wire format)."""
+    body = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": SYSTEM},
+            {"role": "user", "content": prompt},
+        ],
+    }
     req = urllib.request.Request(
-        API_URL,
-        data=body,
+        base + "/chat/completions",
+        data=json.dumps(body).encode(),
+        headers={"content-type": "application/json", "authorization": "Bearer " + key},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=240, context=SSL_CTX) as resp:
+        payload = json.loads(resp.read())
+    return payload["choices"][0]["message"]["content"] or ""
+
+
+def call_anthropic(base, key, model, prompt):
+    """Anthropic messages request."""
+    body = {
+        "model": model,
+        "max_tokens": 2048,
+        "system": SYSTEM,
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    req = urllib.request.Request(
+        base + "/messages",
+        data=json.dumps(body).encode(),
         headers={
             "content-type": "application/json",
-            "x-api-key": api_key,
+            "x-api-key": key,
             "anthropic-version": "2023-06-01",
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    with urllib.request.urlopen(req, timeout=240, context=SSL_CTX) as resp:
         payload = json.loads(resp.read())
-    # The response content is a list of blocks; concatenate the text ones.
     return "".join(b.get("text", "") for b in payload.get("content", []))
 
 
-def strip_fences(text: str) -> str:
-    """Drop any ```...``` markdown fence the model may have added."""
+def strip_fences(text):
+    """Drop any triple-backtick markdown fence the model may have added."""
     lines = [ln for ln in text.splitlines() if not ln.strip().startswith("```")]
     return "\n".join(lines).strip() + "\n"
 
 
-def main() -> int:
-    if len(sys.argv) < 2:
+def main():
+    if len(sys.argv) < 3 or sys.argv[2] not in PROVIDERS:
         print(__doc__)
         return 2
     out_dir = Path(sys.argv[1])
-    model = sys.argv[2] if len(sys.argv) > 2 else DEFAULT_MODEL
+    provider = sys.argv[2]
+    env_var, base, default_model = PROVIDERS[provider]
+    model = sys.argv[3] if len(sys.argv) > 3 else default_model
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("No ANTHROPIC_API_KEY set — the generator is optional.\n")
-        print("To generate model solutions and score them:")
-        print("  export ANTHROPIC_API_KEY=sk-...")
-        print(f"  python3 {sys.argv[0]} candidates/run1")
-        print("  python3 eval/harness/run.py candidates/run1\n")
-        print("The benchmark's reference baseline needs no key:")
-        print("  python3 eval/harness/run.py eval/baseline")
+    key = os.environ.get(env_var)
+    if not key:
+        print("No " + env_var + " set -- the generator is optional.\n")
+        print("  export " + env_var + "=...")
+        print("  python3 " + sys.argv[0] + " candidates/run1 " + provider + " " + model)
         return 0
 
     out_dir.mkdir(parents=True, exist_ok=True)
     tasks = sorted(p.name for p in TASKS_DIR.iterdir() if p.is_dir())
-    print(f"Generating {len(tasks)} solutions with {model} → {out_dir}\n")
+    print("Generating " + str(len(tasks)) + " solutions -- "
+          + provider + "/" + model + " -> " + str(out_dir) + "\n")
 
+    ok = 0
     for task in tasks:
         tdir = TASKS_DIR / task
-        prompt_md = (tdir / "prompt.md").read_text()
-        signature = (tdir / "signature.ae").read_text()
         prompt = (
-            f"{prompt_md}\n\n"
-            f"Signature to complete (return the whole function):\n\n{signature}"
+            (tdir / "prompt.md").read_text() + "\n\n"
+            + "Signature to complete (return the whole function):\n\n"
+            + (tdir / "signature.ae").read_text()
         )
         try:
-            answer = call_anthropic(api_key, model, prompt)
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
-            print(f"  ! {task}: request failed ({exc})", file=sys.stderr)
+            if provider == "anthropic":
+                answer = call_anthropic(base, key, model, prompt)
+            else:
+                answer = call_openai_compatible(base, key, model, prompt)
+        except (urllib.error.URLError, urllib.error.HTTPError, KeyError, TimeoutError) as exc:
+            detail = exc
+            if isinstance(exc, urllib.error.HTTPError):
+                detail = "HTTP " + str(exc.code) + ": " + exc.read().decode(errors="replace")[:200]
+            print("  ! " + task + ": request failed (" + str(detail) + ")", file=sys.stderr)
             continue
-        (out_dir / f"{task}.ae").write_text(strip_fences(answer))
-        print(f"  ✓ {task}")
+        (out_dir / (task + ".ae")).write_text(strip_fences(answer))
+        print("  ok  " + task)
+        ok += 1
 
-    print(f"\nDone. Score with:\n  python3 eval/harness/run.py {out_dir}")
-    return 0
+    print("\nGenerated " + str(ok) + "/" + str(len(tasks)) + ". Score with:")
+    print("  python3 eval/harness/run.py " + str(out_dir))
+    return 0 if ok > 0 else 1
 
 
 if __name__ == "__main__":

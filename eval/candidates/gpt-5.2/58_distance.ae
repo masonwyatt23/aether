@@ -1,0 +1,5 @@
+fn distance(a: Int, b: Int) -> Int
+  where result >= 0
+  effects {} {
+  if a >= b { a - b } else { b - a }
+}

@@ -1,0 +1,10 @@
+type Shape = Circle(Int) | Square(Int) | Triangle(Int, Int)
+
+fn perimeter(s: Shape) -> Int
+  effects {} {
+  match s with {
+    Circle(r) => 6 * r,
+    Square(side) => 4 * side,
+    Triangle(a, b) => a + b + a
+  }
+}

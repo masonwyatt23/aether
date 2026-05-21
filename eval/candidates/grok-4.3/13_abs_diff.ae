@@ -1,0 +1,5 @@
+fn abs_diff(a: Int, b: Int) -> Int
+  where result >= 0 && result >= a - b && result >= b - a
+  effects {} {
+  if a >= b { a - b } else { b - a }
+}

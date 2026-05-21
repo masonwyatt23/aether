@@ -1,0 +1,17 @@
+fn safe_average_floor(a: Int{x: x >= 0 && x <= 100}, b: Int{x: x >= 0 && x <= 100}) -> Int
+  where result >= 0 && result <= 100
+  effects {} {
+  if a <= b {
+    let lo = a;
+    let step = b - lo;
+    let half = step / 2;
+    let mid = lo + half;
+    if mid > 100 then 100 else if mid < 0 then 0 else mid
+  } else {
+    let lo = b;
+    let step = a - lo;
+    let half = step / 2;
+    let mid = lo + half;
+    if mid > 100 then 100 else if mid < 0 then 0 else mid
+  }
+}
