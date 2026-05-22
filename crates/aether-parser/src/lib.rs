@@ -260,6 +260,10 @@ impl<'a> Parser<'a> {
                 spec.ensures.push(p);
             }
         }
+        // `decreases <measure>` termination clause — verbose form
+        if self.eat(&Tok::Decreases) {
+            spec.decreases = Some(Box::new(self.parse_expr_top()?));
+        }
         // `effects {…}` — verbose form
         if self.eat(&Tok::Effects) {
             effects = self.parse_effect_set()?;
@@ -308,6 +312,9 @@ impl<'a> Parser<'a> {
                 spec.ensures.push(p);
             }
         }
+        if self.eat(&Tok::Decreases) {
+            spec.decreases = Some(Box::new(self.parse_expr_top()?));
+        }
         self.expect(&Tok::Eq, "'=' before compact fn body")?;
         let body = self.parse_expr_top()?;
         let end = self.last_span();
@@ -348,10 +355,14 @@ impl<'a> Parser<'a> {
                     self.bump();
                     *effects = effects.union(&self.parse_effect_set()?);
                 }
+                Some(Tok::Decreases) => {
+                    self.bump();
+                    spec.decreases = Some(Box::new(self.parse_expr_top()?));
+                }
                 other => {
                     return Err(ParseError::at(
                         self.peek_span(),
-                        format!("expected requires/ensures/effects in spec block, got {other:?}"),
+                        format!("expected requires/ensures/decreases/effects in spec block, got {other:?}"),
                     ));
                 }
             }

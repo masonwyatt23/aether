@@ -21,6 +21,10 @@ pub struct SpecBlock {
     pub ensures: Vec<Expr>,
     /// Effects declared in a `spec { effects {...} }` block (cumulative with header).
     pub effects: Option<EffectRow>,
+    /// Termination measure from a `decreases <expr>` clause. Checked against
+    /// every direct self-call; `None` means recursion is not termination-checked.
+    /// Boxed so an absent measure does not inflate every `SpecBlock`.
+    pub decreases: Option<Box<Expr>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

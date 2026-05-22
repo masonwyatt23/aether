@@ -72,6 +72,8 @@ pub enum Tok {
     Requires,
     #[token("ensures")]
     Ensures,
+    #[token("decreases")]
+    Decreases,
     #[token("spec")]
     Spec,
     #[token("tool")]

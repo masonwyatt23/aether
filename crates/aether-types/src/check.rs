@@ -163,6 +163,85 @@ impl Scope {
     }
 }
 
+/// Collect `xs[k]` accesses (literal index `k`) reachable in `e`, recursing
+/// into `forall_in` by unrolling its literal range. Used to instantiate
+/// list-element refinement hypotheses for each index actually used.
+fn collect_indexed(e: &Expr, out: &mut Vec<(String, i64)>) {
+    match e {
+        Expr::Index(base, idx, _) => {
+            if let (Expr::Var(b, _), Expr::Lit(Lit::Int(k), _)) = (base.as_ref(), idx.as_ref()) {
+                out.push((b.clone(), *k));
+            }
+            collect_indexed(base, out);
+            collect_indexed(idx, out);
+        }
+        Expr::Bin(_, l, r, _) => {
+            collect_indexed(l, out);
+            collect_indexed(r, out);
+        }
+        Expr::Un(_, x, _) => collect_indexed(x, out),
+        Expr::Call { callee, args, .. } => {
+            // `forall_in(x, lo, hi, pred)`: unroll the literal range so the
+            // `xs[k]` accesses inside `pred` become visible.
+            if let Expr::Var(name, _) = callee.as_ref() {
+                if name == "forall_in" && args.len() == 4 {
+                    if let (
+                        Expr::Var(qv, _),
+                        Expr::Lit(Lit::Int(lo), _),
+                        Expr::Lit(Lit::Int(hi), _),
+                    ) = (&args[0].value, &args[1].value, &args[2].value)
+                    {
+                        let mut k = *lo;
+                        while k <= *hi && k - *lo < 1024 {
+                            let inst = subst(&args[3].value, qv, &Expr::Lit(Lit::Int(k), e.span()));
+                            collect_indexed(&inst, out);
+                            k += 1;
+                        }
+                        return;
+                    }
+                }
+            }
+            for a in args {
+                collect_indexed(&a.value, out);
+            }
+        }
+        Expr::If {
+            cond,
+            then_branch,
+            else_branch,
+            ..
+        } => {
+            collect_indexed(cond, out);
+            collect_indexed(then_branch, out);
+            collect_indexed(else_branch, out);
+        }
+        Expr::Block { stmts, tail, .. } => {
+            for st in stmts {
+                match st {
+                    Stmt::Let { value, .. } => collect_indexed(value, out),
+                    Stmt::Expr(x) => collect_indexed(x, out),
+                }
+            }
+            if let Some(t) = tail {
+                collect_indexed(t, out);
+            }
+        }
+        Expr::Match {
+            scrutinee, arms, ..
+        } => {
+            collect_indexed(scrutinee, out);
+            for arm in arms {
+                collect_indexed(&arm.body, out);
+            }
+        }
+        Expr::Let { value, body, .. } => {
+            collect_indexed(value, out);
+            collect_indexed(body, out);
+        }
+        _ => {}
+    }
+}
+
 fn check_fn(ctx: &TypeCtx, f: &FnDecl, diags: &mut Vec<Diagnostic>) {
     let mut scope = Scope::default();
     for p in &f.params {
@@ -181,6 +260,32 @@ fn check_fn(ctx: &TypeCtx, f: &FnDecl, diags: &mut Vec<Diagnostic>) {
     // Also any `requires` clauses become assumed.
     for r in &f.spec.requires {
         scope.push_assume(r.clone());
+    }
+    // List-element refinement: a parameter `xs: [Int{v: P}]` guarantees that
+    // every element satisfies `P`. For each literal index `xs[k]` used in
+    // the body or the contract, assume `P[v := xs[k]]` as a hypothesis.
+    let mut idx_uses: Vec<(String, i64)> = Vec::new();
+    collect_indexed(&f.body, &mut idx_uses);
+    for ens in &f.spec.ensures {
+        collect_indexed(ens, &mut idx_uses);
+    }
+    idx_uses.sort();
+    idx_uses.dedup();
+    for p in &f.params {
+        if let Type::List(inner, _) = &p.ty {
+            if let Type::Refined { refinement, .. } = inner.as_ref() {
+                for (base, k) in &idx_uses {
+                    if base == &p.name {
+                        let elem = Expr::Index(
+                            Box::new(Expr::Var(p.name.clone(), p.span)),
+                            Box::new(Expr::Lit(Lit::Int(*k), p.span)),
+                            p.span,
+                        );
+                        scope.push_assume(subst(&refinement.pred, &refinement.binder, &elem));
+                    }
+                }
+            }
+        }
     }
     let mut observed = HashSet::<Effect>::new();
     let body_ty = check_expr(ctx, &mut scope, &f.body, &mut observed, diags);
@@ -216,14 +321,64 @@ fn check_fn(ctx: &TypeCtx, f: &FnDecl, diags: &mut Vec<Diagnostic>) {
     for ens in &f.spec.ensures {
         // Substitute `result` with the body expression (which the solver may
         // simplify if it's an if/then/else of arithmetic).
-        prove_ensures(&scope, ens, &f.body, diags);
+        prove_ensures(ctx, &scope, ens, &f.body, diags);
     }
+    // Termination: if a `decreases` measure is declared, every direct
+    // self-call must strictly decrease it. This also makes the recursive use
+    // of a function's own `ensures` (the inductive hypothesis, imported by
+    // `call_ensures`) sound.
+    check_termination(f, &scope, diags);
 }
 
-fn prove_ensures(scope: &Scope, ensures: &Expr, body: &Expr, diags: &mut Vec<Diagnostic>) {
+/// Modular contract reasoning: the postcondition clauses of a called function,
+/// specialized to one call site -- `result` replaced by `result_var`, and each
+/// callee parameter replaced by the corresponding argument expression. A
+/// two-pass relay through `$arg$<name>` sentinels (not legal Aether
+/// identifiers) avoids capture when an argument mentions a parameter's name.
+/// Returns `[]` for calls to non-functions, builtins/tools, or functions with
+/// no `ensures` -- in which case the caller falls back to the opaque path.
+fn call_ensures(ctx: &TypeCtx, call: &Expr, result_var: &Expr) -> Vec<Expr> {
+    let Expr::Call { callee, args, .. } = call else {
+        return Vec::new();
+    };
+    let Expr::Var(name, _) = callee.as_ref() else {
+        return Vec::new();
+    };
+    let Some(sig) = ctx.lookup_fn(name) else {
+        return Vec::new();
+    };
+    if sig.ensures.is_empty() || sig.params.len() != args.len() {
+        return Vec::new();
+    }
+    sig.ensures
+        .iter()
+        .map(|ens| {
+            let mut e = ens.clone();
+            // 1. formal parameters -> fresh sentinels.
+            for (pname, _) in &sig.params {
+                e = subst(&e, pname, &Expr::Var(format!("$arg${pname}"), call.span()));
+            }
+            // 2. `result` -> the call-site result variable.
+            e = subst(&e, "result", result_var);
+            // 3. sentinels -> the argument expressions.
+            for ((pname, _), arg) in sig.params.iter().zip(args) {
+                e = subst(&e, &format!("$arg${pname}"), &arg.value);
+            }
+            e
+        })
+        .collect()
+}
+
+fn prove_ensures(
+    ctx: &TypeCtx,
+    scope: &Scope,
+    ensures: &Expr,
+    body: &Expr,
+    diags: &mut Vec<Diagnostic>,
+) {
     // Walk the body symbolically. For each path, substitute `result` with the
     // leaf expression and call the solver under the accumulated path conditions.
-    fn walk(scope: &Scope, ens: &Expr, body: &Expr, diags: &mut Vec<Diagnostic>) {
+    fn walk(ctx: &TypeCtx, scope: &Scope, ens: &Expr, body: &Expr, diags: &mut Vec<Diagnostic>) {
         match body {
             Expr::If {
                 cond,
@@ -233,10 +388,10 @@ fn prove_ensures(scope: &Scope, ensures: &Expr, body: &Expr, diags: &mut Vec<Dia
             } => {
                 let mut s_then = scope.clone();
                 s_then.push_assume((**cond).clone());
-                walk(&s_then, ens, then_branch, diags);
+                walk(ctx, &s_then, ens, then_branch, diags);
                 let mut s_else = scope.clone();
                 s_else.push_assume(Expr::Un(UnOp::Not, cond.clone(), cond.span()));
-                walk(&s_else, ens, else_branch, diags);
+                walk(ctx, &s_else, ens, else_branch, diags);
             }
             Expr::Block { stmts, tail, .. } => {
                 let mut s2 = scope.clone();
@@ -247,31 +402,82 @@ fn prove_ensures(scope: &Scope, ensures: &Expr, body: &Expr, diags: &mut Vec<Dia
                         ..
                     } = st
                     {
-                        // Add `name = value` as an equality assumption.
-                        let eq = Expr::Bin(
-                            BinOp::Eq,
-                            Box::new(Expr::Var(name.clone(), st.span())),
-                            Box::new(value.clone()),
-                            st.span(),
-                        );
-                        s2.push_assume(eq);
+                        let name_var = Expr::Var(name.clone(), st.span());
+                        let imported = call_ensures(ctx, value, &name_var);
+                        if imported.is_empty() {
+                            // Plain binding: assume `name == value`.
+                            s2.push_assume(Expr::Bin(
+                                BinOp::Eq,
+                                Box::new(name_var.clone()),
+                                Box::new(value.clone()),
+                                st.span(),
+                            ));
+                        } else {
+                            // Modular contract reasoning: the bound value is a
+                            // call to a contracted function -- import its
+                            // postcondition as facts about `name`. Do NOT also
+                            // add `name == <call>`: an uninterpreted call term
+                            // would poison the linear solver.
+                            for h in imported {
+                                s2.push_assume(h);
+                            }
+                        }
                     }
                 }
                 if let Some(t) = tail {
-                    walk(&s2, ens, t, diags);
+                    walk(ctx, &s2, ens, t, diags);
                 } else {
                     let unit = Expr::Lit(Lit::Unit, body.span());
                     let g = subst(ens, "result", &unit);
                     judge(&s2, &g, body.span(), diags);
                 }
             }
+            Expr::Match {
+                scrutinee, arms, ..
+            } => {
+                // Refinement reasoning descends each arm: the arm body is what
+                // flows into `result`. A literal pattern also pins the
+                // scrutinee's value on that arm.
+                for arm in arms {
+                    let mut s2 = scope.clone();
+                    if let Pattern::Lit(lit, ls) = &arm.pat {
+                        s2.push_assume(Expr::Bin(
+                            BinOp::Eq,
+                            scrutinee.clone(),
+                            Box::new(Expr::Lit(lit.clone(), *ls)),
+                            arm.span,
+                        ));
+                    }
+                    if let Some(guard) = &arm.guard {
+                        s2.push_assume(guard.clone());
+                    }
+                    walk(ctx, &s2, ens, &arm.body, diags);
+                }
+            }
             other => {
-                let g = subst(ens, "result", other);
-                judge(scope, &g, body.span(), diags);
+                // Modular contract reasoning: when the value flowing into
+                // `result` is a call to a contracted function, prove the
+                // postcondition about a fresh variable `$ret` constrained by
+                // the callee's `ensures`, instead of treating the call as an
+                // opaque term. Calls with no importable contract fall back to
+                // the opaque path (unchanged behaviour).
+                let ret = Expr::Var("$ret".to_string(), other.span());
+                let hyps = call_ensures(ctx, other, &ret);
+                if hyps.is_empty() {
+                    let g = subst(ens, "result", other);
+                    judge(scope, &g, body.span(), diags);
+                } else {
+                    let mut s2 = scope.clone();
+                    for h in hyps {
+                        s2.push_assume(h);
+                    }
+                    let g = subst(ens, "result", &ret);
+                    judge(&s2, &g, body.span(), diags);
+                }
             }
         }
     }
-    walk(scope, ensures, body, diags);
+    walk(ctx, scope, ensures, body, diags);
 }
 
 fn judge(scope: &Scope, goal: &Expr, span: Span, diags: &mut Vec<Diagnostic>) {
@@ -304,6 +510,165 @@ fn judge(scope: &Scope, goal: &Expr, span: Span, diags: &mut Vec<Diagnostic>) {
             ));
         }
     }
+}
+
+/// Discharge one termination obligation. Like `judge`, but the diagnostics
+/// speak of termination rather than postconditions.
+fn judge_termination(
+    scope: &Scope,
+    goal: &Expr,
+    span: Span,
+    what: &str,
+    diags: &mut Vec<Diagnostic>,
+) {
+    match prove(&scope.path, goal) {
+        Verdict::Proved => {}
+        Verdict::RefutedWith { .. } => {
+            diags.push(Diagnostic::err(
+                span,
+                format!("termination not proved: {what} (`{}`)", goal_display(goal)),
+            ));
+        }
+        Verdict::Unknown => {
+            diags.push(Diagnostic::warn(
+                span,
+                format!(
+                    "termination measure `{}` could not be verified (outside the linear fragment)",
+                    goal_display(goal),
+                ),
+            ));
+        }
+    }
+}
+
+/// Termination check. If the function declares a `decreases <measure>`, every
+/// direct self-call must, under its path condition, (a) strictly decrease the
+/// measure and (b) be reached only where the measure is non-negative. Both
+/// goals are linear, so the existing solver discharges them. With no
+/// `decreases` clause this is a no-op and recursion is unchecked.
+fn check_termination(f: &FnDecl, scope: &Scope, diags: &mut Vec<Diagnostic>) {
+    let Some(measure) = f.spec.decreases.as_deref() else {
+        return;
+    };
+    let params: Vec<String> = f.params.iter().map(|p| p.name.clone()).collect();
+
+    fn walk(
+        fname: &str,
+        params: &[String],
+        measure: &Expr,
+        scope: &Scope,
+        e: &Expr,
+        diags: &mut Vec<Diagnostic>,
+    ) {
+        match e {
+            Expr::If {
+                cond,
+                then_branch,
+                else_branch,
+                ..
+            } => {
+                let mut st = scope.clone();
+                st.push_assume((**cond).clone());
+                walk(fname, params, measure, &st, then_branch, diags);
+                let mut se = scope.clone();
+                se.push_assume(Expr::Un(UnOp::Not, cond.clone(), cond.span()));
+                walk(fname, params, measure, &se, else_branch, diags);
+            }
+            Expr::Block { stmts, tail, .. } => {
+                let mut s2 = scope.clone();
+                for st in stmts {
+                    match st {
+                        Stmt::Let {
+                            pat: Pattern::Var(n, _),
+                            value,
+                            ..
+                        } => {
+                            walk(fname, params, measure, &s2, value, diags);
+                            s2.push_assume(Expr::Bin(
+                                BinOp::Eq,
+                                Box::new(Expr::Var(n.clone(), st.span())),
+                                Box::new(value.clone()),
+                                st.span(),
+                            ));
+                        }
+                        Stmt::Let { value, .. } => {
+                            walk(fname, params, measure, &s2, value, diags);
+                        }
+                        Stmt::Expr(ex) => walk(fname, params, measure, &s2, ex, diags),
+                    }
+                }
+                if let Some(t) = tail {
+                    walk(fname, params, measure, &s2, t, diags);
+                }
+            }
+            Expr::Match {
+                scrutinee, arms, ..
+            } => {
+                walk(fname, params, measure, scope, scrutinee, diags);
+                for arm in arms {
+                    walk(fname, params, measure, scope, &arm.body, diags);
+                }
+            }
+            Expr::Let { value, body, .. } => {
+                walk(fname, params, measure, scope, value, diags);
+                walk(fname, params, measure, scope, body, diags);
+            }
+            Expr::Bin(_, l, r, _) => {
+                walk(fname, params, measure, scope, l, diags);
+                walk(fname, params, measure, scope, r, diags);
+            }
+            Expr::Un(_, x, _) => walk(fname, params, measure, scope, x, diags),
+            Expr::Call { callee, args, span } => {
+                for a in args {
+                    walk(fname, params, measure, scope, &a.value, diags);
+                }
+                let Expr::Var(n, _) = callee.as_ref() else {
+                    return;
+                };
+                if n != fname || args.len() != params.len() {
+                    return;
+                }
+                // Direct self-call: build the measure at the callee's
+                // arguments via a capture-avoiding `$dec$` relay.
+                let mut m_prime = measure.clone();
+                for p in params {
+                    m_prime = subst(&m_prime, p, &Expr::Var(format!("$dec${p}"), *span));
+                }
+                for (p, a) in params.iter().zip(args) {
+                    m_prime = subst(&m_prime, &format!("$dec${p}"), &a.value);
+                }
+                let decreases_goal = Expr::Bin(
+                    BinOp::Lt,
+                    Box::new(m_prime),
+                    Box::new(measure.clone()),
+                    *span,
+                );
+                let bounded_goal = Expr::Bin(
+                    BinOp::Ge,
+                    Box::new(measure.clone()),
+                    Box::new(Expr::Lit(Lit::Int(0), *span)),
+                    *span,
+                );
+                judge_termination(
+                    scope,
+                    &decreases_goal,
+                    *span,
+                    "the measure does not strictly decrease on this recursive call",
+                    diags,
+                );
+                judge_termination(
+                    scope,
+                    &bounded_goal,
+                    *span,
+                    "the measure is not provably non-negative here",
+                    diags,
+                );
+            }
+            _ => {}
+        }
+    }
+
+    walk(&f.name, &params, measure, scope, &f.body, diags);
 }
 
 fn goal_display(e: &Expr) -> String {

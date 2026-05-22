@@ -17,6 +17,7 @@ annotation    = "@no_prov" | "@pure" | "@inline" ;
 
 fn_decl_verbose = "fn" , ident , [ generics ] , params , [ "->" , type ]
                 , [ "where" , expr , { "&&" , expr } ]
+                , [ "decreases" , expr ]
                 , [ "effects" , effect_set ]
                 , [ "spec" , spec_block ]
                 , block ;
@@ -24,6 +25,7 @@ fn_decl_verbose = "fn" , ident , [ generics ] , params , [ "->" , type ]
 fn_decl_compact = ident , [ generics ] , params , ":" , type
                 , [ "!" , effect_set ]
                 , [ "where" , expr , { "&&" , expr } ]
+                , [ "decreases" , expr ]
                 , "=" , expr ;
 
 let_decl       = "let" , ident , [ ":" , type ] , "=" , expr ;
@@ -38,6 +40,7 @@ tool_decl      = "tool" , ident , params , "->" , type ,
                  [ "!" , effect_set ] ;
 
 spec_block     = "{" , { ( "requires" | "ensures" ) , expr , [ ";" ]
+                       | "decreases" , expr , [ ";" ]
                        | "effects" , effect_set , [ ";" ] } , "}" ;
 
 generics       = "<" , ident , { "," , ident } , ">" ;

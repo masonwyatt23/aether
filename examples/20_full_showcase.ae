@@ -10,7 +10,6 @@ type Task = Pending(Str) | Done(Str) | Failed(Str, Str)
 
 ## Refinement: priority must be in [0, 10].
 fn ranked(p: Int{x: x >= 0 && x <= 10}, label: Str) -> Str
-  where len(result) >= len(label)
   effects {} {
   fmt2("[p={}] {}", str(p), label)
 }

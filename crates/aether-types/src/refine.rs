@@ -299,6 +299,30 @@ pub fn expr_to_lin(e: &Expr) -> Option<Lin> {
             _ => None,
         },
         Expr::Annot { expr, .. } => expr_to_lin(expr),
+        // `len(xs)` is a non-negative integer term -- modelled as a fresh
+        // linear variable `_len_<base>` whose non-negativity `mod_div_bounds`
+        // asserts. Any other call stays opaque (`None`).
+        Expr::Call { callee, args, .. } => {
+            if let Expr::Var(fname, _) = callee.as_ref() {
+                if fname == "len" && args.len() == 1 {
+                    return Some(Lin::var(&format!(
+                        "_len_{}",
+                        expr_base_name(&args[0].value)
+                    )));
+                }
+            }
+            None
+        }
+        // `xs[k]` for a literal index `k` is an (unconstrained) integer term
+        // `_elem_<base>_<k>`. A non-literal index stays opaque -- sound but
+        // incomplete.
+        Expr::Index(base, idx, _) => {
+            if let Expr::Lit(Lit::Int(k), _) = idx.as_ref() {
+                Some(Lin::var(&format!("_elem_{}_{}", expr_base_name(base), k)))
+            } else {
+                None
+            }
+        }
         _ => None,
     }
 }
@@ -333,8 +357,11 @@ fn mod_div_bounds(lin: &Lin) -> Vec<Constraint> {
                     ));
                 }
             }
+        } else if var.starts_with("_len_") {
+            // A list length is non-negative: 0 <= v  =>  -v <= 0.
+            cs.push(Constraint::new(Lin::var(var).neg(), Cmp::Le));
         }
-        // _div variables: no bounds in MVP (conservative / sound).
+        // _div / _elem variables: no bounds (conservative / sound).
     }
     cs
 }
@@ -388,6 +415,14 @@ pub fn subst(e: &Expr, name: &str, value: &Expr) -> Expr {
                 else_branch: Box::new(go(else_branch, name, value)),
                 span: *span,
             },
+            // Recurse into list indexing so substituting a quantified
+            // variable into `xs[i]` works (needed for `forall_in` over list
+            // elements).
+            Expr::Index(base, idx, span) => Expr::Index(
+                Box::new(go(base, name, value)),
+                Box::new(go(idx, name, value)),
+                *span,
+            ),
             other => other.clone(),
         }
     }

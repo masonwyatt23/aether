@@ -22,6 +22,7 @@ mod init;
 mod lint;
 mod modules;
 mod repl;
+mod serve;
 mod verify;
 mod watch;
 
@@ -228,6 +229,11 @@ enum Cmd {
     },
     /// Execute a pre-compiled `.aebc` bytecode file (skips parse/typecheck).
     Exec { file: PathBuf },
+    /// Persistent check server: read newline-delimited JSON requests
+    /// (`{"source": "...", "id": ...}`) on stdin, write one JSON response
+    /// line per request, looping until stdin closes. Amortizes process
+    /// startup for tools that check many programs (e.g. an RL training loop).
+    Serve,
 }
 
 fn main() -> ExitCode {
@@ -326,6 +332,7 @@ fn main() -> ExitCode {
             json,
         } => verify::run_verify(file, no_imports, json),
         Cmd::Exec { file } => cmd_exec(file),
+        Cmd::Serve => serve::run_serve(),
     }
 }
 
@@ -645,12 +652,12 @@ fn cmd_lint(file: PathBuf, no_imports: bool, deny_warnings: bool) -> ExitCode {
     }
 }
 
-fn print_json_diagnostics(
+fn diagnostics_json(
     sm: &SourceMap,
     diags: &[Diagnostic],
     n_errors: usize,
     n_warnings: usize,
-) {
+) -> String {
     use std::fmt::Write;
     let mut out = String::from("{\n  \"diagnostics\": [\n");
     for (i, d) in diags.iter().enumerate() {
@@ -685,7 +692,58 @@ fn print_json_diagnostics(
         out,
         "  \"errors\": {n_errors},\n  \"warnings\": {n_warnings}\n}}\n"
     );
-    print!("{out}");
+    out
+}
+
+/// Emit the JSON diagnostics object to stdout (the `check --json` output).
+fn print_json_diagnostics(
+    sm: &SourceMap,
+    diags: &[Diagnostic],
+    n_errors: usize,
+    n_warnings: usize,
+) {
+    print!("{}", diagnostics_json(sm, diags, n_errors, n_warnings));
+}
+
+/// Parse + check an in-memory source string; return the JSON diagnostics
+/// object. Always returns JSON -- including on a parse error -- so `serve`
+/// can rely on a uniform response. Stateless: a fresh `SourceMap` per call.
+pub(crate) fn check_source_to_json(name: &str, src: &str) -> String {
+    use std::fmt::Write;
+    let mut sm = SourceMap::new();
+    let fid = sm.add(name.to_string(), src.to_string());
+    match parse_module(fid, src) {
+        Ok(m) => {
+            let (_, diags) = check_module(&m);
+            let n_errors = diags
+                .iter()
+                .filter(|d| d.severity == Severity::Error)
+                .count();
+            let n_warnings = diags
+                .iter()
+                .filter(|d| d.severity == Severity::Warning)
+                .count();
+            diagnostics_json(&sm, &diags, n_errors, n_warnings)
+        }
+        Err(e) => {
+            // A parse error: emit a one-diagnostic JSON object so the
+            // response shape is identical to a successful check.
+            let span = e.span().unwrap_or_else(|| aether_ast::Span::new(fid, 0..0));
+            let (line, col) = sm.line_col(span);
+            let msg = format!("{e}")
+                .replace('\\', "\\\\")
+                .replace('"', "\\\"")
+                .replace('\n', "\\n");
+            let mut out = String::from("{\n  \"diagnostics\": [\n");
+            let _ = write!(
+                out,
+                "    {{\"severity\":\"error\",\"file\":\"{}\",\"line\":{},\"col\":{},\"start\":{},\"end\":{},\"message\":\"{}\"}}",
+                sm.name(span.file), line, col, span.start, span.end, msg,
+            );
+            out.push_str("\n  ],\n  \"errors\": 1,\n  \"warnings\": 0\n}\n");
+            out
+        }
+    }
 }
 
 fn cmd_run(file: PathBuf, no_check: bool, no_imports: bool, network: bool, bc: bool) -> ExitCode {
@@ -994,5 +1052,33 @@ mod tests {
         use clap::Parser as ClapParser;
         let result = super::Cli::try_parse_from(["aether", "exec", "file.aebc"]);
         assert!(result.is_ok(), "CLI should accept exec subcommand");
+    }
+
+    #[test]
+    fn cli_accepts_serve_subcommand() {
+        use clap::Parser as ClapParser;
+        let result = super::Cli::try_parse_from(["aether", "serve"]);
+        assert!(result.is_ok(), "CLI should accept serve subcommand");
+    }
+
+    #[test]
+    fn check_source_to_json_round_trip() {
+        // A verified program reports zero errors; a refuted one reports an
+        // error; a parse error still yields JSON (not an ariadne report).
+        let ok = super::check_source_to_json(
+            "<t>",
+            "fn f(x: Int) -> Int\n  where result >= x\n  effects {} {\n  x\n}\n",
+        );
+        assert!(ok.contains("\"errors\": 0"), "verified: {ok}");
+        let bad = super::check_source_to_json(
+            "<t>",
+            "fn f(x: Int) -> Int\n  where result > x\n  effects {} {\n  x\n}\n",
+        );
+        assert!(bad.contains("\"errors\": 1"), "refuted: {bad}");
+        let parse_err = super::check_source_to_json("<t>", "fn f(x: Int) ->");
+        assert!(
+            parse_err.contains("\"errors\": 1") && parse_err.contains("\"diagnostics\""),
+            "parse error JSON: {parse_err}"
+        );
     }
 }
