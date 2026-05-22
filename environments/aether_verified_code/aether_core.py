@@ -77,7 +77,7 @@ FAMILY_TIERS = {
     "sat_add": {"hard"}, "sat_sub": {"hard"}, "mirror": {"hard"},
     "list_sum": {"hard"}, "compose": {"hard"}, "bucket": {"hard", "expert"},
     "recursive": {"expert"}, "recursive_range": {"expert"},
-    "compose_chain": {"expert"},
+    "compose_chain": {"expert"}, "all_positive": {"expert"},
 }
 
 

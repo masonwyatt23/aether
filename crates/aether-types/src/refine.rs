@@ -185,6 +185,23 @@ pub fn expr_to_form(e: &Expr) -> Option<Form> {
         }
 
         Expr::Bin(op, l, r, _) => {
+            // Boolean (dis)equality: when both sides are boolean formulas,
+            // `==` is iff and `!=` is xor. Handles contracts of the form
+            // `result == forall_in(i, lo, hi, P)` once `result` has been
+            // substituted by a boolean body.
+            if matches!(op, BinOp::Eq | BinOp::Neq) {
+                if let (Some(a), Some(b)) = (expr_to_form(l), expr_to_form(r)) {
+                    let iff = Form::Or(vec![
+                        Form::And(vec![a.clone(), b.clone()]),
+                        Form::And(vec![Form::Not(Box::new(a)), Form::Not(Box::new(b))]),
+                    ]);
+                    return Some(if matches!(op, BinOp::Neq) {
+                        Form::Not(Box::new(iff))
+                    } else {
+                        iff
+                    });
+                }
+            }
             let lhs = expr_to_lin(l)?;
             let rhs = expr_to_lin(r)?;
             let diff = lhs.add(rhs.neg()); // lhs - rhs

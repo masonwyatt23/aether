@@ -483,9 +483,38 @@ def family_list_sum(rng):
         reference=_assemble(doc, header, contract, f"  {terms}"))
 
 
+# --------------------------------------------------------------------------
+# Family: all_positive -- a quantified contract over a refined list. The
+# `where` uses `forall_in` over the elements of an `[Int{v: v > 0}]` list;
+# the element refinement discharges the bounded quantifier.
+# --------------------------------------------------------------------------
+def family_all_positive(rng):
+    xs = rng.choice(["xs", "items", "values", "data", "elems"])
+    k = rng.randint(2, 5)
+    fname = rng.choice(["all_positive", "first_k_pos", "head_all_pos",
+                        "lead_positive"])
+    header = f"fn {fname}({xs}: [Int{{v: v > 0}}]) -> Bool"
+    contract = f"result == forall_in(i, 0, {k - 1}, {xs}[i] > 0)"
+    doc = (f"Confirm the first {k} elements of {xs} are positive.",
+           "Verified: the element refinement discharges the quantifier.")
+    return dict(
+        family="all_positive", tier="expert",
+        title="Task: First-K All Positive",
+        intro=f"Write `{fname}`: return whether each of the first {k} "
+              f"elements of `{xs}` is greater than 0.",
+        spec=[f"`{xs}` has element-refinement type `[Int{{v: v > 0}}]`.",
+              f"Return `forall_in(i, 0, {k - 1}, {xs}[i] > 0)` -- a bounded "
+              f"universal quantifier over the first {k} elements.",
+              "The element refinement guarantees positivity, so the answer "
+              "is `true`."],
+        signature=_assemble(doc, header, contract, "  false"),
+        reference=_assemble(doc, header, contract, "  true"))
+
+
 FAMILIES = {
     "clamp": family_clamp,
     "list_sum": family_list_sum,
+    "all_positive": family_all_positive,
     "compose": family_compose,
     "compose_chain": family_compose_chain,
     "recursive": family_recursive,
