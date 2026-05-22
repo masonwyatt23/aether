@@ -166,6 +166,11 @@ jobs:
           python3 eval/harness/gen_tasks.py --seed 0 --per-family 3
           --out "$RUNNER_TEMP/ci-instances" --validate
 
+      - name: Vendored env templates in sync
+        # The RL environment vendors eval/templates.py so it is self-contained;
+        # this guards against the two copies drifting apart.
+        run: diff eval/templates.py environments/aether_verified_code/templates.py
+
   coverage:
     name: coverage
     runs-on: ubuntu-latest

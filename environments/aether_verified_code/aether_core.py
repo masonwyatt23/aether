@@ -23,13 +23,16 @@ provably rejects every wrong mutant of its reference), a rewarded solution
 genuinely satisfies the specification.
 """
 
+import atexit
 import json
 import os
+import queue
 import random
 import re
 import subprocess
 import sys
 import tempfile
+import threading
 
 # `templates.py` is vendored into this package, so the environment is
 # self-contained and publishable to the Environments Hub.
@@ -151,13 +154,106 @@ def format_feedback(diagnostics: list) -> str:
         for d in diagnostics)
 
 
-def check(src: str, binary: str = None, timeout: int = 30) -> dict:
-    """Run `aether check --json` on Aether source text.
+def _result(r: dict) -> dict:
+    """Standard result dict from a parsed `aether check` JSON object."""
+    errs, warns = int(r.get("errors", 0)), int(r.get("warnings", 0))
+    diags = r.get("diagnostics", [])
+    return {"outcome": classify(errs, warns, diags), "errors": errs,
+            "warnings": warns, "diagnostics": diags,
+            "feedback": format_feedback(diags)}
 
-    Returns {outcome, errors, warnings, diagnostics, feedback}. A solver
-    timeout or unparseable output is treated conservatively -- never VERIFIED.
-    """
-    binary = binary or aether_bin()
+
+def _fail(feedback: str) -> dict:
+    """A conservative failure result -- never VERIFIED."""
+    return {"outcome": "PARSE-ERROR", "errors": 1, "warnings": 0,
+            "diagnostics": [], "feedback": feedback}
+
+
+# --- persistent verifier pool (`aether serve`) -----------------------------
+# Spawning `aether check` per call pays process-startup cost on every reward.
+# A pool of persistent `aether serve` processes amortizes it -- the key
+# throughput win for RL-scale use. Pool size: $AETHER_SERVE_WORKERS (default
+# 4; set 0 to disable and force the per-call path).
+_serve_pool = None
+_serve_lock = threading.Lock()
+_serve_off = False
+
+
+def _spawn_serve():
+    return subprocess.Popen(
+        [aether_bin(), "serve"],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+
+
+def _serve_shutdown():
+    if _serve_pool is None:
+        return
+    while not _serve_pool.empty():
+        try:
+            _serve_pool.get_nowait().terminate()
+        except (queue.Empty, OSError):
+            break
+
+
+def _serve_pool_get():
+    """The shared pool of `aether serve` workers, or None if unavailable."""
+    global _serve_pool, _serve_off
+    with _serve_lock:
+        if _serve_off:
+            return None
+        if _serve_pool is None:
+            try:
+                n = int(os.environ.get("AETHER_SERVE_WORKERS", "4"))
+            except ValueError:
+                n = 4
+            if n <= 0:
+                _serve_off = True
+                return None
+            pool = queue.Queue()
+            try:
+                for _ in range(n):
+                    pool.put(_spawn_serve())
+            except OSError:
+                _serve_off = True
+                return None
+            _serve_pool = pool
+            atexit.register(_serve_shutdown)
+        return _serve_pool
+
+
+def _check_serve(src: str):
+    """Check via the persistent serve pool. Returns a result dict, or None
+    when serve is unavailable -- the caller then falls back to a per-call
+    `aether check`."""
+    pool = _serve_pool_get()
+    if pool is None:
+        return None
+    worker = pool.get()
+    try:
+        if worker.poll() is not None:        # worker died -- respawn
+            worker = _spawn_serve()
+        worker.stdin.write(json.dumps({"source": src}) + "\n")
+        worker.stdin.flush()
+        line = worker.stdout.readline()
+        if not line:
+            raise OSError("serve worker closed the pipe")
+        return _result(json.loads(line))
+    except (OSError, ValueError):
+        try:
+            worker.kill()
+        except OSError:
+            pass
+        try:
+            worker = _spawn_serve()          # keep the pool full
+        except OSError:
+            pass
+        return None
+    finally:
+        pool.put(worker)
+
+
+def _check_subprocess(src: str, binary: str, timeout: int) -> dict:
+    """Check by spawning `aether check` once (the fallback path)."""
     fd, path = tempfile.mkstemp(suffix=".ae")
     try:
         with os.fdopen(fd, "w") as f:
@@ -165,8 +261,7 @@ def check(src: str, binary: str = None, timeout: int = 30) -> dict:
         proc = subprocess.run([binary, "check", "--json", path],
                               capture_output=True, text=True, timeout=timeout)
     except (subprocess.TimeoutExpired, FileNotFoundError) as exc:
-        return {"outcome": "PARSE-ERROR", "errors": 1, "warnings": 0,
-                "diagnostics": [], "feedback": f"harness error: {exc}"}
+        return _fail(f"harness error: {exc}")
     finally:
         try:
             os.unlink(path)
@@ -175,18 +270,26 @@ def check(src: str, binary: str = None, timeout: int = 30) -> dict:
     out = proc.stdout.strip()
     start = out.find("{")
     if start < 0:
-        return {"outcome": "PARSE-ERROR", "errors": 1, "warnings": 0,
-                "diagnostics": [], "feedback": "no JSON from aether check"}
+        return _fail("no JSON from aether check")
     try:
-        r = json.loads(out[start:])
+        return _result(json.loads(out[start:]))
     except json.JSONDecodeError:
-        return {"outcome": "PARSE-ERROR", "errors": 1, "warnings": 0,
-                "diagnostics": [], "feedback": "unparseable aether check output"}
-    errs, warns = int(r.get("errors", 0)), int(r.get("warnings", 0))
-    diags = r.get("diagnostics", [])
-    return {"outcome": classify(errs, warns, diags), "errors": errs,
-            "warnings": warns, "diagnostics": diags,
-            "feedback": format_feedback(diags)}
+        return _fail("unparseable aether check output")
+
+
+def check(src: str, binary: str = None, timeout: int = 30) -> dict:
+    """Check Aether source with the exact compiler oracle.
+
+    Uses the persistent `aether serve` pool when available (amortized
+    process startup -- the throughput path for RL) and transparently falls
+    back to a per-call `aether check`. Returns {outcome, errors, warnings,
+    diagnostics, feedback}. A timeout or unparseable output is never
+    VERIFIED.
+    """
+    served = _check_serve(src)
+    if served is not None:
+        return served
+    return _check_subprocess(src, binary or aether_bin(), timeout)
 
 
 def _split_and(pred: str) -> list:
