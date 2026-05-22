@@ -1,0 +1,5 @@
+fn saturating_sub(a: Int{x: x >= 0}, b: Int{x: x >= 0}) -> Int
+  where result >= 0 && result <= a && result >= a - b
+  effects {} {
+    if a > b then a - b else 0
+  }

@@ -1,0 +1,3 @@
+if (a - b < lo) { return lo; }
+else if (a - b > hi) { return hi; }
+return a - b;

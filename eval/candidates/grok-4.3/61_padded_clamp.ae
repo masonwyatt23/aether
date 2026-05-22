@@ -1,0 +1,5 @@
+fn padded_clamp(x: Int, lo: Int, pad: Int{p: p >= 0}, hi: Int{h: h >= lo + 2 * pad}) -> Int
+  where result >= lo + pad && result <= hi - pad
+  effects {} {
+  if x < lo + pad { lo + pad } else if x > hi - pad { hi - pad } else { x }
+}

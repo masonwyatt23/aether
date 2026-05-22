@@ -1,0 +1,5 @@
+fn window_clamp(x: Int, lo: Int, width: Int{w: w >= 0}) -> Int
+  where result >= lo && result <= lo + width
+  effects {} {
+  if x < lo { lo } else if x > lo + width { lo + width } else { x }
+}

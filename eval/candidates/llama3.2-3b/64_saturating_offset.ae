@@ -1,0 +1,5 @@
+fn saturating_offset(x: Int{v: v >= 0 && v <= cap}, cap: Int{c: c >= 0}, step: Int{s: s >= 0}) -> Int
+  where result >= x && result <= cap
+  effects {} {
+    if x + step > cap then cap else x + step
+  }

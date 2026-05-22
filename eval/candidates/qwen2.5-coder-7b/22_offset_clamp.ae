@@ -1,0 +1,11 @@
+fn offset_clamp(x: Int, base: Int, span: Int{s: s >= 0}) -> Int
+  where result >= base && result <= base + span
+  effects {} {
+    if x < base {
+      base
+    } else if x > base + span {
+      base + span
+    } else {
+      x
+    }
+  }

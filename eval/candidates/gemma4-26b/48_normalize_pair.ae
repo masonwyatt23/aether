@@ -1,0 +1,12 @@
+fn normalize_pair(a: Int{x: x >= 0 && x <= 50}, b: Int{x: x >= 0 && x <= 50}) -> Int
+  where result >= 0 && result <= 100
+  effects {} {
+  let m = a + b;
+  if m < 0 {
+    0
+  } else if m > 100 {
+    100
+  } else {
+    m
+  }
+}

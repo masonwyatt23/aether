@@ -1,0 +1,8 @@
+fn safe_sub_clamp(a: Int, b: Int{v: v >= 0}, lo: Int, hi: Int{h: h >= lo}) -> Int
+  where result >= lo && result <= hi
+  effects {} {
+    let diff = a - b;
+    if diff < lo then return lo
+    else if diff > hi then return hi
+    else return diff
+  }

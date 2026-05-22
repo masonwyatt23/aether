@@ -1,0 +1,8 @@
+## Add step to x, saturating at the ceiling cap.
+## Preconditions: 0 <= x <= cap (in x's type), cap >= 0, step >= 0.
+## Contract: result >= x AND result <= cap (proved at compile time).
+fn saturating_offset(x: Int{v: v >= 0 && v <= cap}, cap: Int{c: c >= 0}, step: Int{s: s >= 0}) -> Int
+  where result >= x && result <= cap
+  effects {} {
+  0
+}

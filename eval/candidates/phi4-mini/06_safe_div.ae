@@ -1,0 +1,6 @@
+Int{result >= 0} a, Int{x: x > 0} b) -> Int
+  where result = (a / b)
+  effects {} {
+    return (a //= b);
+  }
+}

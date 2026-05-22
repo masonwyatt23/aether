@@ -1,0 +1,5 @@
+fn step_toward(x: Int, t: Int{v: v >= x}) -> Int
+  where result >= x && result <= t
+  effects {} {
+  if x < t { x + 1 } else { x }
+}

@@ -1,0 +1,12 @@
+type Leaf = Red(Int) | Blue(Int)
+type Node = Tip(Leaf) | Fork(Leaf, Leaf)
+
+## Classify a two-level Node tree into a code 1..4.
+## Every constructor of Leaf and Node must be matched (non-exhaustive => warning).
+fn count(n: Node) -> Int
+  effects {} {
+  match n with {
+    Tip(l) => match l with { Red(v) => 1, Blue(v) => 2 },
+    Fork(a, b) => match a with { Red(v) => 3, Blue(v) => 4 }
+  }
+}

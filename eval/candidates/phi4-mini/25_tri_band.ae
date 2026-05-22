@@ -1,0 +1,2 @@
+if x < b then return(b)
+else if x > c then return(c) else return(x)

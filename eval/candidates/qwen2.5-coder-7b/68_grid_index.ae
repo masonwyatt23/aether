@@ -1,0 +1,5 @@
+fn grid_index(r: Int{v: v >= 0 && v < rows}, rows: Int{n: n >= 1}, c: Int{v: v >= 0 && v < cols}, cols: Int{n: n >= 1}) -> Int
+  where result >= c && result < rows * cols
+  effects {} {
+  r * cols + c
+}

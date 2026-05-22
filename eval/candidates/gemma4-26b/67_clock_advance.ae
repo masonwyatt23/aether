@@ -1,0 +1,8 @@
+## Advance a clock reading by d ticks on a k-hour face (1-based).
+## Precondition: k >= 1 (encoded in the type of k).
+## Contract: result >= 1 AND result < k + 1 (proved at compile time).
+fn clock_advance(t: Int, d: Int, k: Int{v: v >= 1}) -> Int
+  where result >= 1 && result < k + 1
+  effects {} {
+  (t + d - 1) % k + 1
+}

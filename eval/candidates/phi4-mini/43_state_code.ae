@@ -1,0 +1,4 @@
+match s with
+| Active(n) => n
+| Done(m) => -m
+| _ => 0 // This arm should not be reached due to the exhaustive nature of a match statement in Aether.

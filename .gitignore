@@ -11,3 +11,12 @@ Cargo.lock.bak
 *.swp
 *.swo
 *~
+
+# Python (eval harness + RL environment)
+__pycache__/
+*.pyc
+
+# Generated benchmark task sets — regenerable via `gen_tasks.py` from a seed,
+# and deliberately not committed (a fixed instance set would be a
+# contamination vector).
+eval/instances/

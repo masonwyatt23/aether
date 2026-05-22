@@ -1,0 +1,4 @@
+fn die_face(x: Int) -> Int
+  where result >= 1 && result < 7
+  effects {} {
+    (x % 6) + 1

@@ -1,0 +1,11 @@
+fn compare3(a: Int, b: Int, base: Int) -> Int
+  where result >= base && result <= base + 2
+  effects {} {
+    if a < b {
+      base
+    } else if a > b {
+      base + 2
+    } else {
+      base + 1
+    }
+  }

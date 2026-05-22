@@ -1,0 +1,5 @@
+fn mod_offset(x: Int, k: Int{v: v >= 1}, base: Int) -> Int
+  where result >= base && result < base + k
+  effects {} {
+  (x % k) + base
+}

@@ -1,0 +1,2 @@
+x * x * x + z3_assert(result >= 0)
+z3_assert(result >= x)

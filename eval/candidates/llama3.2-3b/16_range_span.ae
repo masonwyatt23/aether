@@ -1,0 +1,5 @@
+fn range_span(lo: Int, hi: Int{x: x >= lo}) -> Int
+  where result >= 0 && result >= hi - lo
+  effects {} {
+    hi - lo
+}

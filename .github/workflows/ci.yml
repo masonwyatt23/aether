@@ -126,6 +126,46 @@ jobs:
         # verifying the SMT-LIB2 translation and verdict parsing.
         run: "cargo test -p aether-types smt::tests"
 
+  benchmark:
+    name: verified-code benchmark self-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-bench-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bench-cargo-
+
+      - name: Install z3
+        # The expert tier has non-linear tasks that escalate to z3; without
+        # it the baseline self-test (which must score 100%) would fail.
+        run: sudo apt-get update && sudo apt-get install -y z3
+
+      - name: Build the aether CLI
+        run: cargo build --release -p aether-cli
+
+      - name: Baseline self-test (every reference solution must verify)
+        # run.py exits non-zero if any eval/baseline task fails to verify,
+        # so a broken task or a harness regression fails CI.
+        run: python3 eval/harness/run.py eval/baseline
+
+      - name: Generator self-test (templates produce sound, non-trivial tasks)
+        # gen_tasks.py --validate asserts every generated reference verifies
+        # and every generated stub does not -- a broken template fails CI.
+        run: >-
+          python3 eval/harness/gen_tasks.py --seed 0 --per-family 3
+          --out "$RUNNER_TEMP/ci-instances" --validate
+
   coverage:
     name: coverage
     runs-on: ubuntu-latest

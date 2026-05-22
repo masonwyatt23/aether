@@ -1,0 +1,3 @@
+fn safe_div(a: Int{x: x >= 0}, b: Int{x: x > 0}) -> Int
+  where result >= 0
+  effects {} { a / b }

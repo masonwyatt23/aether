@@ -1,0 +1,9 @@
+type State = Active(Int) | Idle | Done(Int)
+
+fn state_code(s: State) -> Int
+  effects {} {
+  match s with {
+    Active(n) => n
+  }
+  | _ => 0
+}

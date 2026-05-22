@@ -1,0 +1,5 @@
+fn safe_pred(x: Int{v: v >= 0}) -> Int
+  where result >= 0
+  effects {} {
+  if x > 0 then x - 1 else 0
+}

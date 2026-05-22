@@ -1,0 +1,8 @@
+## Sum two values, each drawn from [0, cap].
+## Preconditions: 0 <= x <= cap, 0 <= y <= cap, cap >= 0.
+## Contract: result >= x AND result <= 2 * cap (proved at compile time).
+fn bounded_pair_sum(x: Int{v: v >= 0 && v <= cap}, y: Int{v: v >= 0 && v <= cap}, cap: Int{c: c >= 0}) -> Int
+  where result >= x && result <= 2 * cap
+  effects {} {
+  0
+}

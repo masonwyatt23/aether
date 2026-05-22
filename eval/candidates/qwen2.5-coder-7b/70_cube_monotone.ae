@@ -1,0 +1,8 @@
+## Return x cubed, for non-negative x.
+## Precondition: x >= 0 (encoded in the type of x).
+## Contract: result >= 0 AND result >= x (proved at compile time).
+fn cube_monotone(x: Int{v: v >= 0}) -> Int
+  where result >= 0 && result >= x
+  effects {} {
+  x * x * x
+}

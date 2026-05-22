@@ -1,0 +1,12 @@
+fn sat_add3(x: Int, y: Int{v: v >= 0}, floor: Int, cap: Int{c: c >= floor}) -> Int
+  where result >= floor && result <= cap
+  effects {} {
+    let sum = x + y;
+    if sum < floor {
+      floor
+    } else if sum > cap {
+      cap
+    } else {
+      sum
+    }
+  }

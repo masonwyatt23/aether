@@ -1,0 +1,5 @@
+fn mirror_index(i: Int{v: v >= 0 && v <= len - 1}, len: Int{v: v >= 1}) -> Int
+  where result >= 0 && result <= len - 1
+  effects {} {
+  len - i
+}

@@ -1,0 +1,7 @@
+fn tri_band(x: Int, a: Int, b: Int{q: q >= a + 1}, c: Int{r: r >= b}) -> Int
+  where result >= b && result <= c
+  effects {} {
+    if x < b then return b
+    else if x > c then return c
+    else return x
+  }

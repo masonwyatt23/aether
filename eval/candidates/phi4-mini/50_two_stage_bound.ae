@@ -1,0 +1,2 @@
+let stage1 = if x < lo then lo else if x > hi then hi else x;
+if stage1 < lo then return lo else if stage1 > hi then return hi else return stage1;

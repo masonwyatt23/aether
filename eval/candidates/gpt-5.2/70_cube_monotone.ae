@@ -1,0 +1,5 @@
+fn cube_monotone(x: Int{v: v >= 0}) -> Int
+  where result >= 0 && result >= x
+  effects {} {
+  x * x * x
+}

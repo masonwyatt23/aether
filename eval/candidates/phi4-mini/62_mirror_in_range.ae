@@ -1,0 +1,6 @@
+fn mirror_in_range(i: Int{v: v >= a && v <= b}, a: Int, b: Int{h: h >= a}) -> Int
+  where result >= a && result <= b
+  effects {} {
+    return a + b - i
+  }
+}

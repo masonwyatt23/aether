@@ -1,0 +1,4 @@
+fn mod4_slot(x: Int) -> Int
+  where result >= 1 && result < 5
+  effects {} {
+    (x % 4) + 1

@@ -1,0 +1,5 @@
+fn step_down(x: Int{v: v >= lo && v <= hi}, lo: Int, hi: Int{h: h >= lo}, step: Int{s: s >= 0}) -> Int
+  where result >= lo && result <= x
+  effects {} {
+  if x - step < lo { lo } else { x - step }
+}

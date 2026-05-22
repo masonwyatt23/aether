@@ -1,0 +1,2 @@
+if (a + b > n) { return n; }
+return a + b;

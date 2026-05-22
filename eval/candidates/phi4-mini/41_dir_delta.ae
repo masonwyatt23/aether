@@ -1,0 +1,5 @@
+match d with
+| North(n) => n
+| South(n) => 0 - n
+| East(_) => 0
+| West(_) => 0

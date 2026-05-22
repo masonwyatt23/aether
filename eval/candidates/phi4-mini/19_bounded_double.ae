@@ -1,0 +1,4 @@
+if (2 * x <= hi) then
+  return 2 * x else
+  return hi
+}

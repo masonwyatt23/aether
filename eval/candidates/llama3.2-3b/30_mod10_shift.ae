@@ -1,0 +1,4 @@
+fn mod10_shift(n: Int) -> Int
+  where result >= 1 && result < 11
+  effects {} {
+    (n % 10) + 1

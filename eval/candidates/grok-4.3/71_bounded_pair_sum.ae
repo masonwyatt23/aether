@@ -1,0 +1,5 @@
+fn bounded_pair_sum(x: Int{v: v >= 0 && v <= cap}, y: Int{v: v >= 0 && v <= cap}, cap: Int{c: c >= 0}) -> Int
+  where result >= x && result <= 2 * cap
+  effects {} {
+  x + y
+}

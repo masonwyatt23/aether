@@ -1,0 +1,8 @@
+fn bounded_double(x: Int{v: v >= 0}, hi: Int{v: v >= x}) -> Int
+  where result >= x && result <= hi
+  effects {} {
+    if (2 * x) <= hi then
+      return 2 * x
+    else
+      return hi
+  }

@@ -1,0 +1,10 @@
+fn sign_clamp(x: Int, base: Int) -> Int
+  where result >= base - 1 && result <= base + 1
+  effects {} {
+    if x > 0 then
+      base + 1
+    else if x < 0 then
+      base - 1
+    else
+      base
+  }

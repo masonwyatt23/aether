@@ -1,0 +1,5 @@
+fn clamp_inner(x: Int, lo: Int, hi: Int{h: h >= lo + 2}) -> Int
+  where result >= lo + 1 && result <= hi - 1
+  effects {} {
+    if x < lo + 1 then lo + 1 else if x > hi - 1 then hi - 1 else x
+  }

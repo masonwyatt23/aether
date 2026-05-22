@@ -1,0 +1,1 @@
+if x * 2 < lo then return lo else if x * 2 > hi then return hi else return (x * 2)

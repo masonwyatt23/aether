@@ -1,0 +1,5 @@
+match n with
+| Fork(Red(r1), Blue(b)) => 3
+| Fork(Blue(b1), _)   => 4
+| Tip(Red(_))        => 1
+| Tip(Blue(_))      => 2

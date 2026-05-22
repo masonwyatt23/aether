@@ -1,0 +1,9 @@
+fn normalize_pair(a: Int{x: x >= 0 && x <= 50}, b: Int{x: x >= 0 && x <= 50}) -> Int
+  where result >= 0 && result <= 100
+  effects {} {
+    let m = a + b;
+    if (m < 0) { return 0; }
+    else if (m > 99) { return 99; }
+    else { return m; }
+  }
+}

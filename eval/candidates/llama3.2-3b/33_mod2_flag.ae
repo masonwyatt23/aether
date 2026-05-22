@@ -1,0 +1,4 @@
+fn mod2_flag(x: Int) -> Int
+  where result >= 1 && result < 3
+  effects {} {
+    (x % 2) + 1

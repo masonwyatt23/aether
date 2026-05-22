@@ -1,0 +1,4 @@
+fn mod3_offset(x: Int) -> Int
+  where result >= 1 && result < 4
+  effects {} {
+    (x % 3) + 1

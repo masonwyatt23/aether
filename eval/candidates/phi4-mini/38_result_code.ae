@@ -1,0 +1,4 @@
+match r with {
+  Ok(v) => v,
+  Err(_) => 0
+}

@@ -1,0 +1,12 @@
+fn clamp_double(x: Int, lo: Int, hi: Int{h: h >= lo}) -> Int
+  where result >= lo && result <= hi
+  effects {} {
+  let doubled = 2 * x;
+  if doubled < lo {
+    lo
+  } else if doubled > hi {
+    hi
+  } else {
+    doubled
+  }
+}

@@ -1,0 +1,1 @@
+if x > 0 then return base + 1 else if x < 0 then return base - 1 else return base;

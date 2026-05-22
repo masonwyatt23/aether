@@ -1,0 +1,3 @@
+match p with
+| Single(x) => x
+| Pair(_, b) => b

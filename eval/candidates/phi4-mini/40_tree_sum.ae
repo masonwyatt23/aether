@@ -1,0 +1,3 @@
+match t with
+| Leaf(v) => v
+| Branch(l, r) => l + r

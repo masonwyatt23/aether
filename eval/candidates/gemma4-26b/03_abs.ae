@@ -1,0 +1,9 @@
+fn abs(n: Int) -> Int
+  where result >= 0
+  effects {} {
+  if n >= 0 {
+    n
+  } else {
+    0 - n
+  }
+}

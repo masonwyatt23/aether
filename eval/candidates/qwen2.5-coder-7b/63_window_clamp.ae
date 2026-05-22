@@ -1,0 +1,8 @@
+## Clamp x into the window [lo, lo + width].
+## Precondition: width >= 0 (encoded in the type of width).
+## Contract: result >= lo AND result <= lo + width (proved at compile time).
+fn window_clamp(x: Int, lo: Int, width: Int{w: w >= 0}) -> Int
+  where result >= lo && result <= lo + width
+  effects {} {
+    if x < lo then lo else if x > lo + width then lo + width else x
+}

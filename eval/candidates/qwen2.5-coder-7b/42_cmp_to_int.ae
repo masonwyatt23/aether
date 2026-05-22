@@ -1,0 +1,10 @@
+type Cmp = Lt(Int) | Eq | Gt(Int)
+
+fn cmp_value(c: Cmp) -> Int
+  effects {} {
+  match c with {
+    Lt(n) => 0 - n,
+    Gt(n) => n,
+    Eq => 0
+  }
+}

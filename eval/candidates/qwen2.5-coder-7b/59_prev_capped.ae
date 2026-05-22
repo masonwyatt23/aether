@@ -1,0 +1,5 @@
+fn prev_capped(x: Int, lo: Int{l: l <= x}) -> Int
+  where result >= lo
+  effects {} {
+    if x > lo then x - 1 else lo
+  }

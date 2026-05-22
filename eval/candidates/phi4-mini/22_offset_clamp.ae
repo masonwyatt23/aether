@@ -1,0 +1,1 @@
+if x < base then base else if x > base + span then base + span else x

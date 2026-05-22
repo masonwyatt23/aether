@@ -1,0 +1,4 @@
+match c with
+| Lt(n) => 0 - n,
+| Eq   => 0,
+| Gt(n) => n

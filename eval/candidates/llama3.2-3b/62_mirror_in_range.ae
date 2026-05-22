@@ -1,0 +1,11 @@
+## Return the mirror of index i within the inclusive range [a, b].
+## Preconditions: a <= i <= b (in i's type), b >= a (in b's type).
+## Contract: result >= a AND result <= b (proved at compile time).
+fn mirror_in_range(i: Int{v: v >= a && v <= b}, a: Int, b: Int{h: h >= a}) -> Int
+  where result >= a && result <= b
+  effects {} {
+    let result = a + b - i;
+    assert(result >= a);
+    assert(result <= b);
+    return result;
+  }

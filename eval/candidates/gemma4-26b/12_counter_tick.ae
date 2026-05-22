@@ -1,0 +1,5 @@
+fn counter_tick(c: Int{x: x >= 0 && x <= 99}) -> Int
+  where result >= 1 && result <= 100
+  effects {} {
+  c + 1
+}

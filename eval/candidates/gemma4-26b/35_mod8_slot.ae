@@ -1,0 +1,5 @@
+fn mod8_slot(x: Int) -> Int
+  where result >= 1 && result < 9
+  effects {} {
+  (x % 8) + 1
+}

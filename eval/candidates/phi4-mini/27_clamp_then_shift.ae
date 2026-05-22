@@ -1,0 +1,1 @@
+if x < lo then lo + shift else if x > hi then hi + shift else x + shift

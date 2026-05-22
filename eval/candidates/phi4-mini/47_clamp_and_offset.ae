@@ -1,0 +1,2 @@
+let c = if x < lo then lo else (x > hi ? hi : let x' = x)
+    { let r = c + offset; return r }

@@ -1,0 +1,5 @@
+fn mod5_rank(x: Int) -> Int
+  where result >= 1 && result < 6
+  effects {} {
+  (x % 5) + 1
+}

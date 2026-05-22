@@ -1,67 +1,149 @@
 # Benchmark Results
 
-Runs of the Aether verified-code benchmark (see [README.md](README.md))
-against current frontier models. Each model is given only `prompt.md` +
-`signature.ae` for each task and must return a complete Aether function;
-the result is scored by `aether check` — a task counts as solved only when
-the compiler **proves** its refinement contract (zero errors, zero
-warnings), not merely when it type-checks.
+Results of the Aether verified-code benchmark. A task counts as solved only
+when `aether check` **proves** its refinement contract — zero errors, zero
+warnings. The verifier is an exact oracle: no hidden tests, no LLM judge.
 
-Run date: 2026-05-21. Harness: `eval/harness/run.py`.
+## v2 — procedural, contamination-resistant
 
-## 57-task run (current)
+The v2 benchmark is procedurally generated (`eval/templates.py` +
+`gen_tasks.py`): every run instantiates a fresh seeded task set, so no fixed
+instance can be memorized. Every contract is a mutation-audited tight
+functional spec — a degenerate body (a constant, a bare parameter) is
+refuted. Scores carry a Wilson 95% confidence interval; the 112 tasks are a
+*sample*, so the headline number has sampling error even though the scorer
+is exact.
 
-| Model | Provider | Score | easy | medium | medium-hard | hard |
-|---|---|---:|---:|---:|---:|---:|
-| `grok-4.3` | xAI | **50 / 57 — 88%** | 12/12 | 4/4 | 14/16 | 20/25 |
-| `gpt-5.2` | OpenAI | **46 / 57 — 81%** | 11/12 | 4/4 | 11/16 | 20/25 |
+Run date: 2026-05-21. Task set: 112 tasks, seed 1, 10 families across five
+difficulty tiers.
 
-**The expanded benchmark discriminates.** On the original 12 easy tasks
-both models scored a flat 100%; across 57 tasks spanning four difficulty
-tiers a real gap appears:
+| Model | Provider | Score | 95% CI | easy | medium | medium-hard | hard | expert |
+|---|---|---:|---|---:|---:|---:|---:|---:|
+| `gpt-5.4` | openai (API) | **111/112 — 99%** | [95%, 100%] | 20/20 | 8/8 | 35/36 | 41/41 | 7/7 |
+| `gpt-5.5` | openai (API) | **109/112 — 97%** | [92%, 99%] | 20/20 | 8/8 | 33/36 | 41/41 | 7/7 |
+| `gemma4:26b` | ollama (local) | **108/112 — 96%** | [91%, 99%] | 20/20 | 8/8 | 33/36 | 40/41 | 7/7 |
+| `qwen2.5-coder:7b` | ollama (local) | **70/112 — 62%** | [53%, 71%] | 14/20 | 0/8 | 24/36 | 32/41 | 0/7 |
 
-- **Grok-4.3 (88%) outscores GPT-5.2 (81%)** by 4 tasks.
-- The gap is concentrated in the **medium-hard** tier — ADTs with
-  exhaustive pattern matching and structured multi-statement code — where
-  Grok-4.3 solved 14/16 to GPT-5.2's 11/16.
-- The **hard** tier — multi-branch case analysis, modular arithmetic, and
-  "trap" tasks where the naive implementation violates the contract — cost
-  *both* models 5 tasks each (20/25). Traps bite frontier models equally.
-- GPT-5.2 also missed one **easy** task, which a 100%-on-easy benchmark
-  would never have surfaced.
+### The finding: v2 is saturated
 
-Generated solutions are committed under `eval/candidates/<model>/` so every
-result is inspectable and reproducible. Regenerate with
-`eval/harness/generate.py <dir> <provider> <model>` and re-score with
-`run.py`.
+The three capable models cluster at **96–99%** — and their confidence
+intervals overlap heavily, so a McNemar paired test finds **no significant
+difference** between them. The benchmark, as of v2, no longer separates
+strong models: it is saturated.
 
-## What this shows
+This is not a flaw in the task *writing* — it is structural. **A
+verified-code benchmark cannot be harder than its verifier is expressive.**
+The v2 task families are single, straight-line functions over linear integer
+arithmetic — an inherently easy proof class. The verified-code benchmarks
+that are *not* saturated (miniF2F, Verina's proof track) are hard because
+their verifiers demand loop invariants, induction, and termination.
 
-The methodology works: scoring **provable correctness** rather than
-test-pass rate produces a benchmark that — once the tasks are hard enough —
-separates frontier models, and locates *where* they differ. Both models are
-excellent at simple refinement-typed code; they diverge on structured code
-and lose ground on adversarial "trap" tasks. That is a more informative
-signal than "the hidden tests passed".
+`qwen2.5-coder:7b` (62%) is the one model the v2 set still discriminates —
+and informatively: it **collapses on whole tiers** (medium 0/8, expert 0/7)
+while still managing easy integer functions. A small model fails structured
+verification entirely.
+
+### Agentic mode
+
+The verifier-in-the-loop mode (`agentic.py`) lets a model see `aether check`'s
+diagnostics — including refutation counterexamples — and retry, up to 5
+turns.
+
+- `gpt-5.4`: pass@1 111 → pass@5 112 (**+1**) — already at the ceiling, no
+  room for feedback to help.
+- `qwen2.5-coder:7b`: pass@1 73 → pass@5 73 (**+0**) — a 7B model gains
+  nothing from the counterexamples; it resubmits variations of the same
+  wrong answer.
+
+The agentic gain is real (the verified-code literature shows ~2× for
+mid-capability models on hard tasks), but it is invisible here because every
+model tested is either at the ceiling or too weak to use the feedback. It
+will show once the task set is hard enough to give strong models headroom.
+
+## v2.1 — co-evolution: a more expressive verifier
+
+The saturation finding drove the next phase: deepen the *verifier* so harder
+task families become expressible and checkable. Three capabilities were added
+to the Aether compiler:
+
+- **Modular contract reasoning** — a call site imports the callee's `where`
+  postcondition (and reasons into `match` arms). New `compose` family:
+  multi-function tasks. Bonus: this also made recursive verification work —
+  a self-call is the inductive hypothesis.
+- **`decreases` termination checking** — a new language clause; recursive
+  functions must prove they terminate. New `recursive` family.
+- **`len` as a solver term** — list-length contracts (`len(result) == len(xs)`)
+  are now decidable.
+
+### Re-benchmark — and the honest result
+
+The v2.1 set is 136 tasks across 12 families. `gpt-5.4` scored
+**136/136 — 100%**, including `compose` 12/12 and `recursive` 12/12.
+
+The compiler half of the co-evolution loop worked: the new families are
+sound, verify, and genuinely exercise modular and recursive verification.
+But the **tasks are still not hard** — a frontier model handles two-function
+composition and termination-checked recursion trivially. Making the *verifier*
+more expressive enabled new task *types*; it did not, by itself, make the
+benchmark harder.
+
+The honest conclusion: the next iteration of the loop is **task authoring,
+not verifier capability** — deep multi-level compositions, recursion that
+needs a non-obvious measure or invariant, contracts near the edge of the
+solver. The machinery to express and check such tasks now exists; the tasks
+themselves must be written to be hard.
+
+## The spec-writing track
+
+A separate hypothesis: writing a *tight contract* — given a correct body — is
+harder than writing the body. `specwrite.py` tests it: the model writes the
+`where` clause, which must be **sound** (the reference verifies against it)
+and **strong** (it refutes every mutant the canonical contract refutes).
+
+`gpt-5.4` scored **124/124 — 100%** on the v2.1 contract-bearing tasks. Spec
+writing did not discriminate the frontier either.
+
+## Bottom line
+
+Across three framings — write the body, write the contract, iterate with
+verifier feedback — a frontier model saturates this benchmark. The reason is
+structural and worth stating plainly: **the tasks are small functions over
+linear integer arithmetic, and a frontier model finds those easy no matter
+what is asked.** Question framing is not the difficulty lever; *program
+complexity* is.
+
+What the benchmark genuinely delivers today:
+
+- a **rigorous, exact-oracle methodology** — the compiler proves the
+  contract; no test flakiness, no LLM judge;
+- **contamination resistance** — every run regenerates fresh from templates;
+- **mutation-audited tight contracts** — task quality is a measured property,
+  not a hope;
+- **broad-range discrimination** — it cleanly separates capability tiers: a
+  7B local model scores 62% and fails whole tiers where frontier models score
+  ~100%.
+
+What it does **not** yet do is separate *frontier* models from one another.
+That needs genuinely complex verified programs — many interacting functions,
+deep data-structure invariants, proof obligations the auto-prover cannot
+discharge unaided — or a verifier expressive enough to demand non-trivial
+proof artifacts (loop invariants, lemmas). Both are substantial efforts. The
+v2 infrastructure and the three verifier capabilities added this cycle
+(modular contract reasoning, `decreases` termination, `len` terms) are the
+foundation they would build on — the co-evolution loop is in place; the next
+turn of it is hard, complex *task authoring*.
 
 ## Methodology notes
 
-- **`grok-4.3` and `gpt-5.2`** are clean API evaluations: each model saw
-  only the task prompt and the stubbed signature, never the reference
-  solution.
-- An earlier 12-task run also scored `claude-opus-4-7` at 12/12, but those
-  solutions were written by the Claude agent that built this repository
-  (full repo context) — **not** a clean blind evaluation, so it is omitted
-  here. A clean Claude run needs an `ANTHROPIC_API_KEY`.
-- `gpt-5.5` was requested but is not offered by the OpenAI API; `gpt-5.2`
-  (released 2025-12-11) was the newest model available at run time.
-- A few easy-tier tasks have loose contracts (a constant satisfies them) —
-  see [README.md](README.md). The medium and hard tiers are designed so
-  only a genuinely correct solution verifies.
-
-## Next step
-
-The hard tier (20/25 for both models) is the discriminating frontier.
-Growing it — more trap tasks, contracts requiring the SMT path, multi-
-function programs — would sharpen the benchmark further. The score is no
-longer pinned at 100%, so it now has room to *measure* progress.
+- **Local models** (`gemma4:26b`, `qwen2.5-coder:7b`) ran end-to-end through
+  Ollama — no API key, no cost. `gemma4:26b` timed out on a few tasks under
+  the 240 s request limit; those count as unsolved.
+- **`gpt-5.4` / `gpt-5.5`** were called through the OpenAI Responses API at
+  `reasoning.effort = medium`. Each model saw only the task prompt and
+  stubbed signature.
+- Every score is reproducible: the seed is recorded in the task set's
+  `_manifest.json`, and generated solutions are committed under
+  `eval/instances/<set>/candidates/`.
+- Significance: with ~112 tasks, a McNemar paired test detects only gaps of
+  roughly 8+ tasks. Smaller gaps — including the 96% vs 99% spread above —
+  are within noise.

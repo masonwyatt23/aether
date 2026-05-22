@@ -1,0 +1,9 @@
+fn add_bounded(n: Int{v: v >= 1}, a: Int{v: v >= 0 && v <= n}, b: Int{v: v >= 0 && v <= n}) -> Int
+  where result >= 0 && result <= n
+  effects {} {
+  if a + b > n {
+    n
+  } else {
+    a + b
+  }
+}

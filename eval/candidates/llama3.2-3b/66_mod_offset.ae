@@ -1,0 +1,11 @@
+## Map x into the k-element ring starting at base.
+## Precondition: k >= 1 (encoded in the type of k).
+## Contract: result >= base AND result < base + k (proved at compile time).
+fn mod_offset(x: Int, k: Int{v: v >= 1}, base: Int) -> Int
+  where result >= base && result < base + k
+  effects {} {
+    let offset = x - base;
+    let result = offset % k;
+    if result == k { result -= k; }
+    return result + base;
+  }

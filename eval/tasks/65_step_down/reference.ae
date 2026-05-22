@@ -1,0 +1,8 @@
+## Move x down by step, flooring the result at lo.
+## Preconditions: lo <= x <= hi (in x's type), hi >= lo, step >= 0.
+## Contract: result >= lo AND result <= x (proved at compile time).
+fn step_down(x: Int{v: v >= lo && v <= hi}, lo: Int, hi: Int{h: h >= lo}, step: Int{s: s >= 0}) -> Int
+  where result >= lo && result <= x
+  effects {} {
+  if x - step < lo then lo else x - step
+}

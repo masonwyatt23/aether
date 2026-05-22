@@ -1,0 +1,7 @@
+fn two_stage_bound(x: Int, lo: Int, hi: Int{h: h >= lo}) -> Int
+  where result >= lo && result <= hi
+  effects {} {
+    let stage1 = if x < lo then lo else if x > hi then hi else x;
+    let stage2 = if stage1 < lo then lo else if stage1 > hi then hi else stage1;
+    return stage2;
+  }

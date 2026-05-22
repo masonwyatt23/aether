@@ -1,0 +1,4 @@
+match o with {
+  Some(v) => v
+  None => default
+}

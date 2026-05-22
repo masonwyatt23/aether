@@ -1,0 +1,9 @@
+type Res = Ok(Int) | Err(Int)
+
+fn ok_or_zero(r: Res) -> Int
+  effects {} {
+  match r with {
+    Ok(v) => v,
+    Err(_) => 0
+  }
+}

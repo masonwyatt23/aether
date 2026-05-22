@@ -1,0 +1,5 @@
+fn inc_capped(x: Int, hi: Int{h: h >= x}) -> Int
+  where result >= x && result <= hi
+  effects {} {
+    if x < hi then x + 1 else hi
+  }

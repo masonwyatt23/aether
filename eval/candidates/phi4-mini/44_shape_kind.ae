@@ -1,0 +1,4 @@
+match s with
+| Circle(r)   => 6 * r,
+| Square(side) => 4 * side,
+| Triangle(a, b) => a + b + a

@@ -1,0 +1,15 @@
+fn clip_to_cap(x: Int, cap: Int{c: c >= 0}) -> Int
+  effects {} {
+  if x < 0 { return -x }
+  else if x > cap { return cap } 
+  else { let _ = x; return x }
+}
+
+fn scaled_clip(x: Int, base: Int, max_cap: Int{c: c >= 0}) -> Int
+  where result >= base && result <= base + max_cap
+  effects {} {
+  if x < 0 { let clipped_x = clip_to_cap(-x, max_cap); r = base + clipped_x }
+  else if x > (max_cap - base) { let clipped_x = clip_to_cap(x, max_cap); r = base + clipped_x }
+  else { let _clipped_x = clip_to_cap(x, max_cap); r = base + _clipped_x; }
+  return r
+}
