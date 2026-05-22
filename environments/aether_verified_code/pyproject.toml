@@ -1,0 +1,33 @@
+[project]
+name = "aether-verified-code"
+description = "RL environment for verified-code generation: an LLM writes Aether code, scored by the compiler's exact refinement-type oracle — an unhackable reward."
+version = "0.1.0"
+requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Mason Wyatt", email = "mason@evero-consulting.com" }]
+keywords = ["aether", "formal-verification", "verified-code", "rl-environment"]
+tags = ["eval", "rl-environment", "code", "formal-verification", "verified-code", "multi-turn"]
+dependencies = [
+    "verifiers>=0.1.14",
+    "datasets",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+# `templates.py` is vendored so the environment is self-contained.
+include = ["aether_verified_code.py", "aether_core.py", "templates.py", "README.md", "tests/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# `prime eval run aether-verified-code` defaults.
+[tool.verifiers.eval]
+num_examples = 20
+rollouts_per_example = 3
